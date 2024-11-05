@@ -84,9 +84,7 @@ func (v *VM) Run() InterpretResult {
 				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
 				v.ip += 4
 
-				for range amount {
-					v.PopVar()
-				}
+				v.PopnVar(amount)
 			}
 
 			case compiler.OP_PRINT: fmt.Printf("%.2f\n", v.Pop())
@@ -162,9 +160,12 @@ func (v *VM) Pop() util.Value {
 	return topElement
 }
 
-// can have errors
 func (v *VM) PopVar() util.Value {
-	lastIndex := len(v.variables) - 1
+	return v.PopnVar(1)
+}
+
+func (v *VM) PopnVar(n int) util.Value {
+	lastIndex := len(v.variables) - n
 	topElement := v.variables[lastIndex]
 
 	v.variables = v.variables[:lastIndex]

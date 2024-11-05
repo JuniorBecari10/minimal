@@ -71,7 +71,16 @@ func (l *Lexer) scanToken() {
 		case '+': l.addToken(token.TokenPlus)
 		case '-': l.addToken(token.TokenMinus)
 		case '*': l.addToken(token.TokenStar)
-		case '/': l.addToken(token.TokenSlash)
+		case '/': {
+			if l.match('/') {
+				// A comment goes until the end of the line.
+				for l.peek() != '\n' && !l.isAtEnd() {
+					l.advance()
+				}
+			} else {
+				l.addToken(token.TokenSlash)
+			}
+		}
 
 		case '(': l.addToken(token.TokenLeftParen)
 		case ')': l.addToken(token.TokenRightParen)

@@ -27,52 +27,89 @@ const (
 	OP_PRINT
 )
 
-type Local struct {
+type Variable struct {
 	name token.Token
 	depth int
+	unintialized bool
 }
 
 type Compiler struct {
 	program []ast.Statement
-	locals []Local
+	locals []Variable
 	scopeDepth int
 
 	code bytes.Buffer
 	constants []util.Value
+
 	hadError bool
+	panicMode bool
 }
 
 func NewCompiler(program []ast.Statement) *Compiler {
 	return &Compiler{
 		program: program,
-		locals: []Local{},
+		locals: []Variable{},
 		scopeDepth: 0,
 
 		code: bytes.Buffer{},
 		constants: []util.Value{},
+
 		hadError: false,
+		panicMode: false,
 	}
 }
 
-func (c *Compiler) Compile() (string, []util.Value) {
+func (c *Compiler) Compile() (string, []util.Value, bool) {
+	c.hoistTopLevel()
 	for _, stmt := range c.program {
 		c.statement(stmt)
 	}
 	
-	return c.code.String(), c.constants
+	return c.code.String(), c.constants, c.hadError
 }
 
 // ---
 
+func (c *Compiler) hoistTopLevel() {
+	for _, decl := range c.program {
+		switch s := decl.(type) {
+			case ast.VarStatement:
+				c.locals = append(c.locals, Variable{
+					name: s.Name,
+					depth: c.scopeDepth,
+					unintialized: true,
+				})
+		}
+	}
+}
+
 func (c *Compiler) statement(stmt ast.Statement) {
+	if c.panicMode {
+		c.panicMode = false
+	}
+
 	switch s := stmt.(type) {
 		case ast.VarStatement: {
-			c.locals = append(c.locals, Local{
+			found := false
+			for i := len(c.locals) - 1; i >= 0; i-- {
+				if c.locals[i].name.Lexeme == s.Name.Lexeme {
+					found = true
+					break
+				}
+			}
+
+			c.locals = append(c.locals, Variable{
 				name: s.Name,
 				depth: c.scopeDepth,
+				unintialized: false,
 			})
 
 			c.expression(s.Init)
+
+			if c.hadError {
+				return
+			}
+
 			c.emitByte(OP_DEF_VAR) // pop from stack and push to variable stack
 		}
 
@@ -88,6 +125,11 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 		case ast.PrintStatement: {
 			c.expression(s.Expr)
+
+			if c.hadError {
+				return
+			}
+
 			c.emitByte(OP_PRINT)
 		}
 
@@ -99,6 +141,10 @@ func (c *Compiler) statement(stmt ast.Statement) {
 // ---
 
 func (c *Compiler) expression(expr ast.Expression) {
+	if c.hadError {
+		return
+	}
+
 	switch e := expr.(type) {
 		case ast.NumberExpression: {
 			index := c.AddConstant(util.Value(e.Literal))
@@ -161,6 +207,8 @@ func (c *Compiler) endScope() {
 			count += 1
 		}
 
+		c.locals = c.locals[:len(c.locals) - count]
+
 		if count > 1 {
 			c.emitByte(OP_POPN_VAR)
 			c.emitBytes(util.IntToBytes(count)) // count has 4 bytes
@@ -197,5 +245,7 @@ func (c *Compiler) error(pos token.Position, message string) {
 	}
 	
 	util.Error(pos, message)
+	
 	c.hadError = true
+	c.panicMode = true
 }

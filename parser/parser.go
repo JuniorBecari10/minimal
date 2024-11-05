@@ -17,6 +17,7 @@ type Parser struct {
 	precedenceMap map[token.TokenKind] int
 
 	hadError bool
+	panicMode bool
 }
 
 func NewParser(tokens []token.Token) *Parser {
@@ -25,6 +26,7 @@ func NewParser(tokens []token.Token) *Parser {
 		current: 0,
 
 		hadError: false,
+		panicMode: false,
 	}
 
 	p.prefixMap = map[token.TokenKind] func() ast.Expression {
@@ -64,6 +66,10 @@ func (p *Parser) Parse() ([]ast.Statement, bool) {
 // ---
 
 func (p *Parser) statement() ast.Statement {
+	if p.panicMode {
+		p.synchronize()
+	}
+
 	t := p.peek()
 	
 	switch t.Kind {
@@ -226,7 +232,11 @@ func (p *Parser) expect(kind token.TokenKind) bool {
 
 func (p *Parser) expectToken(kind token.TokenKind) token.Token {
 	if !p.check(kind) {
-		p.error(fmt.Sprintf("Expected '%s' token", kind))
+		if p.isAtEnd() {
+			p.error(fmt.Sprintf("Expected '%s', reached end", kind))
+		} else {
+			p.error(fmt.Sprintf("Expected '%s', got '%s'", kind, p.peek().Kind))
+		}
 		return token.AbsentToken()
 	}
 
@@ -260,11 +270,21 @@ func (p * Parser) isAtEnd() bool {
 	return p.current >= len(p.tokens)
 }
 
+func (p *Parser) synchronize() {
+	p.panicMode = false
+	
+	for p.peek().Kind == token.TokenSemicolon {
+		p.advance()
+	}
+}
+
 func (p *Parser) error(message string) {
-	if p.hadError {
+	if p.panicMode {
 		return
 	}
 	
 	util.Error(p.peek().Pos, message)
+
 	p.hadError = true
+	p.panicMode = true
 }

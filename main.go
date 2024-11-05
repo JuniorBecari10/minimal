@@ -32,15 +32,17 @@ func interpret(source string) {
 	parser := parser.NewParser(tokens)
 	ast, hadError := parser.Parse()
 
-	fmt.Printf("%+v\n", ast)
-
 	if hadError {
 		return
 	}
 
 	compiler := compiler.NewCompiler(ast)
-	instructions, constants := compiler.Compile()
+	instructions, constants, hadError := compiler.Compile()
 
+	if hadError {
+		return
+	}
+	
 	d := disassembler.NewDisassembler(instructions, constants)
 	d.Disassemble()
 
