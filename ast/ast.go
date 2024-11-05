@@ -1,0 +1,79 @@
+package ast
+
+import (
+	"vm-go/token"
+)
+
+type Statement interface {
+	stmt()
+}
+
+type Expression interface {
+	expr()
+}
+
+type AstBase struct {
+	Pos token.Position
+}
+
+// ---
+
+type VarStatement struct {
+	AstBase
+	Name token.Token
+	Init Expression
+}
+
+type BlockStatement struct {
+	AstBase
+	Stmts []Statement
+}
+
+type PrintStatement struct {
+	AstBase
+	Expr Expression
+}
+
+type ExprStatement struct {
+	AstBase
+	Expr Expression
+}
+
+// ---
+
+func (x VarStatement) stmt() {}
+func (x BlockStatement) stmt() {}
+func (x PrintStatement) stmt() {}
+func (x ExprStatement) stmt() {}
+
+// ---
+
+type NumberExpression struct {
+	AstBase
+	Literal float64
+}
+
+type BinaryExpression struct {
+	AstBase
+
+	Left Expression
+	Right Expression
+	Operator token.Token
+}
+
+type GroupExpression struct {
+	AstBase
+	Expr Expression
+}
+
+type IdentifierExpression struct {
+	AstBase
+	Ident token.Token
+}
+
+// ---
+
+func (x NumberExpression) expr() {}
+func (x BinaryExpression) expr() {}
+func (x GroupExpression) expr() {}
+func (x IdentifierExpression) expr() {}
