@@ -30,7 +30,7 @@ const (
 type Variable struct {
 	name token.Token
 	depth int
-	unintialized bool
+	initialized bool
 }
 
 type Compiler struct {
@@ -77,7 +77,7 @@ func (c *Compiler) hoistTopLevel() {
 				c.locals = append(c.locals, Variable{
 					name: s.Name,
 					depth: c.scopeDepth,
-					unintialized: true,
+					initialized: false,
 				})
 		}
 	}
@@ -90,19 +90,27 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 	switch s := stmt.(type) {
 		case ast.VarStatement: {
-			found := false
+			index := -1
 			for i := len(c.locals) - 1; i >= 0; i-- {
 				if c.locals[i].name.Lexeme == s.Name.Lexeme {
-					found = true
+					index = i
 					break
 				}
 			}
 
-			c.locals = append(c.locals, Variable{
-				name: s.Name,
-				depth: c.scopeDepth,
-				unintialized: false,
-			})
+			if index == -1 {
+				c.locals = append(c.locals, Variable{
+					name: s.Name,
+					depth: c.scopeDepth,
+					initialized: true,
+				})
+			} else {
+				if c.locals[index].depth == 0 && c.scopeDepth == 0 {
+					c.locals[index].initialized = true
+				} else {
+					c.error(s.Pos, fmt.Sprintf("'%s' has already been declared", s.Name.Lexeme))
+				}
+			}
 
 			c.expression(s.Init)
 
@@ -156,6 +164,14 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.IdentifierExpression: {
 			for i := len(c.locals) - 1; i >= 0; i-- {
 				if c.locals[i].name.Lexeme == e.Ident.Lexeme {
+					if !c.locals[i].initialized {
+						// TODO check if the scopeDepth is 0 and allow its use,
+						// since functions are allowed in top level and the use of variables inside them is allowed,
+						// because it is guaranteed to have them defined
+						c.error(e.Pos, fmt.Sprintf("'%s' is not defined yet", e.Ident.Lexeme))
+						return
+					}
+
 					c.emitByte(OP_GET_VAR)
 					c.emitBytes(util.IntToBytes(i)) // index has 4 bytes
 
