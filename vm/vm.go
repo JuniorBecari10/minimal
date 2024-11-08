@@ -43,7 +43,7 @@ func (v *VM) Run() InterpretResult {
 		i := v.nextByte()
 
 		switch i {
-			case compiler.OP_CONSTANT: {
+			case compiler.OP_PUSH_CONST: {
 				index, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
 				v.ip += 4
 

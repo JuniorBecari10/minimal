@@ -10,7 +10,6 @@ import (
 type Disassembler struct {
 	code      string
 	constants []util.Value
-
 	ip int
 }
 
@@ -18,12 +17,11 @@ func NewDisassembler(code string, constants []util.Value) *Disassembler {
 	return &Disassembler{
 		code:      code,
 		constants: constants,
-
 		ip: 0,
 	}
 }
 
-const MAX_INSTRUCTION_LENGTH = 11
+const MAX_INSTRUCTION_LENGTH = 13
 
 func (d *Disassembler) Disassemble() {
 	for !d.isAtEnd() {
@@ -32,7 +30,7 @@ func (d *Disassembler) Disassemble() {
 
 		switch i {
 			// inst index value
-			case compiler.OP_CONSTANT: {
+			case compiler.OP_PUSH_CONST: {
 				index, _ := util.BytesToInt([]byte(d.code[d.ip : d.ip+4]))
 				d.ip += 4
 
@@ -89,7 +87,7 @@ func (d *Disassembler) isAtEnd() bool {
 
 func getInstructionName(inst byte) string {
 	switch inst {
-		case compiler.OP_CONSTANT: return "OP_CONSTANT"
+		case compiler.OP_PUSH_CONST: return "OP_PUSH_CONST"
 
 		case compiler.OP_ADD: return "OP_ADD"
 		case compiler.OP_SUB: return "OP_SUB"

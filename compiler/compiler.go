@@ -11,7 +11,7 @@ import (
 type Opcode int
 
 const (
-	OP_CONSTANT = iota
+	OP_PUSH_CONST = iota
 	OP_ADD
 	OP_SUB
 	OP_MUL
@@ -62,6 +62,10 @@ func NewCompiler(program []ast.Statement) *Compiler {
 func (c *Compiler) Compile() (string, []util.Value, bool) {
 	c.hoistTopLevel()
 	for _, stmt := range c.program {
+		if c.panicMode {
+			c.panicMode = false
+		}
+
 		c.statement(stmt)
 	}
 	
@@ -84,10 +88,6 @@ func (c *Compiler) hoistTopLevel() {
 }
 
 func (c *Compiler) statement(stmt ast.Statement) {
-	if c.panicMode {
-		c.panicMode = false
-	}
-
 	switch s := stmt.(type) {
 		case ast.VarStatement: {
 			index := -1
@@ -98,6 +98,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				}
 			}
 
+			// didn't find
 			if index == -1 {
 				c.locals = append(c.locals, Variable{
 					name: s.Name,
@@ -105,10 +106,12 @@ func (c *Compiler) statement(stmt ast.Statement) {
 					initialized: true,
 				})
 			} else {
-				if c.locals[index].depth == 0 && c.scopeDepth == 0 {
+				// if it's a global and we're reached its declaratiomn. also make sure that it isn't a redeclaration
+				if c.locals[index].depth == 0 && c.scopeDepth == 0 && !c.locals[index].initialized {
 					c.locals[index].initialized = true
 				} else {
-					c.error(s.Pos, fmt.Sprintf("'%s' has already been declared", s.Name.Lexeme))
+					c.error(s.Pos, fmt.Sprintf("'%s' has already been declared in this scope", s.Name.Lexeme))
+					return
 				}
 			}
 
@@ -125,6 +128,10 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.beginScope()
 
 			for _, stmt := range s.Stmts {
+				if c.panicMode {
+					c.panicMode = false
+				}
+
 				c.statement(stmt)
 			}
 			
@@ -157,7 +164,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.NumberExpression: {
 			index := c.AddConstant(util.Value(e.Literal))
 
-			c.emitByte(OP_CONSTANT)
+			c.emitByte(OP_PUSH_CONST)
 			c.emitBytes(util.IntToBytes(index)) // index has 4 bytes
 		}
 
@@ -165,7 +172,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			for i := len(c.locals) - 1; i >= 0; i-- {
 				if c.locals[i].name.Lexeme == e.Ident.Lexeme {
 					if !c.locals[i].initialized {
-						// TODO check if the scopeDepth is 0 and allow its use,
+						// TODO check if the scopeDepth is not 0 and allow its use,
 						// since functions are allowed in top level and the use of variables inside them is allowed,
 						// because it is guaranteed to have them defined
 						c.error(e.Pos, fmt.Sprintf("'%s' is not defined yet", e.Ident.Lexeme))
@@ -179,7 +186,6 @@ func (c *Compiler) expression(expr ast.Expression) {
 				}
 			}
 
-			// TODO: throw error and abort compilation if one happened
 			c.error(e.Pos, fmt.Sprintf("'%s' doesn't exist", e.Ident.Lexeme))
 		}
 
