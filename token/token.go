@@ -20,6 +20,9 @@ const (
 	TokenEqual     = "="
 	TokenSemicolon = ";"
 
+	TokenIfKw    = "if"
+	TokenElseKw  = "else"
+	TokenWhileKw = "while"
 	TokenVarKw   = "var"
 	TokenPrintKw = "print"
 

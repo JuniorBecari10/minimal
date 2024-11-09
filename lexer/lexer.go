@@ -129,6 +129,9 @@ func (l *Lexer) identifier() {
 
 func (l *Lexer) checkKeyword() token.TokenKind {
 	switch l.source[l.start:l.current] {
+		case "if": return token.TokenIfKw
+		case "else": return token.TokenElseKw
+		case "while": return token.TokenWhileKw
 		case "var": return token.TokenVarKw
 		case "print": return token.TokenPrintKw
 

@@ -73,6 +73,8 @@ func (p *Parser) statement() ast.Statement {
 	t := p.peek()
 	
 	switch t.Kind {
+		case token.TokenIfKw: return p.ifStatement()
+		case token.TokenWhileKw: return p.whileStatement()
 		case token.TokenVarKw: return p.varStatement()
 		case token.TokenPrintKw: return p.printStatement()
 		case token.TokenLeftBrace: return p.blockStatement()
@@ -83,7 +85,79 @@ func (p *Parser) statement() ast.Statement {
 
 // ---
 
-func (p *Parser) varStatement() ast.Statement {
+func (p *Parser) ifStatement() ast.Statement {
+	pos := p.advance().Pos // 'var' keyword
+	condition := p.expression(0)
+
+	thenPos := p.expectToken(token.TokenLeftBrace).Pos
+	then := p.parseBlock()
+
+	var elseBranch *ast.BlockStatement = nil
+
+	if p.match(token.TokenElseKw) {
+		if p.match(token.TokenIfKw) {
+			cond, _ := p.ifStatement().(ast.IfStatement) // this won't panic
+
+			elseBranch = &ast.BlockStatement{
+				AstBase: ast.AstBase{
+					Pos: cond.Pos,
+				},
+				Stmts: []ast.Statement {
+					cond,
+				},
+			}
+		} else {
+			elsePos := p.expectToken(token.TokenLeftBrace).Pos
+			elseBlock := p.parseBlock()
+
+			elseBranch = &ast.BlockStatement{
+				AstBase: ast.AstBase{
+					Pos: elsePos,
+				},
+				Stmts: elseBlock,
+			}
+		}
+	}
+
+	return ast.IfStatement{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+
+		Condition: condition,
+		Then: ast.BlockStatement{
+			AstBase: ast.AstBase{
+				Pos: thenPos,
+			},
+			Stmts: then,
+		},
+		Else: elseBranch,
+	}
+}
+
+func (p *Parser) whileStatement() ast.Statement {
+	pos := p.advance().Pos // 'var' keyword
+	condition := p.expression(0)
+
+	blockPos := p.expectToken(token.TokenLeftBrace).Pos
+	block := p.parseBlock()
+
+	return ast.WhileStatement{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+
+		Condition: condition,
+		Block: ast.BlockStatement{
+			AstBase: ast.AstBase{
+				Pos: blockPos,
+			},
+			Stmts: block,
+		},
+	}
+}
+
+func (p *Parser) varStatement() ast.VarStatement {
 	pos := p.advance().Pos // 'var' keyword
 	name := p.expectToken(token.TokenIdentifier)
 	p.expect(token.TokenEqual)
@@ -116,15 +190,10 @@ func (p *Parser) printStatement() ast.Statement {
 	}
 }
 
-func (p *Parser) blockStatement() ast.Statement {
+func (p *Parser) blockStatement() ast.BlockStatement {
 	pos := p.advance().Pos // '{'
-	stmts := []ast.Statement {}
+	stmts := p.parseBlock()
 
-	for !p.isAtEnd() && !p.check(token.TokenRightBrace) {
-		stmts = append(stmts, p.statement())
-	}
-
-	p.advance()
 	return ast.BlockStatement{
 		AstBase: ast.AstBase{
 			Pos: pos,
@@ -137,6 +206,7 @@ func (p *Parser) blockStatement() ast.Statement {
 func (p *Parser) exprStatement() ast.Statement {
 	pos := p.peek().Pos
 	expr := p.expression(0)
+
 	p.requireSemicolon()
 
 	return ast.ExprStatement{
@@ -145,6 +215,19 @@ func (p *Parser) exprStatement() ast.Statement {
 		},
 		Expr: expr,
 	}
+}
+
+// ---
+
+func (p *Parser) parseBlock() []ast.Statement {
+	stmts := []ast.Statement {}
+
+	for !p.isAtEnd() && !p.check(token.TokenRightBrace) && !p.hadError {
+		stmts = append(stmts, p.statement())
+	}
+
+	p.advance() // '}'
+	return stmts
 }
 
 // ---
@@ -202,6 +285,7 @@ func (p *Parser) parseGroup() ast.Expression {
 	p.expect(token.TokenLeftParen)
 
 	expr := p.expression(0)
+
 	p.expect(token.TokenRightParen)
 
 	return ast.GroupExpression{
@@ -251,6 +335,15 @@ func (p *Parser) check(kind token.TokenKind) bool {
 	return p.peek().Kind == kind
 }
 
+func (p *Parser) match(kind token.TokenKind) bool {
+	if p.check(kind) {
+		p.advance()
+		return true
+	}
+
+	return false
+}
+
 func (p *Parser) advance() token.Token {
 	peek := p.peek()
 	p.current += 1
@@ -273,7 +366,16 @@ func (p * Parser) isAtEnd() bool {
 func (p *Parser) synchronize() {
 	p.panicMode = false
 	
-	for p.peek().Kind == token.TokenSemicolon {
+	for !p.isAtEnd() {
+		switch p.peek().Kind {
+			case token.TokenVarKw, token.TokenLeftBrace, token.TokenIfKw:
+				return
+		}
+
+		if p.peek().Kind == token.TokenSemicolon {
+			return
+		}
+
 		p.advance()
 	}
 }

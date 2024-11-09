@@ -24,6 +24,8 @@ const (
 	OP_POP_VAR
 	OP_POPN_VAR
 
+	OP_JUMP_FALSE
+
 	OP_PRINT
 )
 
@@ -89,6 +91,31 @@ func (c *Compiler) hoistTopLevel() {
 
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
+		case ast.IfStatement: {
+			c.expression(s.Condition)
+
+			if c.hadError {
+				return
+			}
+
+			start := c.code.Len()
+			c.emitByte(OP_JUMP_FALSE)
+			c.emitBytes(util.IntToBytes(0)) // placeholder
+
+			c.statement(s.Then)
+			end := c.code.Len()
+
+			diff := end - start
+			buf := c.code.Bytes()
+
+			requiredSize := start + 6
+			if requiredSize > len(buf) {
+				c.code.Grow(requiredSize - len(buf))
+			}
+
+			copy(buf[start+2:start+6], util.IntToBytes(diff))
+		}
+
 		case ast.VarStatement: {
 			index := -1
 			for i := len(c.locals) - 1; i >= 0; i-- {

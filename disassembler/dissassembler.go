@@ -45,7 +45,7 @@ func (d *Disassembler) Disassemble() {
 			}
 
 			// inst [int]
-			case compiler.OP_POPN_VAR, compiler.OP_GET_VAR, compiler.OP_SET_VAR: {
+			case compiler.OP_POPN_VAR, compiler.OP_GET_VAR, compiler.OP_SET_VAR, compiler.OP_JUMP_FALSE: {
 				count, _ := util.BytesToInt([]byte(d.code[d.ip : d.ip+4]))
 				d.ip += 4
 
@@ -100,6 +100,8 @@ func getInstructionName(inst byte) string {
 
 		case compiler.OP_POP_VAR: return "OP_POP_VAR"
 		case compiler.OP_POPN_VAR: return "OP_POPN_VAR"
+
+		case compiler.OP_JUMP_FALSE: return "OP_JUMP_FALSE"
 
 		case compiler.OP_PRINT: return "OP_PRINT"
 
