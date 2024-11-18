@@ -5,15 +5,16 @@ import (
 	"strconv"
 	"vm-go/compiler"
 	"vm-go/util"
+	"vm-go/value"
 )
 
 type Disassembler struct {
-	code      string
-	constants []util.Value
+	code      []byte
+	constants []value.Value
 	ip int
 }
 
-func NewDisassembler(code string, constants []util.Value) *Disassembler {
+func NewDisassembler(code []byte, constants []value.Value) *Disassembler {
 	return &Disassembler{
 		code:      code,
 		constants: constants,
@@ -35,7 +36,7 @@ func (d *Disassembler) Disassemble() {
 				d.ip += 4
 
 				fmt.Printf(
-					"%s %s | %d %.2f\n",
+					"%s %s | %d (%.2f)\n",
 					util.PadLeft(strconv.Itoa(ip), 4, " "),
 					util.PadRight(getInstructionName(i), MAX_INSTRUCTION_LENGTH, " "),
 
@@ -98,10 +99,22 @@ func getInstructionName(inst byte) string {
 		case compiler.OP_GET_VAR: return "OP_GET_VAR"
 		case compiler.OP_SET_VAR: return "OP_SET_VAR"
 
+		case compiler.OP_POP: return "OP_POP"
 		case compiler.OP_POP_VAR: return "OP_POP_VAR"
 		case compiler.OP_POPN_VAR: return "OP_POPN_VAR"
 
+		case compiler.OP_JUMP: return "OP_JUMP"
 		case compiler.OP_JUMP_FALSE: return "OP_JUMP_FALSE"
+		case compiler.OP_LOOP_FALSE: return "OP_LOOP_FALSE"
+
+		case compiler.OP_EQUAL: return "OP_EQUAL"
+		case compiler.OP_NOT_EQUAL: return "OP_NOT_EQUAL"
+
+		case compiler.OP_GREATER: return "OP_GREATER"
+		case compiler.OP_GREATER_EQUAL: return "OP_GREATER_EQUAL"
+
+		case compiler.OP_LESS: return "OP_LESS"
+		case compiler.OP_LESS_EQUAL: return "OP_LESS_EQUAL"
 
 		case compiler.OP_PRINT: return "OP_PRINT"
 

@@ -45,6 +45,7 @@ func interpret(source string) {
 	
 	d := disassembler.NewDisassembler(instructions, constants)
 	d.Disassemble()
+	fmt.Println()
 
 	vm_ := vm.NewVM(instructions, constants)
 	status := vm_.Run()

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"vm-go/compiler"
 	"vm-go/util"
+	"vm-go/value"
 )
 
 type InterpretResult int
@@ -15,23 +16,23 @@ const (
 )
 
 type VM struct {
-	code      string
-	constants []util.Value
+	code      []byte
+	constants []value.Value
 
-	stack     []util.Value
-	variables []util.Value
+	stack     []value.Value
+	variables []value.Value
 
 	ip int
 	hadError bool
 }
 
-func NewVM(code string, constants []util.Value) *VM {
+func NewVM(code []byte, constants []value.Value) *VM {
 	return &VM{
 		code:      code,
 		constants: constants,
 
-		stack:     []util.Value{},
-		variables: []util.Value{},
+		stack:     []value.Value{},
+		variables: []value.Value{},
 
 		ip:        0,
 		hadError:  false,
@@ -76,6 +77,10 @@ func (v *VM) Run() InterpretResult {
 				v.variables[index] = v.Pop()
 			}
 
+			case compiler.OP_POP: {
+				v.Pop()
+			}
+
 			case compiler.OP_POP_VAR: {
 				v.PopVar()
 			}
@@ -85,6 +90,10 @@ func (v *VM) Run() InterpretResult {
 				v.ip += 4
 
 				v.PopnVar(amount)
+			}
+
+			case compiler.OP_JUMP: {
+				
 			}
 
 			case compiler.OP_PRINT: fmt.Printf("%.2f\n", v.Pop())
@@ -142,12 +151,12 @@ func (v *VM) isAtEnd() bool {
 
 // ---
 
-func (v *VM) Push(f util.Value) {
+func (v *VM) Push(f value.Value) {
 	v.stack = append(v.stack, f)
 }
 
 // can have errors
-func (v *VM) Pop() util.Value {
+func (v *VM) Pop() value.Value {
 	if v.stackIsEmpty() {
 		v.error("Performed a pop operation on an empty stack")
 		return 0
@@ -160,11 +169,11 @@ func (v *VM) Pop() util.Value {
 	return topElement
 }
 
-func (v *VM) PopVar() util.Value {
+func (v *VM) PopVar() value.Value {
 	return v.PopnVar(1)
 }
 
-func (v *VM) PopnVar(n int) util.Value {
+func (v *VM) PopnVar(n int) value.Value {
 	lastIndex := len(v.variables) - n
 	topElement := v.variables[lastIndex]
 

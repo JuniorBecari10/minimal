@@ -7,8 +7,6 @@ import (
 	"vm-go/token"
 )
 
-type Value float64
-
 // It is little-endian
 func IntToBytes(n int) []byte {
 	bytes := make([]byte, 4)
