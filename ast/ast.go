@@ -68,6 +68,13 @@ type NumberExpression struct {
 	Literal float64
 }
 
+type UnaryExpression struct {
+	AstBase
+
+	Operand Expression
+	Operator token.Token
+}
+
 type BinaryExpression struct {
 	AstBase
 
@@ -89,6 +96,7 @@ type IdentifierExpression struct {
 // ---
 
 func (x NumberExpression) expr() {}
+func (x UnaryExpression) expr() {}
 func (x BinaryExpression) expr() {}
 func (x GroupExpression) expr() {}
 func (x IdentifierExpression) expr() {}

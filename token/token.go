@@ -17,14 +17,28 @@ const (
 	TokenLeftBrace  = "{"
 	TokenRightBrace = "}"
 
-	TokenEqual     = "="
+	TokenEqual       = "="
+	TokenDoubleEqual = "=="
+
+	TokenBangEqual = "!="
 	TokenSemicolon = ";"
+
+	TokenGreater      = ">"
+	TokenGreaterEqual = ">="
+
+	TokenLess      = "<"
+	TokenLessEqual = "<="
 
 	TokenIfKw    = "if"
 	TokenElseKw  = "else"
 	TokenWhileKw = "while"
 	TokenVarKw   = "var"
 	TokenPrintKw = "print"
+
+	TokenAndKw = "and"
+	TokenOrKw  = "or"
+	TokenXorKw = "xor"
+	TokenNotKw = "not"
 
 	TokenAbsent = "Absent"
 )

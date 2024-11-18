@@ -88,7 +88,38 @@ func (l *Lexer) scanToken() {
 		case '{': l.addToken(token.TokenLeftBrace)
 		case '}': l.addToken(token.TokenRightBrace)
 
-		case '=': l.addToken(token.TokenEqual)
+		case '=': {
+			if l.match('=') {
+				l.addToken(token.TokenDoubleEqual)
+			} else {
+				l.addToken(token.TokenEqual)
+			}
+		}
+
+		case '!': {
+			if l.match('=') {
+				l.addToken(token.TokenBangEqual)
+			} else {
+				l.error(fmt.Sprintf("Unknown character: '%c' (%d)", c, int(c)))
+			}
+		}
+
+		case '>': {
+			if l.match('=') {
+				l.addToken(token.TokenGreaterEqual)
+			} else {
+				l.addToken(token.TokenGreater)
+			}
+		}
+
+		case '<': {
+			if l.match('=') {
+				l.addToken(token.TokenLessEqual)
+			} else {
+				l.addToken(token.TokenLess)
+			}
+		}
+
 		case ';': l.addToken(token.TokenSemicolon)
 
 		default: {
@@ -134,6 +165,11 @@ func (l *Lexer) checkKeyword() token.TokenKind {
 		case "while": return token.TokenWhileKw
 		case "var": return token.TokenVarKw
 		case "print": return token.TokenPrintKw
+
+		case "and": return token.TokenAndKw
+		case "or": return token.TokenOrKw
+		case "xor": return token.TokenXorKw
+		case "not": return token.TokenNotKw
 
 		default: return token.TokenIdentifier
 	}
