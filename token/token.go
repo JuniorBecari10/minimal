@@ -1,6 +1,6 @@
 package token
 
-type TokenKind string
+type TokenKind = string
 
 const (
 	TokenNumber     = "Number"

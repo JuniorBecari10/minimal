@@ -7,12 +7,14 @@ import (
 	"vm-go/value"
 )
 
-type InterpretResult int
+type InterpretResult = int
 
 const (
 	STATUS_OK = iota
 	STATUS_STACK_EMPTY
+	STATUS_OUT_OF_BOUNDS
 	STATUS_DIV_ZERO
+	STATUS_TYPE_ERROR
 )
 
 type VM struct {
@@ -52,7 +54,7 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_ADD, compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV: {
-				status := v.binary(i)
+				status := v.binaryNum(i)
 
 				if status != STATUS_OK {
 					return status
@@ -93,10 +95,68 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_JUMP: {
+				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				v.ip += amount
+			}
+
+			case compiler.OP_JUMP_FALSE: {
+				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
 				
+				// TODO: check for out of bounds by checking nil
+				if b, ok := v.Peek(0).(value.ValueBool); ok {
+					if v.hadError {
+						return STATUS_OUT_OF_BOUNDS
+					}
+
+					if !b.Value {
+						v.ip += amount
+					}
+				} else {
+					v.error("Expression is not a boolean")
+					return STATUS_TYPE_ERROR
+				}
+			}
+
+			case compiler.OP_LOOP_FALSE: {
+				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				
+				// TODO: check for out of bounds by checking nil
+				if b, ok := v.Peek(0).(value.ValueBool); ok {
+					if v.hadError {
+						return STATUS_OUT_OF_BOUNDS
+					}
+
+					if !b.Value {
+						v.ip -= amount
+					}
+				} else {
+					v.error("Expression is not a boolean")
+					return STATUS_TYPE_ERROR
+				}
+			}
+
+			case compiler.OP_EQUAL: {
+				b := v.Pop()
+				a := v.Pop()
+
+				if !checkTypes(a, b) {
+					v.error("Types must be the same when comparing")
+					return STATUS_TYPE_ERROR
+				}
+
+				switch val := a.(type) {
+					case value.ValueNumber:
+						v.Push(value.ValueBool{ Value: val.Value == b.(value.ValueNumber).Value })
+					
+					case value.ValueBool:
+						v.Push(value.ValueBool{ Value: val.Value == b.(value.ValueBool).Value })
+				}
 			}
 
 			case compiler.OP_PRINT: fmt.Printf("%.2f\n", v.Pop())
+
+			default:
+				panic(fmt.Sprintf("Unknown instruction: '%d'", i))
 		}
 	}
 
@@ -105,7 +165,7 @@ func (v *VM) Run() InterpretResult {
 
 // ---
 
-func (v *VM) binary(operator byte) InterpretResult {
+func (v *VM) binaryNum(operator byte) InterpretResult {
 	right := v.Pop()
 
 	if v.stackIsEmpty() {
@@ -159,7 +219,7 @@ func (v *VM) Push(f value.Value) {
 func (v *VM) Pop() value.Value {
 	if v.stackIsEmpty() {
 		v.error("Performed a pop operation on an empty stack")
-		return 0
+		return nil
 	}
 
 	lastIndex := len(v.stack) - 1
@@ -167,6 +227,16 @@ func (v *VM) Pop() value.Value {
 
 	v.stack = v.stack[:lastIndex]
 	return topElement
+}
+
+func (v *VM) Peek(offset int) value.Value {
+	pos := len(v.stack) - offset
+	if pos < 0 || pos > len(v.stack) - 1 {
+		v.error("Peek position out of bounds")
+		return nil
+	}
+
+	return v.stack[pos]
 }
 
 func (v *VM) PopVar() value.Value {
