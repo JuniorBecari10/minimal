@@ -20,7 +20,7 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 			offset := 1 // OP_POP (next instruction)
 
 			if s.Else != nil {
-				offset = 7 // OP_POP + OP_JUMP (amount: 4 bytes) + OP_POP
+				offset = 6 // OP_POP + OP_JUMP (amount: 4 bytes)
 			}
 
 			res.WriteString(string(util.IntToBytes(len(then) + offset)))
