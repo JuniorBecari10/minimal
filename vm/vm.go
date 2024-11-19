@@ -101,6 +101,7 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_JUMP_FALSE: {
 				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				v.ip += 4
 				
 				// TODO: check for out of bounds by checking nil
 				if b, ok := v.Peek(0).(value.ValueBool); ok {
@@ -175,17 +176,25 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 
 	left := v.Pop()
 
+	if !isNumber(left) || !isNumber(right) {
+		v.error("Types must be numbers when performing arithmetic")
+		return STATUS_TYPE_ERROR
+	}
+
+	leftNum := left.(value.ValueNumber)
+	rightNum := right.(value.ValueNumber)
+
 	switch operator {
-		case compiler.OP_ADD: v.Push(left + right)
-		case compiler.OP_SUB: v.Push(left - right)
-		case compiler.OP_MUL: v.Push(left * right)
+		case compiler.OP_ADD: v.Push(value.ValueNumber{ Value: leftNum.Value + rightNum.Value })
+		case compiler.OP_SUB: v.Push(value.ValueNumber{ Value: leftNum.Value - rightNum.Value })
+		case compiler.OP_MUL: v.Push(value.ValueNumber{ Value: leftNum.Value * rightNum.Value })
 		case compiler.OP_DIV: {
-			if right == 0 {
+			if rightNum.Value == 0 {
 				v.error("Cannot divide by zero")
 				return STATUS_DIV_ZERO
 			}
 
-			v.Push(left / right)
+			v.Push(value.ValueNumber{ Value: leftNum.Value / rightNum.Value })
 		}
 	}
 
@@ -230,7 +239,7 @@ func (v *VM) Pop() value.Value {
 }
 
 func (v *VM) Peek(offset int) value.Value {
-	pos := len(v.stack) - offset
+	pos := len(v.stack) - 1 - offset
 	if pos < 0 || pos > len(v.stack) - 1 {
 		v.error("Peek position out of bounds")
 		return nil

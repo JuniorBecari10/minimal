@@ -16,7 +16,14 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 			then := c.statements(s.Then.Stmts)
 
 			res.WriteByte(OP_JUMP_FALSE)
-			res.WriteString(string(util.IntToBytes(len(then))))
+
+			offset := 1 // OP_POP (next instruction)
+
+			if s.Else != nil {
+				offset = 7 // OP_POP + OP_JUMP (amount: 4 bytes) + OP_POP
+			}
+
+			res.WriteString(string(util.IntToBytes(len(then) + offset)))
 			res.WriteByte(OP_POP)
 
 			res.WriteString(string(then))
@@ -25,7 +32,7 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 				else_ := c.statements(s.Else.Stmts)
 
 				res.WriteByte(OP_JUMP)
-				res.WriteString(string(util.IntToBytes(len(else_))))
+				res.WriteString(string(util.IntToBytes(len(else_) + 1))) // OP_POP
 				res.WriteByte(OP_POP)
 
 				res.WriteString(string(else_))
