@@ -40,12 +40,20 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 		}
 
 		case ast.WhileStatement: {
-			res.WriteString(string(c.expression(s.Condition)))
+			condition := string(c.expression(s.Condition))
 			block := c.statements(s.Block.Stmts)
 
-			res.WriteByte(OP_LOOP_FALSE)
+			res.WriteString(condition)
+
+			res.WriteByte(OP_JUMP_FALSE)
+			res.WriteString(string(util.IntToBytes(len(block) + 6))) // OP_POP + OP_LOOP_FALSE (amount: 4 bytes)
 			res.WriteByte(OP_POP)
-			res.WriteString(string(util.IntToBytes(len(block))))
+
+			res.WriteString(string(block))
+
+			res.WriteByte(OP_LOOP)
+			res.WriteString(string(util.IntToBytes(len(block) + len(condition) + 11))) // own (LOOP_FALSE) (amount: 4 bytes) + block + OP_POP + JUMP_FALSE + condition
+			res.WriteByte(OP_POP)
 		}
 
 		case ast.VarStatement: {

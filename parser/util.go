@@ -14,7 +14,7 @@ func (p *Parser) parseBlock() []ast.Statement {
 		stmts = append(stmts, p.statement())
 	}
 
-	p.advance() // '}'
+	p.expect(token.TokenRightBrace)
 	return stmts
 }
 
@@ -93,6 +93,7 @@ func (p *Parser) error(message string) {
 		return
 	}
 
+	// TODO: if reached end, get the position of the last token
 	util.Error(p.peek().Pos, message)
 
 	p.hadError = true

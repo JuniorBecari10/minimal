@@ -6,17 +6,18 @@ import (
 )
 
 const (
-	PrecPrimary = iota	// literals, identifiers
-	PrecCall			// ()
-	PrecUnary			// not -
-	PrecFactor			// * /
-	PrecTerm			// + -
-	PrecComparison			// < > <= >=
-	PrecEqual			// == !=
-	PrecAnd				// and
-	PrecOr				// or
-	PrecAssign          // =
+	PrecAssign = iota       // =
+	PrecOr                  // or
+	PrecAnd                 // and
+	PrecEqual               // == !=
+	PrecComparison          // < > <= >=
+	PrecTerm                // + -
+	PrecFactor              // * /
+	PrecUnary               // not -
+	PrecCall                // ()
+	PrecPrimary             // literals, identifiers
 )
+
 
 type Parser struct {
 	tokens []token.Token

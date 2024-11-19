@@ -118,40 +118,35 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_LOOP_FALSE: {
+			case compiler.OP_LOOP: {
 				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
 				
-				// TODO: check for out of bounds by checking nil
-				if b, ok := v.Peek(0).(value.ValueBool); ok {
-					if v.hadError {
-						return STATUS_OUT_OF_BOUNDS
-					}
-
-					if !b.Value {
-						v.ip -= amount
-					}
-				} else {
-					v.error("Expression is not a boolean")
-					return STATUS_TYPE_ERROR
-				}
+				v.ip += 4
+				v.ip -= amount
 			}
 
 			case compiler.OP_EQUAL: {
 				b := v.Pop()
 				a := v.Pop()
 
-				if !checkTypes(a, b) {
+				if !typesEqual(a, b) {
 					v.error("Types must be the same when comparing")
 					return STATUS_TYPE_ERROR
 				}
 
-				switch val := a.(type) {
-					case value.ValueNumber:
-						v.Push(value.ValueBool{ Value: val.Value == b.(value.ValueNumber).Value })
-					
-					case value.ValueBool:
-						v.Push(value.ValueBool{ Value: val.Value == b.(value.ValueBool).Value })
+				v.Push(value.ValueBool{ Value: valuesEqual(a, b) })
+			}
+
+			case compiler.OP_NOT_EQUAL: {
+				b := v.Pop()
+				a := v.Pop()
+
+				if !typesEqual(a, b) {
+					v.error("Types must be the same when comparing")
+					return STATUS_TYPE_ERROR
 				}
+
+				v.Push(value.ValueBool{ Value: !valuesEqual(a, b) })
 			}
 
 			case compiler.OP_PRINT: fmt.Printf("%.2f\n", v.Pop())
