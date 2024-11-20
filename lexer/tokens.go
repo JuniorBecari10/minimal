@@ -19,6 +19,20 @@ func (l *Lexer) number() {
 	l.addToken(token.TokenNumber)
 }
 
+func (l *Lexer) string() {
+	for l.peek() != '"' && !l.isAtEnd() {
+		l.advance()
+	}
+
+	if l.isAtEnd() {
+		l.error("Unterminated string")
+		return
+	}
+
+	l.advance() // the closing '"'
+	l.addTokenLexeme(token.TokenString, l.source[l.start + 1 : l.current - 1])
+}
+
 func (l *Lexer) identifier() {
 	for unicode.IsLetter(rune(l.peek())) || l.peek() == '_' {
 		l.advance()

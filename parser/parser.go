@@ -42,6 +42,7 @@ func NewParser(tokens []token.Token) *Parser {
 
 	p.prefixMap = map[token.TokenKind] func() ast.Expression {
 		token.TokenNumber: p.parseNumber,
+		token.TokenString: p.parseString,
 		token.TokenIdentifier: p.parseIdentifier,
 
 		token.TokenLeftParen: p.parseGroup,

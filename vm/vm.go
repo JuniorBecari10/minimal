@@ -96,7 +96,7 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_JUMP: {
 				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
-				
+
 				v.ip += 4
 				v.ip += amount
 			}
@@ -151,7 +151,7 @@ func (v *VM) Run() InterpretResult {
 				v.Push(value.ValueBool{ Value: !valuesEqual(a, b) })
 			}
 
-			case compiler.OP_PRINT: fmt.Printf("%.2f\n", v.Pop())
+			case compiler.OP_PRINT: fmt.Println(v.Pop().String())
 
 			default:
 				panic(fmt.Sprintf("Unknown instruction: '%d'", i))

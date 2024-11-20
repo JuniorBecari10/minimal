@@ -43,6 +43,15 @@ func (p *Parser) parseNumber() ast.Expression {
 	}
 }
 
+func (p *Parser) parseString() ast.Expression {
+	tok := p.advance()
+
+	return ast.StringExpression{
+		AstBase: ast.AstBase{Pos: tok.Pos},
+		Literal: tok.Lexeme,
+	}
+}
+
 func (p *Parser) parseIdentifier() ast.Expression {
 	ident := p.expectToken(token.TokenIdentifier)
 

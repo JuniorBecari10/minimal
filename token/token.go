@@ -4,6 +4,7 @@ type TokenKind = string
 
 const (
 	TokenNumber     = "Number"
+	TokenString     = "String"
 	TokenIdentifier = "Identifier"
 
 	TokenPlus  = "+"

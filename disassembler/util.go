@@ -1,0 +1,74 @@
+package disassembler
+
+import "vm-go/compiler"
+
+func (d *Disassembler) nextByte() byte {
+	ip := d.ip
+	d.ip += 1
+
+	return d.code[ip]
+}
+
+func (d *Disassembler) isAtEnd() bool {
+	return d.ip >= len(d.code)
+}
+
+// ---
+
+func getInstructionName(inst byte) string {
+	switch inst {
+	case compiler.OP_PUSH_CONST:
+		return "OP_PUSH_CONST"
+
+	case compiler.OP_ADD:
+		return "OP_ADD"
+	case compiler.OP_SUB:
+		return "OP_SUB"
+	case compiler.OP_MUL:
+		return "OP_MUL"
+	case compiler.OP_DIV:
+		return "OP_DIV"
+
+	case compiler.OP_DEF_VAR:
+		return "OP_DEF_VAR"
+	case compiler.OP_GET_VAR:
+		return "OP_GET_VAR"
+	case compiler.OP_SET_VAR:
+		return "OP_SET_VAR"
+
+	case compiler.OP_POP:
+		return "OP_POP"
+	case compiler.OP_POP_VAR:
+		return "OP_POP_VAR"
+	case compiler.OP_POPN_VAR:
+		return "OP_POPN_VAR"
+
+	case compiler.OP_JUMP:
+		return "OP_JUMP"
+	case compiler.OP_JUMP_FALSE:
+		return "OP_JUMP_FALSE"
+	case compiler.OP_LOOP:
+		return "OP_LOOP_FALSE"
+
+	case compiler.OP_EQUAL:
+		return "OP_EQUAL"
+	case compiler.OP_NOT_EQUAL:
+		return "OP_NOT_EQUAL"
+
+	case compiler.OP_GREATER:
+		return "OP_GREATER"
+	case compiler.OP_GREATER_EQUAL:
+		return "OP_GREATER_EQUAL"
+
+	case compiler.OP_LESS:
+		return "OP_LESS"
+	case compiler.OP_LESS_EQUAL:
+		return "OP_LESS_EQUAL"
+
+	case compiler.OP_PRINT:
+		return "OP_PRINT"
+
+	default:
+		return "Unknown"
+	}
+}

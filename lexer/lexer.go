@@ -47,13 +47,6 @@ func (l *Lexer) Lex() ([]token.Token, bool) {
 
 func (l *Lexer) scanToken() {
 	for strings.IndexByte(" \r\t\n", l.peek()) != -1 {
-		if (l.peek() == '\n') {
-			l.current += 1
-			l.increaseLine()
-
-			continue
-		}
-
 		l.advance()
 	}
 
@@ -120,6 +113,7 @@ func (l *Lexer) scanToken() {
 		}
 
 		case ';': l.addToken(token.TokenSemicolon)
+		case '"': l.string()
 
 		default: {
 			if unicode.IsDigit(rune(c)) {

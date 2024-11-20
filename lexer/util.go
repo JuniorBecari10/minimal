@@ -70,3 +70,11 @@ func (l *Lexer) addToken(kind token.TokenKind) {
 		Pos:    l.startPos,
 	})
 }
+
+func (l *Lexer) addTokenLexeme(kind token.TokenKind, lexeme string) {
+	l.tokens = append(l.tokens, token.Token{
+		Kind:   kind,
+		Lexeme: lexeme,
+		Pos:    l.startPos,
+	})
+}
