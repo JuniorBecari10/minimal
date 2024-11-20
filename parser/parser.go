@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	PrecAssignment = iota       // =
+	PrecAssignment = iota   // =
 	PrecOr                  // or
 	PrecAnd                 // and
 	PrecEqual               // == !=

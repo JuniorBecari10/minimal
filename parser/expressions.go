@@ -124,5 +124,18 @@ func (p *Parser) parseBinary(left ast.Expression, pos token.Position, op token.T
 }
 
 func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Expression {
-	return nil
+	p.expectToken(token.TokenEqual)
+	right := p.expression(PrecAssignment)
+
+	name, ok := left.(ast.IdentifierExpression)
+
+	if !ok {
+		p.error(fmt.Sprintf("Invalid assignment target: '%v'", left))
+	}
+
+	return ast.IdentifierAssignmentExpression{
+		AstBase:  ast.AstBase{Pos: pos},
+		Name: name.Ident,
+		Expr: right,
+	}
 }

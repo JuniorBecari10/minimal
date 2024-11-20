@@ -37,6 +37,7 @@ func interpret(source string) {
 	}
 
 	fmt.Printf("%#v\n", ast)
+	return
 
 	compiler := compiler.NewCompiler(ast)
 	instructions, constants, hadError := compiler.Compile()
