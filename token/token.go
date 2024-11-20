@@ -41,6 +41,10 @@ const (
 	TokenXorKw = "xor"
 	TokenNotKw = "not"
 
+	TokenTrueKw  = "true"
+	TokenFalseKw = "false"
+	TokenNilKw   = "nil"
+
 	TokenAbsent = "Absent"
 )
 

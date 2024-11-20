@@ -57,11 +57,15 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 		}
 
 		case ast.VarStatement: {
-			// Find the variable to check if it already exists or not
+			// Find the variable to check if it already exists or not, in this scope
 			index := -1
 			for i := len(c.variables) - 1; i >= 0; i-- {
 				if c.variables[i].name.Lexeme == s.Name.Lexeme {
 					index = i
+					break
+				}
+
+				if c.variables[i].depth < c.scopeDepth {
 					break
 				}
 			}
@@ -80,9 +84,24 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 				if c.variables[index].depth == 0 && c.scopeDepth == 0 && !c.variables[index].initialized {
 					c.variables[index].initialized = true
 				} else {
-					// it's a redeclaration
-					c.error(s.Pos, fmt.Sprintf("'%s' has already been declared in this scope", s.Name.Lexeme))
-					return res.Bytes()
+					// Found a variable with the same name, it can be in the same scope or not
+					existing := c.variables[index]
+
+					if existing.depth == 0 && c.scopeDepth == 0 && !existing.initialized {
+						// If it's a global variable and uninitialized, allow redeclaration
+						c.variables[index].initialized = true
+					} else if existing.depth == c.scopeDepth {
+						// Redeclaration in the same scope is not allowed
+						c.error(s.Pos, fmt.Sprintf("'%s' has already been declared in this scope", s.Name.Lexeme))
+						return res.Bytes()
+					} else {
+						// the variable is in an enclosing scope, we'll shadow it
+						c.variables = append(c.variables, Variable{
+							name:        s.Name,
+							depth:       c.scopeDepth,
+							initialized: true,
+						})
+					}
 				}
 			}
 

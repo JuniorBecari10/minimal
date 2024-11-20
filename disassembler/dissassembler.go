@@ -22,24 +22,25 @@ func NewDisassembler(code []byte, constants []value.Value) *Disassembler {
 	}
 }
 
-const MAX_INSTRUCTION_LENGTH = 13
+const MAX_INSTRUCTION_LENGTH = 16
 
 func (d *Disassembler) Disassemble() {
 	for !d.isAtEnd() {
+		ip := d.ip
 		inst := d.nextByte()
-		d.PrintInstruction(inst)
+
+		d.PrintInstruction(inst, ip)
 	}
 }
 
-func (d *Disassembler) PrintInstruction(inst byte) {
-	ip := d.ip
-
+func (d *Disassembler) PrintInstruction(inst byte, ip int) {
 	switch inst {
 		// inst index value
 		case compiler.OP_PUSH_CONST: {
 			index, _ := util.BytesToInt([]byte(d.code[d.ip : d.ip+4]))
 			d.ip += 4
 
+			// TODO: print the type as well
 			fmt.Printf(
 				"%s %s | %s (%s)\n",
 				util.PadLeft(strconv.Itoa(ip), 4, " "),

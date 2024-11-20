@@ -31,13 +31,27 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 			res.WriteString(string(util.IntToBytes(index)))
 		}
 
+		case ast.BoolExpression: {
+			index := c.AddConstant(value.ValueBool{ Value: e.Literal })
+
+			res.WriteByte(OP_PUSH_CONST)
+			res.WriteString(string(util.IntToBytes(index)))
+		}
+
+		case ast.NilExpression: {
+			index := c.AddConstant(value.ValueNil{})
+
+			res.WriteByte(OP_PUSH_CONST)
+			res.WriteString(string(util.IntToBytes(index)))
+		}
+
 		case ast.IdentifierExpression: {
 			for i := len(c.variables) - 1; i >= 0; i-- {
 				if c.variables[i].name.Lexeme == e.Ident.Lexeme {
 					if !c.variables[i].initialized {
 						// TODO check if the scopeDepth is not 0 and allow its use,
 						// since functions are allowed in top level and the use of variables inside them is allowed,
-						// because it is guaranteed to have them defined
+						// because it is guaranteed to have them defined, since we'll have a main function
 						c.error(e.Pos, fmt.Sprintf("'%s' is not defined yet", e.Ident.Lexeme))
 						return res.Bytes()
 					}

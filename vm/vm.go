@@ -151,6 +151,14 @@ func (v *VM) Run() InterpretResult {
 				v.Push(value.ValueBool{ Value: !valuesEqual(a, b) })
 			}
 
+			case compiler.OP_GREATER, compiler.OP_GREATER_EQUAL, compiler.OP_LESS, compiler.OP_LESS_EQUAL: {
+				status := v.binaryComparison(i)
+
+				if status != STATUS_OK {
+					return status
+				}
+			}
+
 			case compiler.OP_PRINT: fmt.Println(v.Pop().String())
 
 			default:
@@ -193,6 +201,34 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 
 			v.Push(value.ValueNumber{ Value: leftNum.Value / rightNum.Value })
 		}
+	}
+
+	return STATUS_OK
+}
+
+func (v *VM) binaryComparison(operator byte) InterpretResult {
+	right := v.Pop()
+
+	if v.stackIsEmpty() {
+		v.error("Not enough stack items to perform a binary operation")
+		return STATUS_STACK_EMPTY
+	}
+
+	left := v.Pop()
+
+	if !isNumber(left) || !isNumber(right) {
+		v.error("Types must be numbers when performing comparison")
+		return STATUS_TYPE_ERROR
+	}
+
+	leftNum := left.(value.ValueNumber)
+	rightNum := right.(value.ValueNumber)
+
+	switch operator {
+		case compiler.OP_GREATER: v.Push(value.ValueBool{ Value: leftNum.Value > rightNum.Value })
+		case compiler.OP_GREATER_EQUAL: v.Push(value.ValueBool{ Value: leftNum.Value >= rightNum.Value })
+		case compiler.OP_LESS: v.Push(value.ValueBool{ Value: leftNum.Value < rightNum.Value })
+		case compiler.OP_LESS_EQUAL: v.Push(value.ValueBool{ Value: leftNum.Value <= rightNum.Value })
 	}
 
 	return STATUS_OK

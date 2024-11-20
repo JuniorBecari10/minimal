@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	PrecAssign = iota       // =
+	PrecAssignment = iota       // =
 	PrecOr                  // or
 	PrecAnd                 // and
 	PrecEqual               // == !=
@@ -45,6 +45,10 @@ func NewParser(tokens []token.Token) *Parser {
 		token.TokenString: p.parseString,
 		token.TokenIdentifier: p.parseIdentifier,
 
+		token.TokenTrueKw: p.parseBool,
+		token.TokenFalseKw: p.parseBool,
+		token.TokenNilKw: p.parseNil,
+
 		token.TokenLeftParen: p.parseGroup,
 		token.TokenNotKw: func() ast.Expression { return p.parseUnary(token.TokenNotKw) },
 	}
@@ -68,6 +72,8 @@ func NewParser(tokens []token.Token) *Parser {
 
 		token.TokenDoubleEqual:   func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenDoubleEqual) },
 		token.TokenBangEqual:     func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenBangEqual) },
+
+		token.TokenEqual: p.parseAssignment,
 	}
 
 	p.precedenceMap = map[token.TokenKind] int {
@@ -88,13 +94,15 @@ func NewParser(tokens []token.Token) *Parser {
 
 		token.TokenDoubleEqual: PrecEqual,
 		token.TokenBangEqual: PrecEqual,
+
+		token.TokenEqual: PrecAssignment,
 	}
 
 	return p
 }
 
 func (p *Parser) Parse() ([]ast.Statement, bool) {
-	stmts := []ast.Statement {}
+	stmts := []ast.Statement{}
 
 	for !p.isAtEnd() {
 		stmts = append(stmts, p.statement())

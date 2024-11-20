@@ -20,14 +20,11 @@ type ValueBool struct {
 	Value bool
 }
 
+type ValueNil struct {}
+
 // ---
 
 func (x ValueNumber) String() string { return fmt.Sprintf("%.2f", x.Value) }
 func (x ValueString) String() string { return x.Value }
-func (x ValueBool) String() string {
-	if x.Value {
-		return "true"
-	} else {
-		return "false"
-	}
-}
+func (x ValueBool) String() string { return fmt.Sprintf("%t", x.Value) }
+func (x ValueNil) String() string { return "nil" }

@@ -53,7 +53,6 @@ func interpret(source string) {
 	status := vm_.Run()
 
 	if status != vm.STATUS_OK {
-		fmt.Println(status)
 		return
 	}
 }

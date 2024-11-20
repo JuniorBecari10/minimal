@@ -64,6 +64,23 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	}
 }
 
+func (p *Parser) parseBool() ast.Expression {
+	tok := p.advance()
+
+	return ast.BoolExpression{
+		AstBase: ast.AstBase{Pos: tok.Pos},
+		Literal: tok.Kind == token.TokenTrueKw,
+	}
+}
+
+func (p *Parser) parseNil() ast.Expression {
+	tok := p.advance()
+
+	return ast.NilExpression{
+		AstBase: ast.AstBase{Pos: tok.Pos},
+	}
+}
+
 func (p *Parser) parseGroup() ast.Expression {
 	pos := p.peek().Pos
 	p.expect(token.TokenLeftParen)
@@ -104,4 +121,8 @@ func (p *Parser) parseBinary(left ast.Expression, pos token.Position, op token.T
 		Right:    right,
 		Operator: operator,
 	}
+}
+
+func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Expression {
+	return nil
 }
