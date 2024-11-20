@@ -96,6 +96,8 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_JUMP: {
 				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				
+				v.ip += 4
 				v.ip += amount
 			}
 
