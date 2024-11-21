@@ -39,14 +39,6 @@ func (l *Lexer) peek() byte {
 	return l.source[l.current]
 }
 
-func (l *Lexer) peekNext() byte {
-	if l.isAtEnd() {
-		return 0
-	}
-
-	return l.source[l.current+1]
-}
-
 func (l *Lexer) isAtEnd() bool {
 	return l.current >= len(l.source)
 }

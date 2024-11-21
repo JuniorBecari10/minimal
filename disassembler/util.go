@@ -65,6 +65,19 @@ func getInstructionName(inst byte) string {
 	case compiler.OP_LESS_EQUAL:
 		return "OP_LESS_EQUAL"
 
+	case compiler.OP_AND:
+		return "OP_AND"
+	case compiler.OP_OR:
+		return "OP_OR"
+	case compiler.OP_XOR:
+		return "OP_XOR"
+	
+	case compiler.OP_NOT:
+		return "OP_NOT"
+	
+	case compiler.OP_NEGATE:
+		return "OP_NEGATE"
+
 	case compiler.OP_PRINT:
 		return "OP_PRINT"
 

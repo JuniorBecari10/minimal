@@ -10,7 +10,7 @@ func (l *Lexer) number() {
 		l.advance()
 	}
 
-	if l.match('.') && unicode.IsDigit(rune(l.peekNext())) {
+	if l.match('.') && unicode.IsDigit(rune(l.peek())) {
 		for unicode.IsDigit(rune(l.peek())) {
 			l.advance()
 		}

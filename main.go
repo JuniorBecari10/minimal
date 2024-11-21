@@ -29,16 +29,15 @@ func interpret(source string) {
 		return
 	}
 
+	fmt.Printf("%#v\n", tokens)
+
 	parser := parser.NewParser(tokens)
 	ast, hadError := parser.Parse()
 
 	if hadError {
 		return
 	}
-
-	fmt.Printf("%#v\n", ast)
-	return
-
+	
 	compiler := compiler.NewCompiler(ast)
 	instructions, constants, hadError := compiler.Compile()
 

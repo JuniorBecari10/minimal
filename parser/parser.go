@@ -7,6 +7,7 @@ import (
 
 const (
 	PrecAssignment = iota   // =
+	PrecXor                 // xor
 	PrecOr                  // or
 	PrecAnd                 // and
 	PrecEqual               // == !=
@@ -86,6 +87,7 @@ func NewParser(tokens []token.Token) *Parser {
 
 		token.TokenAndKw: PrecAnd,
 		token.TokenOrKw: PrecOr,
+		token.TokenXorKw: PrecXor,
 
 		token.TokenGreater: PrecComparison,
 		token.TokenGreaterEqual: PrecComparison,
