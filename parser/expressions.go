@@ -97,10 +97,9 @@ func (p *Parser) parseGroup() ast.Expression {
 
 func (p *Parser) parseUnary(op token.TokenKind) ast.Expression {
 	pos := p.peek().Pos
-	precedence := p.precedenceMap[op]
 
 	operator := p.expectToken(op)
-	operand := p.expression(precedence)
+	operand := p.expression(PrecUnary)
 
 	return ast.UnaryExpression{
 		AstBase:  ast.AstBase{Pos: pos},

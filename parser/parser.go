@@ -27,7 +27,7 @@ type Parser struct {
 
 	prefixMap map[token.TokenKind] func() ast.Expression
 	infixMap map[token.TokenKind] func(ast.Expression, token.Position) ast.Expression
-	precedenceMap map[token.TokenKind] int
+	precedenceMap map[token.TokenKind] int // add another map if necessary
 
 	hadError bool
 	panicMode bool
@@ -52,6 +52,7 @@ func NewParser(tokens []token.Token) *Parser {
 		token.TokenNilKw: p.parseNil,
 
 		token.TokenLeftParen: p.parseGroup,
+
 		token.TokenNotKw: func() ast.Expression { return p.parseUnary(token.TokenNotKw) },
 		token.TokenMinus: func() ast.Expression { return p.parseUnary(token.TokenMinus) },
 	}
@@ -73,8 +74,8 @@ func NewParser(tokens []token.Token) *Parser {
 		token.TokenLess:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenLess) },
 		token.TokenLessEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenLessEqual) },
 
-		token.TokenDoubleEqual:   func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenDoubleEqual) },
-		token.TokenBangEqual:     func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenBangEqual) },
+		token.TokenDoubleEqual:  func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenDoubleEqual) },
+		token.TokenBangEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenBangEqual) },
 
 		token.TokenEqual: p.parseAssignment,
 	}
