@@ -46,24 +46,14 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 		}
 
 		case ast.IdentifierExpression: {
-			for i := len(c.variables) - 1; i >= 0; i-- {
-				if c.variables[i].name.Lexeme == e.Ident.Lexeme {
-					if !c.variables[i].initialized {
-						// TODO check if the scopeDepth is not 0 and allow its use,
-						// since functions are allowed in top level and the use of variables inside them is allowed,
-						// because it is guaranteed to have them defined, since we'll have a main function
-						c.error(e.Pos, fmt.Sprintf("'%s' is not defined yet", e.Ident.Lexeme))
-						return res.Bytes()
-					}
+			index := c.resolveVariable(e.Ident)
 
-					res.WriteByte(OP_GET_VAR)
-					res.WriteString(string(util.IntToBytes(i)))
-
-					return res.Bytes()
-				}
+			if index < 0 {
+				return res.Bytes()
 			}
 
-			c.error(e.Pos, fmt.Sprintf("'%s' doesn't exist", e.Ident.Lexeme))
+			res.WriteByte(OP_GET_VAR)
+			res.WriteString(string(util.IntToBytes(index)))
 		}
 
 		case ast.BinaryExpression: {
@@ -123,6 +113,19 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 
 		case ast.GroupExpression:
 			res.WriteString(string(c.expression(e.Expr)))
+		
+		case ast.IdentifierAssignmentExpression: {
+			index := c.resolveVariable(e.Name)
+
+			if index < 0 {
+				return res.Bytes()
+			}
+
+			res.WriteString(string(c.expression(e.Expr)))
+
+			res.WriteByte(OP_SET_VAR)
+			res.WriteString(string(util.IntToBytes(index)))
+		}
 	}
 
 	return res.Bytes()

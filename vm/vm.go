@@ -76,7 +76,7 @@ func (v *VM) Run() InterpretResult {
 				index, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
 				v.ip += 4
 
-				v.variables[index] = v.Pop()
+				v.variables[index] = v.Peek(0)
 			}
 
 			case compiler.OP_POP: {

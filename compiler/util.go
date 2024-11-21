@@ -2,10 +2,30 @@ package compiler
 
 import (
 	"bytes"
+	"fmt"
 	"vm-go/token"
 	"vm-go/util"
 	"vm-go/value"
 )
+
+func (c *Compiler) resolveVariable(token token.Token) int {
+	for i := len(c.variables) - 1; i >= 0; i-- {
+		if c.variables[i].name.Lexeme == token.Lexeme {
+			if !c.variables[i].initialized {
+				// TODO check if the scopeDepth is not 0 and allow its use,
+				// since functions are allowed in top level and the use of variables inside them is allowed,
+				// because it is guaranteed to have them defined, since we'll have a main function
+				c.error(token.Pos, fmt.Sprintf("'%s' is not defined yet", token.Lexeme))
+				return -1
+			}
+
+			return i
+		}
+	}
+
+	c.error(token.Pos, fmt.Sprintf("'%s' doesn't exist", token.Lexeme))
+	return -1
+}
 
 func (c *Compiler) beginScope() {
 	c.scopeDepth += 1

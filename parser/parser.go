@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	PrecAssignment = iota   // =
-	PrecXor                 // xor
+	PrecLowest = iota
+	PrecAssignment          // =
 	PrecOr                  // or
+	PrecXor                 // xor
 	PrecAnd                 // and
 	PrecEqual               // == !=
 	PrecComparison          // < > <= >=

@@ -125,7 +125,7 @@ func (p *Parser) parseBinary(left ast.Expression, pos token.Position, op token.T
 
 func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Expression {
 	p.expectToken(token.TokenEqual)
-	right := p.expression(PrecAssignment)
+	right := p.expression(PrecLowest) // accept one level higher because assignment is right-associative
 
 	name, ok := left.(ast.IdentifierExpression)
 

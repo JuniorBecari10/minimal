@@ -145,7 +145,7 @@ func (p *Parser) blockStatement() ast.BlockStatement {
 
 func (p *Parser) exprStatement() ast.Statement {
 	pos := p.peek().Pos
-	expr := p.expression(0)
+	expr := p.expression(PrecLowest)
 
 	p.requireSemicolon()
 

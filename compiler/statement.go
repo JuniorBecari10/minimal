@@ -131,8 +131,10 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 			res.WriteByte(OP_PRINT)
 		}
 
-		case ast.ExprStatement:
+		case ast.ExprStatement: {
 			res.WriteString(string(c.expression(s.Expr)))
+			res.WriteByte(OP_POP)
+		}
 	}
 
 	return res.Bytes()
