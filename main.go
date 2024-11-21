@@ -3,56 +3,26 @@ package main
 import (
 	"fmt"
 	"os"
-	"vm-go/compiler"
-	"vm-go/disassembler"
-	"vm-go/lexer"
-	"vm-go/parser"
-	"vm-go/vm"
+	"vm-go/run"
 )
 
 func main() {
-	c, err := os.ReadFile("file.txt")
+	if len(os.Args) == 1 || len(os.Args) > 3 {
+		fmt.Println("Usage: vm <source> [-d | --dissassemble]")
+		return
+	}
+
+	c, err := os.ReadFile(os.Args[1])
 	
 	if err != nil {
-		fmt.Println("Cannot read file")
+		fmt.Printf("Cannot read file: '%s'\n", os.Args[1])
 		os.Exit(1)
 	}
 
-	interpret(string(c))
-}
-
-func interpret(source string) {
-	lexer := lexer.NewLexer(source)
-	tokens, hadError := lexer.Lex()
-
-	if hadError {
-		return
+	mode := run.ModeRun
+	if len(os.Args) == 3 && (os.Args[2] == "-d" || os.Args[2] == "--dissassemble") {
+		mode = run.ModeDisassemble
 	}
 
-	parser := parser.NewParser(tokens)
-	ast, hadError := parser.Parse()
-
-	if hadError {
-		return
-	}
-
-	fmt.Printf("%#v\n", ast)
-
-	compiler := compiler.NewCompiler(ast)
-	instructions, constants, hadError := compiler.Compile()
-
-	if hadError {
-		return
-	}
-	
-	d := disassembler.NewDisassembler(instructions, constants)
-	d.Disassemble()
-	fmt.Println()
-
-	vm_ := vm.NewVM(instructions, constants)
-	status := vm_.Run()
-
-	if status != vm.STATUS_OK {
-		return
-	}
+	run.Run(string(c), mode)
 }

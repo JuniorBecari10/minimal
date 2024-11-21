@@ -31,6 +31,13 @@ func isBool(v value.Value) bool {
 	return ok
 }
 
+func isString(v value.Value) bool {
+	_, ok := v.(value.ValueString)
+	return ok
+}
+
+// ---
+
 func xor(a, b bool) bool {
     return (a || b) && !(a && b)
 }

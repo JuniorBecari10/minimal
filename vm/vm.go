@@ -53,7 +53,29 @@ func (v *VM) Run() InterpretResult {
 				v.Push(v.constants[index])
 			}
 
-			case compiler.OP_ADD, compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV: {
+			// TODO: add a separated opcode for concatenating strings when typechecking is added
+			case compiler.OP_ADD: {
+				if !typesEqual(v.Peek(0), v.Peek(1)) {
+					v.error("Operands types must be equal when adding/concatenating")
+					return STATUS_TYPE_ERROR
+				}
+
+				if isString(v.Peek(0)) {
+					status := v.concatenateStrs()
+
+					if status != STATUS_OK {
+						return status
+					}
+				} else {
+					status := v.binaryNum(i)
+
+					if status != STATUS_OK {
+						return status
+					}
+				}
+			}
+
+			case compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV: {
 				status := v.binaryNum(i)
 
 				if status != STATUS_OK {
@@ -202,6 +224,28 @@ func (v *VM) Run() InterpretResult {
 }
 
 // ---
+
+func (v *VM) concatenateStrs() InterpretResult {
+	right := v.Pop()
+
+	if v.stackIsEmpty() {
+		v.error("Not enough stack items to perform a binary operation")
+		return STATUS_STACK_EMPTY
+	}
+
+	left := v.Pop()
+
+	if !isString(left) || !isString(right) {
+		v.error("Operands must be stringss when performing concatenation")
+		return STATUS_TYPE_ERROR
+	}
+
+	leftStr := left.(value.ValueString)
+	rightStr := right.(value.ValueString)
+
+	v.Push(value.ValueString{ Value: leftStr.Value + rightStr.Value })
+	return STATUS_OK
+}
 
 func (v *VM) binaryNum(operator byte) InterpretResult {
 	right := v.Pop()

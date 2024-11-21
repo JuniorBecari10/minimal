@@ -85,8 +85,7 @@ func (p *Parser) parseGroup() ast.Expression {
 	pos := p.peek().Pos
 	p.expect(token.TokenLeftParen)
 
-	expr := p.expression(0)
-
+	expr := p.expression(PrecLowest)
 	p.expect(token.TokenRightParen)
 
 	return ast.GroupExpression{
