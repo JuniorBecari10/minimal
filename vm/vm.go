@@ -66,12 +66,15 @@ func (v *VM) Run() InterpretResult {
 					if status != STATUS_OK {
 						return status
 					}
-				} else {
+				} else if isNumber(v.Peek(0)) {
 					status := v.binaryNum(i)
 
 					if status != STATUS_OK {
 						return status
 					}
+				} else {
+					v.error("Operands must be numbers or strings when adding/concatenating")
+					return STATUS_TYPE_ERROR
 				}
 			}
 
