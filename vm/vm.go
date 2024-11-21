@@ -159,6 +159,38 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
+			case compiler.OP_AND, compiler.OP_OR, compiler.OP_XOR: {
+				status := v.binaryBool(i)
+
+				if status != STATUS_OK {
+					return status
+				}
+			}
+
+			case compiler.OP_NOT: {
+				op := v.Pop()
+
+				if !isBool(op) {
+					v.error("Operand must be a boolean for logical not")
+					return STATUS_TYPE_ERROR
+				}
+
+				opBool := op.(value.ValueBool)
+				v.Push(value.ValueBool{ Value: !opBool.Value })
+			}
+
+			case compiler.OP_NEGATE: {
+				op := v.Pop()
+
+				if !isNumber(op) {
+					v.error("Operand must be a number for number negation")
+					return STATUS_TYPE_ERROR
+				}
+
+				opNum := op.(value.ValueNumber)
+				v.Push(value.ValueNumber{ Value: -opNum.Value })
+			}
+
 			case compiler.OP_PRINT: fmt.Println(v.Pop().String())
 
 			default:
@@ -182,7 +214,7 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 	left := v.Pop()
 
 	if !isNumber(left) || !isNumber(right) {
-		v.error("Types must be numbers when performing arithmetic")
+		v.error("Operands must be numbers when performing arithmetic")
 		return STATUS_TYPE_ERROR
 	}
 
@@ -217,7 +249,7 @@ func (v *VM) binaryComparison(operator byte) InterpretResult {
 	left := v.Pop()
 
 	if !isNumber(left) || !isNumber(right) {
-		v.error("Types must be numbers when performing comparison")
+		v.error("Operands must be numbers when performing comparison")
 		return STATUS_TYPE_ERROR
 	}
 
@@ -229,6 +261,33 @@ func (v *VM) binaryComparison(operator byte) InterpretResult {
 		case compiler.OP_GREATER_EQUAL: v.Push(value.ValueBool{ Value: leftNum.Value >= rightNum.Value })
 		case compiler.OP_LESS: v.Push(value.ValueBool{ Value: leftNum.Value < rightNum.Value })
 		case compiler.OP_LESS_EQUAL: v.Push(value.ValueBool{ Value: leftNum.Value <= rightNum.Value })
+	}
+
+	return STATUS_OK
+}
+
+func (v *VM) binaryBool(operator byte) InterpretResult {
+	right := v.Pop()
+
+	if v.stackIsEmpty() {
+		v.error("Not enough stack items to perform a binary operation")
+		return STATUS_STACK_EMPTY
+	}
+
+	left := v.Pop()
+
+	if !isBool(left) || !isBool(right) {
+		v.error("Operands must be booleans when performing boolean operations")
+		return STATUS_TYPE_ERROR
+	}
+
+	leftNum := left.(value.ValueBool)
+	rightNum := right.(value.ValueBool)
+
+	switch operator {
+		case compiler.OP_AND: v.Push(value.ValueBool{ Value: leftNum.Value && rightNum.Value })
+		case compiler.OP_OR: v.Push(value.ValueBool{ Value: leftNum.Value || rightNum.Value })
+		case compiler.OP_XOR: v.Push(value.ValueBool{ Value: xor(leftNum.Value, rightNum.Value) })
 	}
 
 	return STATUS_OK

@@ -51,6 +51,7 @@ func NewParser(tokens []token.Token) *Parser {
 
 		token.TokenLeftParen: p.parseGroup,
 		token.TokenNotKw: func() ast.Expression { return p.parseUnary(token.TokenNotKw) },
+		token.TokenMinus: func() ast.Expression { return p.parseUnary(token.TokenMinus) },
 	}
 
 	p.infixMap = map[token.TokenKind]func(ast.Expression, token.Position) ast.Expression{
@@ -62,7 +63,7 @@ func NewParser(tokens []token.Token) *Parser {
 		
 		token.TokenAndKw:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenAndKw) },
 		token.TokenOrKw:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenOrKw) },
-		token.TokenXorKw:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenXorKw) },
+		token.TokenXorKw:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenXorKw) },
 		
 		token.TokenGreater:      func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenGreater) },
 		token.TokenGreaterEqual: func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenGreaterEqual) },

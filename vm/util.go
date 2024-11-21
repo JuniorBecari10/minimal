@@ -25,3 +25,12 @@ func isNumber(v value.Value) bool {
 	_, ok := v.(value.ValueNumber)
 	return ok
 }
+
+func isBool(v value.Value) bool {
+	_, ok := v.(value.ValueBool)
+	return ok
+}
+
+func xor(a, b bool) bool {
+    return (a || b) && !(a && b)
+}

@@ -94,9 +94,30 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 					res.WriteByte(OP_LESS)
 				case token.TokenLessEqual:
 					res.WriteByte(OP_LESS_EQUAL)
+				
+				case token.TokenAndKw:
+					res.WriteByte(OP_AND)
+				case token.TokenOrKw:
+					res.WriteByte(OP_OR)
+				case token.TokenXorKw:
+					res.WriteByte(OP_XOR)
 
 				default:
 					panic(fmt.Sprintf("Unknown binary operator: '%s'", e.Operator.Kind))
+			}
+		}
+
+		case ast.UnaryExpression: {
+			res.WriteString(string(c.expression(e.Operand)))
+
+			switch e.Operator.Kind {
+				case token.TokenNotKw:
+					res.WriteByte(OP_NOT)
+				case token.TokenMinus:
+					res.WriteByte(OP_NEGATE)
+				
+				default:
+					panic(fmt.Sprintf("Unknown unary operator: '%s'", e.Operator.Kind))
 			}
 		}
 

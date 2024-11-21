@@ -37,6 +37,13 @@ const (
 	OP_LESS
 	OP_LESS_EQUAL
 
+	OP_AND
+	OP_OR
+	OP_XOR
+
+	OP_NOT
+	OP_NEGATE
+
 	OP_PRINT
 )
 
