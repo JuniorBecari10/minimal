@@ -49,7 +49,7 @@ func (l *Lexer) increaseLine() {
 }
 
 func (l *Lexer) error(message string) {
-	util.Error(l.startPos, message)
+	util.Error(l.startPos, message, l.fileData)
 	l.hadError = true
 }
 

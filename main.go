@@ -24,5 +24,5 @@ func main() {
 		mode = run.ModeDisassemble
 	}
 
-	run.Run(string(c), mode)
+	run.Run(string(c), os.Args[1], mode)
 }

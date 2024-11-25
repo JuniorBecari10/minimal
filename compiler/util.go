@@ -78,7 +78,7 @@ func (c *Compiler) error(pos token.Position, message string) {
 		return
 	}
 
-	util.Error(pos, message)
+	util.Error(pos, message, c.fileData)
 
 	c.hadError = true
 	c.panicMode = true

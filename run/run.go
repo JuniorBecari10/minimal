@@ -1,11 +1,13 @@
 package run
 
 import (
+	"strings"
+	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/disassembler"
 	"vm-go/lexer"
 	"vm-go/parser"
-	"vm-go/value"
+	"vm-go/util"
 	"vm-go/vm"
 )
 
@@ -16,8 +18,13 @@ const (
 	ModeDisassemble
 )
 
-func Run(source string, mode RunMode) {
-	bytecode, constants, hadError := compile(source)
+func Run(source, fileName string, mode RunMode) {
+	fileData := util.FileData{
+		Name: fileName,
+		Lines: strings.Split(source, "\n"),
+	}
+
+	chunk, hadError := compile(source, &fileData)
 
 	if hadError {
 		return
@@ -25,38 +32,38 @@ func Run(source string, mode RunMode) {
 	
 	switch mode {
 		case ModeRun: {
-			vm_ := vm.NewVM(bytecode, constants)
+			vm_ := vm.NewVM(chunk, &fileData)
 			vm_.Run()
 		}
 
 		case ModeDisassemble: {
-			diss := disassembler.NewDisassembler(bytecode, constants)
+			diss := disassembler.NewDisassembler(chunk, &fileData)
 			diss.Disassemble()
 		}
 	}
 }
 
-func compile(source string) ([]byte, []value.Value, bool) {
-	lexer := lexer.NewLexer(source)
+func compile(source string, fileData *util.FileData) (chunk.Chunk, bool) {
+	lexer := lexer.NewLexer(source, fileData)
 	tokens, hadError := lexer.Lex()
 
 	if hadError {
-		return nil, nil, true
+		return chunk.Chunk{}, true
 	}
 
-	parser := parser.NewParser(tokens)
+	parser := parser.NewParser(tokens, fileData)
 	ast, hadError := parser.Parse()
 
 	if hadError {
-		return nil, nil, true
+		return chunk.Chunk{}, true
 	}
 
-	compiler := compiler.NewCompiler(ast)
-	bytecode, constants, hadError := compiler.Compile()
+	compiler := compiler.NewCompiler(ast, fileData)
+	chunk, hadError := compiler.Compile()
 
 	if hadError {
-		return nil, nil, true
+		return chunk.Chunk{}, true
 	}
 
-	return bytecode, constants, false
+	return chunk, false
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode"
 	"vm-go/token"
+	"vm-go/util"
 )
 
 type Lexer struct {
@@ -18,9 +19,11 @@ type Lexer struct {
 
 	hadError bool
 	tokens []token.Token
+
+	fileData *util.FileData
 }
 
-func NewLexer(source string) *Lexer {
+func NewLexer(source string, fileData *util.FileData) *Lexer {
 	return &Lexer{
 		source:  source,
 
@@ -32,6 +35,8 @@ func NewLexer(source string) *Lexer {
 
 		hadError: false,
 		tokens:   []token.Token{},
+
+		fileData: fileData,
 	}
 }
 
@@ -121,7 +126,7 @@ func (l *Lexer) scanToken() {
 			} else if unicode.IsLetter(rune(c)) || c == '_' {
 				l.identifier()
 			} else {
-				l.error(fmt.Sprintf("Unknown character: '%c' (%d)", c, int(c)))
+				l.error(fmt.Sprintf("Unknown character: '%c' (code point %d)", c, int(c)))
 			}
 		}
 	}

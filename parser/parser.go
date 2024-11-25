@@ -3,6 +3,7 @@ package parser
 import (
 	"vm-go/ast"
 	"vm-go/token"
+	"vm-go/util"
 )
 
 const (
@@ -31,15 +32,19 @@ type Parser struct {
 
 	hadError bool
 	panicMode bool
+
+	fileData *util.FileData
 }
 
-func NewParser(tokens []token.Token) *Parser {
+func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 	p := &Parser{
 		tokens: tokens,
 		current: 0,
 
 		hadError: false,
 		panicMode: false,
+
+		fileData: fileData,
 	}
 
 	p.prefixMap = map[token.TokenKind] func() ast.Expression {

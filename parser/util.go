@@ -94,7 +94,7 @@ func (p *Parser) error(message string) {
 	}
 
 	// TODO: if reached end, get the position of the last token
-	util.Error(p.peek().Pos, message)
+	util.Error(p.peek().Pos, message, p.fileData)
 
 	p.hadError = true
 	p.panicMode = true

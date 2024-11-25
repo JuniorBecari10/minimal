@@ -3,7 +3,9 @@ package compiler
 import (
 	"bytes"
 	"vm-go/ast"
+	"vm-go/chunk"
 	"vm-go/token"
+	"vm-go/util"
 	"vm-go/value"
 )
 
@@ -54,7 +56,7 @@ type Variable struct {
 }
 
 type Compiler struct {
-	program []ast.Statement
+	ast []ast.Statement
 	variables []Variable
 
 	scopeDepth int
@@ -62,11 +64,13 @@ type Compiler struct {
 
 	hadError bool
 	panicMode bool
+
+	fileData *util.FileData
 }
 
-func NewCompiler(program []ast.Statement) *Compiler {
+func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 	return &Compiler{
-		program: program,
+		ast: ast,
 		variables: []Variable{},
 
 		scopeDepth: 0,
@@ -74,14 +78,19 @@ func NewCompiler(program []ast.Statement) *Compiler {
 
 		hadError: false,
 		panicMode: false,
+
+		fileData: fileData,
 	}
 }
 
-func (c *Compiler) Compile() ([]byte, []value.Value, bool) {
+func (c *Compiler) Compile() (chunk.Chunk, bool) {
 	c.hoistTopLevel()
 	
-	bytecode := c.statements(c.program)
-	return bytecode, c.constants, c.hadError
+	bytecode := c.statements(c.ast)
+	return chunk.Chunk{
+		Code: bytecode,
+		Constants: c.constants,
+	}, c.hadError
 }
 
 // ---
@@ -101,7 +110,7 @@ func (c *Compiler) statements(stmts []ast.Statement) []byte {
 }
 
 func (c *Compiler) hoistTopLevel() {
-	for _, decl := range c.program {
+	for _, decl := range c.ast {
 		switch s := decl.(type) {
 			case ast.VarStatement: {
 				c.variables = append(c.variables, Variable{
