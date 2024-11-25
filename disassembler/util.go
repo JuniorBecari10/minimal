@@ -6,11 +6,11 @@ func (d *Disassembler) nextByte() byte {
 	ip := d.ip
 	d.ip += 1
 
-	return d.code[ip]
+	return d.chunk.Code[ip]
 }
 
 func (d *Disassembler) isAtEnd() bool {
-	return d.ip >= len(d.code)
+	return d.ip >= len(d.chunk.Code)
 }
 
 // ---

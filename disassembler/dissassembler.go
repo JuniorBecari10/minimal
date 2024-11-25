@@ -3,22 +3,24 @@ package disassembler
 import (
 	"fmt"
 	"strconv"
+	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/util"
-	"vm-go/value"
 )
 
 type Disassembler struct {
-	code      []byte
-	constants []value.Value
+	chunk chunk.Chunk
 	ip int
+
+	fileData *util.FileData
 }
 
-func NewDisassembler(code []byte, constants []value.Value) *Disassembler {
+func NewDisassembler(chunk chunk.Chunk, fileData *util.FileData) *Disassembler {
 	return &Disassembler{
-		code:      code,
-		constants: constants,
+		chunk: chunk,
 		ip: 0,
+
+		fileData: fileData,
 	}
 }
 
@@ -37,7 +39,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int) {
 	switch inst {
 		// inst index value
 		case compiler.OP_PUSH_CONST: {
-			index, _ := util.BytesToInt([]byte(d.code[d.ip : d.ip+4]))
+			index, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
 			d.ip += 4
 
 			// TODO: print the type as well
@@ -47,13 +49,13 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int) {
 				util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
 
 				util.PadRight(strconv.Itoa(index), 4, " "),
-				d.constants[index].String(),
+				d.chunk.Constants[index].String(),
 			)
 		}
 
 		// inst [int]
 		case compiler.OP_POPN_VAR, compiler.OP_GET_VAR, compiler.OP_SET_VAR: {
-			count, _ := util.BytesToInt([]byte(d.code[d.ip : d.ip+4]))
+			count, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
 			d.ip += 4
 
 			fmt.Printf(
@@ -67,7 +69,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int) {
 
 		// inst amount result
 		case compiler.OP_JUMP_FALSE, compiler.OP_JUMP, compiler.OP_LOOP: {
-			count, _ := util.BytesToInt([]byte(d.code[d.ip : d.ip+4]))
+			count, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
 			d.ip += 4
 
 			fmt.Printf(

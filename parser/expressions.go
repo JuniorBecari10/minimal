@@ -8,18 +8,18 @@ import (
 )
 
 func (p *Parser) expression(precedence int) ast.Expression {
-	pos := p.peek().Pos
-	prefixFn, ok := p.prefixMap[p.peek().Kind]
+	pos := p.peek(0).Pos
+	prefixFn, ok := p.prefixMap[p.peek(0).Kind]
 
 	if !ok {
-		p.error(fmt.Sprintf("Unexpected token: '%s'", p.peek().Lexeme))
+		p.error(fmt.Sprintf("Unexpected token: '%s'", p.peek(0).Lexeme))
 		return nil
 	}
 
 	left := prefixFn()
 
-	for p.precedenceMap[p.peek().Kind] > precedence {
-		infixFn, ok := p.infixMap[p.peek().Kind]
+	for p.precedenceMap[p.peek(0).Kind] > precedence {
+		infixFn, ok := p.infixMap[p.peek(0).Kind]
 
 		if !ok {
 			break
@@ -82,7 +82,7 @@ func (p *Parser) parseNil() ast.Expression {
 }
 
 func (p *Parser) parseGroup() ast.Expression {
-	pos := p.peek().Pos
+	pos := p.peek(0).Pos
 	p.expect(token.TokenLeftParen)
 
 	expr := p.expression(PrecLowest)
@@ -95,7 +95,7 @@ func (p *Parser) parseGroup() ast.Expression {
 }
 
 func (p *Parser) parseUnary(op token.TokenKind) ast.Expression {
-	pos := p.peek().Pos
+	pos := p.peek(0).Pos
 
 	operator := p.expectToken(op)
 	operand := p.expression(PrecUnary)

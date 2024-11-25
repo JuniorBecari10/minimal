@@ -10,7 +10,7 @@ import (
 func (p *Parser) parseBlock() []ast.Statement {
 	stmts := []ast.Statement {}
 
-	for !p.isAtEnd() && !p.check(token.TokenRightBrace) && !p.hadError {
+	for !p.isAtEnd(0) && !p.check(token.TokenRightBrace) && !p.hadError {
 		stmts = append(stmts, p.statement())
 	}
 
@@ -24,10 +24,10 @@ func (p *Parser) expect(kind token.TokenKind) bool {
 
 func (p *Parser) expectToken(kind token.TokenKind) token.Token {
 	if !p.check(kind) {
-		if p.isAtEnd() {
+		if p.isAtEnd(0) {
 			p.error(fmt.Sprintf("Expected '%s', reached end", kind))
 		} else {
-			p.error(fmt.Sprintf("Expected '%s', got '%s'", kind, p.peek().Kind))
+			p.error(fmt.Sprintf("Expected '%s', got '%s'", kind, p.peek(0).Kind))
 		}
 		return token.AbsentToken()
 	}
@@ -40,7 +40,7 @@ func (p *Parser) requireSemicolon() {
 }
 
 func (p *Parser) check(kind token.TokenKind) bool {
-	return p.peek().Kind == kind
+	return p.peek(0).Kind == kind
 }
 
 func (p *Parser) match(kind token.TokenKind) bool {
@@ -53,34 +53,34 @@ func (p *Parser) match(kind token.TokenKind) bool {
 }
 
 func (p *Parser) advance() token.Token {
-	peek := p.peek()
+	peek := p.peek(0)
 	p.current += 1
 
 	return peek
 }
 
-func (p *Parser) peek() token.Token {
-	if p.isAtEnd() {
+func (p *Parser) peek(offset int) token.Token {
+	if p.isAtEnd(offset) {
 		return token.AbsentToken()
 	}
 
-	return p.tokens[p.current]
+	return p.tokens[p.current + offset]
 }
 
-func (p *Parser) isAtEnd() bool {
-	return p.current >= len(p.tokens)
+func (p *Parser) isAtEnd(offset int) bool {
+	return p.current + offset >= len(p.tokens)
 }
 
 func (p *Parser) synchronize() {
 	p.panicMode = false
 
-	for !p.isAtEnd() {
-		switch p.peek().Kind {
+	for !p.isAtEnd(0) {
+		switch p.peek(0).Kind {
 		case token.TokenVarKw, token.TokenLeftBrace, token.TokenIfKw:
 			return
 		}
 
-		if p.peek().Kind == token.TokenSemicolon {
+		if p.peek(0).Kind == token.TokenSemicolon {
 			return
 		}
 
@@ -94,7 +94,11 @@ func (p *Parser) error(message string) {
 	}
 
 	// TODO: if reached end, get the position of the last token
-	util.Error(p.peek().Pos, message, p.fileData)
+	last := p.peek(-1)
+	pos := last.Pos
+
+	pos.Col += len(last.Lexeme)
+	util.Error(pos, message, p.fileData)
 
 	p.hadError = true
 	p.panicMode = true

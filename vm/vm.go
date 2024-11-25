@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/util"
 	"vm-go/value"
@@ -18,39 +19,39 @@ const (
 )
 
 type VM struct {
-	code      []byte
-	constants []value.Value
+	chunk chunk.Chunk
 
 	stack     []value.Value
 	variables []value.Value
 
 	ip int
 	hadError bool
+	fileData *util.FileData
 }
 
-func NewVM(code []byte, constants []value.Value) *VM {
+func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 	return &VM{
-		code:      code,
-		constants: constants,
+		chunk: chunk,
 
 		stack:     []value.Value{},
 		variables: []value.Value{},
 
 		ip:        0,
 		hadError:  false,
+		fileData: fileData,
 	}
 }
 
 func (v *VM) Run() InterpretResult {
-	for !v.isAtEnd() {
+	for !v.isAtEnd() && !v.hadError {
 		i := v.nextByte()
 
 		switch i {
 			case compiler.OP_PUSH_CONST: {
-				index, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				index, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
 				v.ip += 4
 
-				v.Push(v.constants[index])
+				v.Push(v.chunk.Constants[index])
 			}
 
 			// TODO: add a separated opcode for concatenating strings when typechecking is added
@@ -91,14 +92,14 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_GET_VAR: {
-				index, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				index, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
 				v.ip += 4
 
 				v.Push(v.variables[index])
 			}
 
 			case compiler.OP_SET_VAR: {
-				index, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				index, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
 				v.ip += 4
 
 				v.variables[index] = v.Peek(0)
@@ -113,21 +114,21 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_POPN_VAR: {
-				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				amount, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
 				v.ip += 4
 
 				v.PopnVar(amount)
 			}
 
 			case compiler.OP_JUMP: {
-				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				amount, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
 
 				v.ip += 4
 				v.ip += amount
 			}
 
 			case compiler.OP_JUMP_FALSE: {
-				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				amount, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
 				v.ip += 4
 				
 				// TODO: check for out of bounds by checking nil
@@ -146,7 +147,7 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_LOOP: {
-				amount, _ := util.BytesToInt([]byte(v.code[v.ip:v.ip + 4]))
+				amount, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
 				
 				v.ip += 4
 				v.ip -= amount
@@ -346,7 +347,7 @@ func (v *VM) nextByte() byte {
 	ip := v.ip
 	v.ip += 1
 
-	return v.code[ip]
+	return v.chunk.Code[ip]
 }
 
 func (v *VM) stackIsEmpty() bool {
@@ -354,7 +355,7 @@ func (v *VM) stackIsEmpty() bool {
 }
 
 func (v *VM) isAtEnd() bool {
-	return v.ip >= len(v.code)
+	return v.ip >= len(v.chunk.Code)
 }
 
 // ---

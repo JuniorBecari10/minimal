@@ -59,11 +59,11 @@ func compile(source string, fileData *util.FileData) (chunk.Chunk, bool) {
 	}
 
 	compiler := compiler.NewCompiler(ast, fileData)
-	chunk, hadError := compiler.Compile()
+	chunk_, hadError := compiler.Compile()
 
 	if hadError {
 		return chunk.Chunk{}, true
 	}
 
-	return chunk, false
+	return chunk_, false
 }

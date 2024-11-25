@@ -114,7 +114,7 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 func (p *Parser) Parse() ([]ast.Statement, bool) {
 	stmts := []ast.Statement{}
 
-	for !p.isAtEnd() {
+	for !p.isAtEnd(0) {
 		stmts = append(stmts, p.statement())
 	}
 

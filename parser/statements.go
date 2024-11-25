@@ -10,7 +10,7 @@ func (p *Parser) statement() ast.Statement {
 		p.synchronize()
 	}
 
-	t := p.peek()
+	t := p.peek(0)
 	
 	switch t.Kind {
 		case token.TokenIfKw: return p.ifStatement()
@@ -144,7 +144,7 @@ func (p *Parser) blockStatement() ast.BlockStatement {
 }
 
 func (p *Parser) exprStatement() ast.Statement {
-	pos := p.peek().Pos
+	pos := p.peek(0).Pos
 	expr := p.expression(PrecLowest)
 
 	p.requireSemicolon()
