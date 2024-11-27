@@ -15,6 +15,7 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 			res.WriteString(string(c.expression(s.Condition)))
 			then := c.statements(s.Then.Stmts)
 
+			c.positions = append(c.positions, s.Pos)
 			res.WriteByte(OP_JUMP_FALSE)
 
 			offset := 1 // OP_POP (next instruction)
@@ -45,14 +46,19 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 
 			res.WriteString(condition)
 
+			c.positions = append(c.positions, s.Pos)
 			res.WriteByte(OP_JUMP_FALSE)
 			res.WriteString(string(util.IntToBytes(len(block) + 6))) // OP_POP + OP_LOOP_FALSE (amount: 4 bytes)
+			c.positions = append(c.positions, s.Pos)
 			res.WriteByte(OP_POP)
 
 			res.WriteString(string(block))
 
+			c.positions = append(c.positions, s.Pos)
 			res.WriteByte(OP_LOOP)
 			res.WriteString(string(util.IntToBytes(len(block) + len(condition) + 11))) // own (LOOP_FALSE) (amount: 4 bytes) + block + OP_POP + JUMP_FALSE + condition
+
+			c.positions = append(c.positions, s.Pos)
 			res.WriteByte(OP_POP)
 		}
 
@@ -112,13 +118,13 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 			}
 
 			// pop from stack and push to variable stack
-			res.WriteByte(OP_DEF_VAR)
+			c.writeByte(&res, OP_DEF_VAR, s.Pos)
 		}
 
 		case ast.BlockStatement: {
 			c.beginScope()
 			res.WriteString(string(c.statements(s.Stmts)))
-			res.WriteString(string(c.endScope()))
+			res.WriteString(string(c.endScope(s.Pos)))
 		}
 
 		case ast.PrintStatement: {
@@ -128,12 +134,12 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 				return res.Bytes()
 			}
 
-			res.WriteByte(OP_PRINT)
+			c.writeByte(&res, OP_PRINT, s.Pos)
 		}
 
 		case ast.ExprStatement: {
 			res.WriteString(string(c.expression(s.Expr)))
-			res.WriteByte(OP_POP)
+			c.writeByte(&res, OP_POP, s.Pos)
 		}
 	}
 

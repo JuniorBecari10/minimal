@@ -61,6 +61,7 @@ type Compiler struct {
 
 	scopeDepth int
 	constants []value.Value
+	positions []token.Position
 
 	hadError bool
 	panicMode bool
@@ -75,6 +76,7 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 
 		scopeDepth: 0,
 		constants: []value.Value{},
+		positions: []token.Position{},
 
 		hadError: false,
 		panicMode: false,
@@ -90,6 +92,7 @@ func (c *Compiler) Compile() (chunk.Chunk, bool) {
 	return chunk.Chunk{
 		Code: bytecode,
 		Constants: c.constants,
+		Positions: c.positions,
 	}, c.hadError
 }
 

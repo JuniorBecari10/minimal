@@ -20,28 +20,28 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 		case ast.NumberExpression: {
 			index := c.AddConstant(value.ValueNumber{ Value: e.Literal })
 
-			res.WriteByte(OP_PUSH_CONST)
+			c.writeByte(&res, OP_PUSH_CONST, e.Pos)
 			res.WriteString(string(util.IntToBytes(index)))
 		}
 
 		case ast.StringExpression: {
 			index := c.AddConstant(value.ValueString{ Value: e.Literal })
 
-			res.WriteByte(OP_PUSH_CONST)
+			c.writeByte(&res, OP_PUSH_CONST, e.Pos)
 			res.WriteString(string(util.IntToBytes(index)))
 		}
 
 		case ast.BoolExpression: {
 			index := c.AddConstant(value.ValueBool{ Value: e.Literal })
 
-			res.WriteByte(OP_PUSH_CONST)
+			c.writeByte(&res, OP_PUSH_CONST, e.Pos)
 			res.WriteString(string(util.IntToBytes(index)))
 		}
 
 		case ast.NilExpression: {
 			index := c.AddConstant(value.ValueNil{})
 
-			res.WriteByte(OP_PUSH_CONST)
+			c.writeByte(&res, OP_PUSH_CONST, e.Pos)
 			res.WriteString(string(util.IntToBytes(index)))
 		}
 
@@ -52,7 +52,7 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 				return res.Bytes()
 			}
 
-			res.WriteByte(OP_GET_VAR)
+			c.writeByte(&res, OP_GET_VAR, e.Pos)
 			res.WriteString(string(util.IntToBytes(index)))
 		}
 
@@ -60,6 +60,7 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 			res.WriteString(string(c.expression(e.Left)))
 			res.WriteString(string(c.expression(e.Right)))
 
+			c.positions = append(c.positions, e.Operator.Pos)
 			switch e.Operator.Kind {
 				case token.TokenPlus:
 					res.WriteByte(OP_ADD)
@@ -100,6 +101,7 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 		case ast.UnaryExpression: {
 			res.WriteString(string(c.expression(e.Operand)))
 
+			c.positions = append(c.positions, e.Operator.Pos)
 			switch e.Operator.Kind {
 				case token.TokenNotKw:
 					res.WriteByte(OP_NOT)
@@ -123,7 +125,7 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 
 			res.WriteString(string(c.expression(e.Expr)))
 
-			res.WriteByte(OP_SET_VAR)
+			c.writeByte(&res, OP_SET_VAR, e.Pos)
 			res.WriteString(string(util.IntToBytes(index)))
 		}
 	}

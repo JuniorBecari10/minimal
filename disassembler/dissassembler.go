@@ -27,15 +27,30 @@ func NewDisassembler(chunk chunk.Chunk, fileData *util.FileData) *Disassembler {
 const MAX_INSTRUCTION_LENGTH = 16
 
 func (d *Disassembler) Disassemble() {
+	fmt.Println(" offset | position  | instruction      | index  | constant")
+	fmt.Println("--------|-----------|------------------|--------|----------")
+
+	i := 0
 	for !d.isAtEnd() {
 		ip := d.ip
 		inst := d.nextByte()
 
-		d.PrintInstruction(inst, ip)
+		d.PrintInstruction(inst, ip, i)
+		i++
 	}
 }
 
-func (d *Disassembler) PrintInstruction(inst byte, ip int) {
+func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
+	fmt.Printf(
+		" %s | %s %s | %s | ",
+		util.PadLeft(strconv.Itoa(ip), 6, " "),
+
+		util.PadRight(strconv.Itoa(d.chunk.Positions[i].Line + 1), 4, " "),
+		util.PadRight(strconv.Itoa(d.chunk.Positions[i].Col + 1), 4, " "),
+
+		util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
+	)
+
 	switch inst {
 		// inst index value
 		case compiler.OP_PUSH_CONST: {
@@ -44,11 +59,8 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int) {
 
 			// TODO: print the type as well
 			fmt.Printf(
-				"%s %s | %s (%s)\n",
-				util.PadLeft(strconv.Itoa(ip), 4, " "),
-				util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
-
-				util.PadRight(strconv.Itoa(index), 4, " "),
+				"%s | %s\n",
+				util.PadRight(strconv.Itoa(index), 6, " "),
 				d.chunk.Constants[index].String(),
 			)
 		}
@@ -59,11 +71,8 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int) {
 			d.ip += 4
 
 			fmt.Printf(
-				"%s %s | %d\n",
-				util.PadLeft(strconv.Itoa(ip), 4, " "),
-				util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
-
-				count,
+				"%s |\n",
+				util.PadRight(strconv.Itoa(count), 6, " "),
 			)
 		}
 
@@ -73,22 +82,14 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int) {
 			d.ip += 4
 
 			fmt.Printf(
-				"%s %s | %s (%d)\n",
-				util.PadLeft(strconv.Itoa(ip), 4, " "),
-				util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
-
+				"%s (%d)\n",
 				util.PadRight(strconv.Itoa(count), 4, " "),
 				d.ip + count,
 			)
 		}
 
 		// inst
-		default: {
-			fmt.Printf(
-				"%s %s |\n",
-				util.PadLeft(strconv.Itoa(ip), 4, " "),
-				util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
-			)
-		}
+		default:
+			fmt.Println("       |")
 	}
 }

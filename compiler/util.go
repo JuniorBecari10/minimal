@@ -27,16 +27,22 @@ func (c *Compiler) resolveVariable(token token.Token) int {
 	return -1
 }
 
+func (c *Compiler) writeByte(res *bytes.Buffer, b uint8, pos token.Position) {
+	c.positions = append(c.positions, pos)
+	res.WriteByte(b)
+}
+
 func (c *Compiler) beginScope() {
 	c.scopeDepth += 1
 }
 
-func (c *Compiler) endScope() []byte {
+// this returns the instructions to pop the variables from the variable stack
+func (c *Compiler) endScope(pos token.Position) []byte {
 	res := bytes.Buffer{}
 	c.scopeDepth -= 1
 
 	if len(c.variables) > 0 {
-		lastDepth := c.variables[len(c.variables)-1].depth
+		lastDepth := c.variables[len(c.variables) - 1].depth
 
 		count := 0
 		for i := len(c.variables) - 1; i >= 0; i-- {
@@ -48,7 +54,8 @@ func (c *Compiler) endScope() []byte {
 		}
 
 		c.variables = c.variables[:len(c.variables)-count]
-
+		c.positions = append(c.positions, pos)
+		
 		if count > 1 {
 			res.WriteByte(OP_POPN_VAR)
 			res.WriteString(string(util.IntToBytes(count)))

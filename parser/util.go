@@ -8,7 +8,7 @@ import (
 )
 
 func (p *Parser) parseBlock() []ast.Statement {
-	stmts := []ast.Statement {}
+	stmts := []ast.Statement{}
 
 	for !p.isAtEnd(0) && !p.check(token.TokenRightBrace) && !p.hadError {
 		stmts = append(stmts, p.statement())
