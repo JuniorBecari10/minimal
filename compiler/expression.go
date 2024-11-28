@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"bytes"
 	"fmt"
 	"vm-go/ast"
 	"vm-go/token"
@@ -9,89 +8,87 @@ import (
 	"vm-go/value"
 )
 
-func (c *Compiler) expression(expr ast.Expression) []byte {
-	res := bytes.Buffer{}
-
+func (c *Compiler) expression(expr ast.Expression) {
 	if c.hadError {
-		return res.Bytes()
+		return
 	}
 
 	switch e := expr.(type) {
 		case ast.NumberExpression: {
 			index := c.AddConstant(value.ValueNumber{ Value: e.Literal })
 
-			c.writeByte(&res, OP_PUSH_CONST, e.Pos)
-			res.WriteString(string(util.IntToBytes(index)))
+			c.writeBytePos(OP_PUSH_CONST, e.Pos)
+			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.StringExpression: {
 			index := c.AddConstant(value.ValueString{ Value: e.Literal })
 
-			c.writeByte(&res, OP_PUSH_CONST, e.Pos)
-			res.WriteString(string(util.IntToBytes(index)))
+			c.writeBytePos(OP_PUSH_CONST, e.Pos)
+			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.BoolExpression: {
 			index := c.AddConstant(value.ValueBool{ Value: e.Literal })
 
-			c.writeByte(&res, OP_PUSH_CONST, e.Pos)
-			res.WriteString(string(util.IntToBytes(index)))
+			c.writeBytePos(OP_PUSH_CONST, e.Pos)
+			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.NilExpression: {
 			index := c.AddConstant(value.ValueNil{})
 
-			c.writeByte(&res, OP_PUSH_CONST, e.Pos)
-			res.WriteString(string(util.IntToBytes(index)))
+			c.writeBytePos(OP_PUSH_CONST, e.Pos)
+			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.IdentifierExpression: {
 			index := c.resolveVariable(e.Ident)
 
 			if index < 0 {
-				return res.Bytes()
+				return
 			}
 
-			c.writeByte(&res, OP_GET_VAR, e.Pos)
-			res.WriteString(string(util.IntToBytes(index)))
+			c.writeBytePos(OP_GET_VAR, e.Pos)
+			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.BinaryExpression: {
-			res.WriteString(string(c.expression(e.Left)))
-			res.WriteString(string(c.expression(e.Right)))
+			c.expression(e.Left)
+			c.expression(e.Right)
 
-			c.positions = append(c.positions, e.Operator.Pos)
+			c.chunk.Positions = append(c.chunk.Positions, e.Operator.Pos)
 			switch e.Operator.Kind {
 				case token.TokenPlus:
-					res.WriteByte(OP_ADD)
+					c.writeByte(OP_ADD)
 				case token.TokenMinus:
-					res.WriteByte(OP_SUB)
+					c.writeByte(OP_SUB)
 				case token.TokenStar:
-					res.WriteByte(OP_MUL)
+					c.writeByte(OP_MUL)
 				case token.TokenSlash:
-					res.WriteByte(OP_DIV)
+					c.writeByte(OP_DIV)
 				
 				case token.TokenDoubleEqual:
-					res.WriteByte(OP_EQUAL)
+					c.writeByte(OP_EQUAL)
 				case token.TokenBangEqual:
-					res.WriteByte(OP_NOT_EQUAL)
+					c.writeByte(OP_NOT_EQUAL)
 				
 				case token.TokenGreater:
-					res.WriteByte(OP_GREATER)
+					c.writeByte(OP_GREATER)
 				case token.TokenGreaterEqual:
-					res.WriteByte(OP_GREATER_EQUAL)
+					c.writeByte(OP_GREATER_EQUAL)
 				
 				case token.TokenLess:
-					res.WriteByte(OP_LESS)
+					c.writeByte(OP_LESS)
 				case token.TokenLessEqual:
-					res.WriteByte(OP_LESS_EQUAL)
+					c.writeByte(OP_LESS_EQUAL)
 				
 				case token.TokenAndKw:
-					res.WriteByte(OP_AND)
+					c.writeByte(OP_AND)
 				case token.TokenOrKw:
-					res.WriteByte(OP_OR)
+					c.writeByte(OP_OR)
 				case token.TokenXorKw:
-					res.WriteByte(OP_XOR)
+					c.writeByte(OP_XOR)
 
 				default:
 					panic(fmt.Sprintf("Unknown binary operator: '%s'", e.Operator.Kind))
@@ -99,14 +96,14 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 		}
 
 		case ast.UnaryExpression: {
-			res.WriteString(string(c.expression(e.Operand)))
+			c.expression(e.Operand)
 
-			c.positions = append(c.positions, e.Operator.Pos)
+			c.chunk.Positions = append(c.chunk.Positions, e.Operator.Pos)
 			switch e.Operator.Kind {
 				case token.TokenNotKw:
-					res.WriteByte(OP_NOT)
+					c.writeByte(OP_NOT)
 				case token.TokenMinus:
-					res.WriteByte(OP_NEGATE)
+					c.writeByte(OP_NEGATE)
 				
 				default:
 					panic(fmt.Sprintf("Unknown unary operator: '%s'", e.Operator.Kind))
@@ -114,21 +111,19 @@ func (c *Compiler) expression(expr ast.Expression) []byte {
 		}
 
 		case ast.GroupExpression:
-			res.WriteString(string(c.expression(e.Expr)))
+			c.expression(e.Expr)
 		
 		case ast.IdentifierAssignmentExpression: {
 			index := c.resolveVariable(e.Name)
 
 			if index < 0 {
-				return res.Bytes()
+				return
 			}
 
-			res.WriteString(string(c.expression(e.Expr)))
+			c.expression(e.Expr)
 
-			c.writeByte(&res, OP_SET_VAR, e.Pos)
-			res.WriteString(string(util.IntToBytes(index)))
+			c.writeBytePos(OP_SET_VAR, e.Pos)
+			c.writeBytes(util.IntToBytes(index))
 		}
 	}
-
-	return res.Bytes()
 }

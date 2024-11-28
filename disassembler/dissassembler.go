@@ -27,8 +27,8 @@ func NewDisassembler(chunk chunk.Chunk, fileData *util.FileData) *Disassembler {
 const MAX_INSTRUCTION_LENGTH = 16
 
 func (d *Disassembler) Disassemble() {
-	fmt.Println(" offset | position  | instruction      | index  | constant")
-	fmt.Println("--------|-----------|------------------|--------|----------")
+	fmt.Println(" offset | position  | instruction      | index  | extra")
+	fmt.Println("--------|-----------|------------------|--------|-------")
 
 	i := 0
 	for !d.isAtEnd() {
@@ -82,14 +82,15 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			d.ip += 4
 
 			fmt.Printf(
-				"%s (%d)\n",
-				util.PadRight(strconv.Itoa(count), 4, " "),
+				"%s | %d\n",
+				util.PadRight(strconv.Itoa(count), 6, " "),
 				d.ip + count,
 			)
 		}
 
 		// inst
 		default:
+			// add the separator between index and constant columns
 			fmt.Println("       |")
 	}
 }

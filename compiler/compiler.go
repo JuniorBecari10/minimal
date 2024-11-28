@@ -1,12 +1,10 @@
 package compiler
 
 import (
-	"bytes"
 	"vm-go/ast"
 	"vm-go/chunk"
 	"vm-go/token"
 	"vm-go/util"
-	"vm-go/value"
 )
 
 type Opcode int
@@ -59,9 +57,8 @@ type Compiler struct {
 	ast []ast.Statement
 	variables []Variable
 
+	chunk chunk.Chunk
 	scopeDepth int
-	constants []value.Value
-	positions []token.Position
 
 	hadError bool
 	panicMode bool
@@ -74,9 +71,8 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 		ast: ast,
 		variables: []Variable{},
 
+		chunk: chunk.Chunk{},
 		scopeDepth: 0,
-		constants: []value.Value{},
-		positions: []token.Position{},
 
 		hadError: false,
 		panicMode: false,
@@ -87,29 +83,21 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 
 func (c *Compiler) Compile() (chunk.Chunk, bool) {
 	c.hoistTopLevel()
+	c.statements(c.ast)
 	
-	bytecode := c.statements(c.ast)
-	return chunk.Chunk{
-		Code: bytecode,
-		Constants: c.constants,
-		Positions: c.positions,
-	}, c.hadError
+	return c.chunk, c.hadError
 }
 
 // ---
 
-func (c *Compiler) statements(stmts []ast.Statement) []byte {
-	res := bytes.Buffer{}
-
+func (c *Compiler) statements(stmts []ast.Statement){
 	for _, stmt := range stmts {
 		if c.panicMode {
 			c.panicMode = false
 		}
 
-		res.WriteString(string(c.statement(stmt)))
+		c.statement(stmt)
 	}
-
-	return res.Bytes()
 }
 
 func (c *Compiler) hoistTopLevel() {

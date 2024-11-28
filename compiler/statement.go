@@ -1,58 +1,55 @@
 package compiler
 
 import (
-	"bytes"
 	"fmt"
 	"vm-go/ast"
 	"vm-go/util"
 )
 
-func (c *Compiler) statement(stmt ast.Statement) []byte {
-	res := bytes.Buffer{}
-
+func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.IfStatement: {
-			res.WriteString(string(c.expression(s.Condition)))
-			then := c.statements(s.Then.Stmts)
+			c.expression(s.Condition)
+			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
+			c.writeBytes(util.IntToBytes(0)) // dummy
 
-			c.positions = append(c.positions, s.Pos)
-			res.WriteByte(OP_JUMP_FALSE)
-
+			jumpOffsetIndex := len(c.chunk.Code)
+			c.statements(s.Then.Stmts)
+			
 			offset := 1 // OP_POP (next instruction)
 
 			if s.Else != nil {
 				offset = 6 // OP_POP + OP_JUMP (amount: 4 bytes)
 			}
 
-			res.WriteString(string(util.IntToBytes(len(then) + offset)))
-			res.WriteByte(OP_POP)
+			// insert the real position into the instruction
+			amount := len(c.chunk.Code) - jumpOffsetIndex + 4 + offset
+			c.backpatch(jumpOffsetIndex, util.IntToBytes(amount))
 
-			res.WriteString(string(then))
+			c.writeBytePos(OP_POP, s.Pos)
 
 			if s.Else != nil {
-				else_ := c.statements(s.Else.Stmts)
+				c.writeBytePos(OP_JUMP, s.Pos)
+				c.writeBytes(util.IntToBytes(0)) // dummy
+				jumpOffsetIndex := len(c.chunk.Code)
 
-				res.WriteByte(OP_JUMP)
-				res.WriteString(string(util.IntToBytes(len(else_) + 1))) // OP_POP
-				res.WriteByte(OP_POP)
+				c.writeBytePos(OP_POP, s.Pos)
+				c.statements(s.Else.Stmts)
 
-				res.WriteString(string(else_))
+				amount := len(c.chunk.Code) - jumpOffsetIndex + 5 // index + OP_POP
+				c.backpatch(jumpOffsetIndex, util.IntToBytes(amount))
 			}
 		}
 
 		case ast.WhileStatement: {
-			condition := string(c.expression(s.Condition))
-			block := c.statements(s.Block.Stmts)
+			c.expression(s.Condition)
 
-			res.WriteString(condition)
+			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
+			c.writeBytes(util.IntToBytes(0)) // dummy
+			c.writeBytePos(OP_POP, s.Pos)
 
-			c.positions = append(c.positions, s.Pos)
-			res.WriteByte(OP_JUMP_FALSE)
+			c.statements(s.Block.Stmts)
 			res.WriteString(string(util.IntToBytes(len(block) + 6))) // OP_POP + OP_LOOP_FALSE (amount: 4 bytes)
-			c.positions = append(c.positions, s.Pos)
-			res.WriteByte(OP_POP)
-
-			res.WriteString(string(block))
 
 			c.positions = append(c.positions, s.Pos)
 			res.WriteByte(OP_LOOP)
@@ -99,7 +96,7 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 					} else if existing.depth == c.scopeDepth {
 						// Redeclaration in the same scope is not allowed
 						c.error(s.Pos, fmt.Sprintf("'%s' has already been declared in this scope", s.Name.Lexeme))
-						return res.Bytes()
+						return
 					} else {
 						// the variable is in an enclosing scope, we'll shadow it
 						c.variables = append(c.variables, Variable{
@@ -111,37 +108,35 @@ func (c *Compiler) statement(stmt ast.Statement) []byte {
 				}
 			}
 
-			res.WriteString(string(c.expression(s.Init)))
+			c.expression(s.Init)
 
 			if c.hadError {
-				return res.Bytes()
+				return
 			}
 
 			// pop from stack and push to variable stack
-			c.writeByte(&res, OP_DEF_VAR, s.Pos)
+			c.writeBytePos(OP_DEF_VAR, s.Pos)
 		}
 
 		case ast.BlockStatement: {
 			c.beginScope()
-			res.WriteString(string(c.statements(s.Stmts)))
-			res.WriteString(string(c.endScope(s.Pos)))
+			c.statements(s.Stmts)
+			c.writeBytes(c.endScope(s.Pos))
 		}
 
 		case ast.PrintStatement: {
-			res.WriteString(string(c.expression(s.Expr)))
+			c.expression(s.Expr)
 
 			if c.hadError {
-				return res.Bytes()
+				return
 			}
 
-			c.writeByte(&res, OP_PRINT, s.Pos)
+			c.writeBytePos(OP_PRINT, s.Pos)
 		}
 
 		case ast.ExprStatement: {
-			res.WriteString(string(c.expression(s.Expr)))
-			c.writeByte(&res, OP_POP, s.Pos)
+			c.expression(s.Expr)
+			c.writeBytePos(OP_POP, s.Pos)
 		}
 	}
-
-	return res.Bytes()
 }
