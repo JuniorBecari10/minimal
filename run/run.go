@@ -1,7 +1,6 @@
 package run
 
 import (
-	"fmt"
 	"strings"
 	"vm-go/chunk"
 	"vm-go/compiler"
@@ -26,9 +25,6 @@ func Run(source, fileName string, mode RunMode) {
 	}
 
 	chunk, hadError := compile(source, &fileData)
-	for _, p := range chunk.Positions {
-		fmt.Println(p)
-	}
 
 	if hadError {
 		return

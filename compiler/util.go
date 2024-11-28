@@ -37,9 +37,7 @@ func (c *Compiler) writeBytePos(b uint8, pos token.Position) {
 }
 
 func (c *Compiler) writeBytes(bytes []uint8) {
-	for _, b := range bytes {
-		c.chunk.Code = append(c.chunk.Code, b)
-	}
+	c.chunk.Code = append(c.chunk.Code, bytes...)
 }
 
 func (c *Compiler) backpatch(index int, bytes []uint8) {
@@ -54,6 +52,56 @@ func (c *Compiler) backpatch(index int, bytes []uint8) {
 	// Overwrite the bytes at the specified position
 	for i, b := range bytes {
 		c.chunk.Code[index+i] = b
+	}
+}
+
+func (c *Compiler) addVariable(token token.Token, pos token.Position) {
+	// Find the variable to check if it already exists or not, in this scope
+	index := -1
+	for i := len(c.variables) - 1; i >= 0; i-- {
+		if c.variables[i].name.Lexeme == token.Lexeme {
+			index = i
+			break
+		}
+
+		if c.variables[i].depth < c.scopeDepth {
+			break
+		}
+	}
+
+	// didn't find it
+	if index == -1 {
+		c.variables = append(c.variables, Variable{
+			name:        token,
+			depth:       c.scopeDepth,
+			initialized: true,
+		})
+		// found it
+	} else {
+		// if it's a global and we've reached its declaration. also make sure that it isn't a redeclaration
+		// we do that by checking if the initialized field is true
+		if c.variables[index].depth == 0 && c.scopeDepth == 0 && !c.variables[index].initialized {
+			c.variables[index].initialized = true
+		} else {
+			// Found a variable with the same name, it can be in the same scope or not
+			existing := c.variables[index]
+
+			if existing.depth == 0 && c.scopeDepth == 0 && !existing.initialized {
+				// If it's a global variable and uninitialized, allow redeclaration
+				c.variables[index].initialized = true
+			} else if existing.depth == c.scopeDepth {
+				// Redeclaration in the same scope is not allowed
+				c.error(pos, fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
+				return
+			} else {
+				// the variable is in an enclosing scope, we'll shadow it
+				c.variables = append(c.variables, Variable{
+					name:        token,
+					depth:       c.scopeDepth,
+					initialized: true,
+				})
+			}
+		}
 	}
 }
 

@@ -27,8 +27,8 @@ func NewDisassembler(chunk chunk.Chunk, fileData *util.FileData) *Disassembler {
 const MAX_INSTRUCTION_LENGTH = 16
 
 func (d *Disassembler) Disassemble() {
-	fmt.Println(" offset | position  | instruction      | index  | extra")
-	fmt.Println("--------|-----------|------------------|--------|-------")
+	fmt.Println(" offset | position  | instruction      | index  | result")
+	fmt.Println("--------|-----------|------------------|--------|--------")
 
 	i := 0
 	for !d.isAtEnd() {
@@ -77,7 +77,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst amount result
-		case compiler.OP_JUMP_FALSE, compiler.OP_JUMP, compiler.OP_LOOP: {
+		case compiler.OP_JUMP_FALSE, compiler.OP_JUMP: {
 			count, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
 			d.ip += 4
 
@@ -85,6 +85,18 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 				"%s | %d\n",
 				util.PadRight(strconv.Itoa(count), 6, " "),
 				d.ip + count,
+			)
+		}
+
+		// inst amount result
+		case compiler.OP_LOOP: {
+			count, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
+			d.ip += 4
+
+			fmt.Printf(
+				"%s | %d\n",
+				util.PadRight(strconv.Itoa(count), 6, " "),
+				d.ip - count,
 			)
 		}
 
