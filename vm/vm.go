@@ -8,7 +8,7 @@ import (
 	"vm-go/value"
 )
 
-type InterpretResult = int
+type InterpretResult int
 
 const (
 	STATUS_OK = iota
@@ -48,7 +48,7 @@ func (v *VM) Run() InterpretResult {
 
 		switch i {
 			case compiler.OP_PUSH_CONST: {
-				index, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
+				index, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
 				v.ip += 4
 
 				v.Push(v.chunk.Constants[index])
@@ -92,14 +92,14 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_GET_VAR: {
-				index, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
+				index, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
 				v.ip += 4
 
 				v.Push(v.variables[index])
 			}
 
 			case compiler.OP_SET_VAR: {
-				index, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
+				index, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
 				v.ip += 4
 
 				v.variables[index] = v.Peek(0)
@@ -114,21 +114,21 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_POPN_VAR: {
-				amount, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
+				amount, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
 				v.ip += 4
 
 				v.PopnVar(amount)
 			}
 
 			case compiler.OP_JUMP: {
-				amount, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
+				amount, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
 
 				v.ip += 4
 				v.ip += amount
 			}
 
 			case compiler.OP_JUMP_FALSE: {
-				amount, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
+				amount, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
 				v.ip += 4
 				
 				// TODO: check for out of bounds by checking nil
@@ -147,7 +147,7 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_LOOP: {
-				amount, _ := util.BytesToInt([]byte(v.chunk.Code[v.ip:v.ip + 4]))
+				amount, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
 				
 				v.ip += 4
 				v.ip -= amount

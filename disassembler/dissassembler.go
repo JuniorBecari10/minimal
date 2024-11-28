@@ -54,7 +54,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 	switch inst {
 		// inst index value
 		case compiler.OP_PUSH_CONST: {
-			index, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
+			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			// TODO: print the type as well
@@ -67,7 +67,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 		// inst [int]
 		case compiler.OP_POPN_VAR, compiler.OP_GET_VAR, compiler.OP_SET_VAR: {
-			count, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
+			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			fmt.Printf(
@@ -78,7 +78,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 		// inst amount result
 		case compiler.OP_JUMP_FALSE, compiler.OP_JUMP: {
-			count, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
+			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			fmt.Printf(
@@ -90,7 +90,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 		// inst amount result
 		case compiler.OP_LOOP: {
-			count, _ := util.BytesToInt([]byte(d.chunk.Code[d.ip : d.ip+4]))
+			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			fmt.Printf(

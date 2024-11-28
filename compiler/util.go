@@ -27,22 +27,22 @@ func (c *Compiler) resolveVariable(token token.Token) int {
 	return -1
 }
 
-func (c *Compiler) writeByte(b uint8) {
+func (c *Compiler) writeByte(b byte) {
 	c.chunk.Code = append(c.chunk.Code, b)
 }
 
-func (c *Compiler) writeBytePos(b uint8, pos token.Position) {
+func (c *Compiler) writeBytePos(b byte, pos token.Position) {
 	c.chunk.Positions = append(c.chunk.Positions, pos)
 	c.chunk.Code = append(c.chunk.Code, b)
 }
 
-func (c *Compiler) writeBytes(bytes []uint8) {
+func (c *Compiler) writeBytes(bytes []byte) {
 	c.chunk.Code = append(c.chunk.Code, bytes...)
 }
 
-func (c *Compiler) backpatch(index int, bytes []uint8) {
+func (c *Compiler) backpatch(index int, bytes []byte) {
 	// Ensure the position is valid
-	if index < 0 || index+len(bytes) > len(c.chunk.Code) {
+	if index < 0 || index + len(bytes) > len(c.chunk.Code) {
 		// TODO: separate this into a function
 		fmt.Printf("internal: invalid position: %d\n", index)
 		c.hadError = true
@@ -51,7 +51,7 @@ func (c *Compiler) backpatch(index int, bytes []uint8) {
 
 	// Overwrite the bytes at the specified position
 	for i, b := range bytes {
-		c.chunk.Code[index+i] = b
+		c.chunk.Code[index + i] = b
 	}
 }
 
