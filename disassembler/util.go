@@ -28,6 +28,9 @@ func getInstructionName(inst byte) string {
 		return "OP_MUL"
 	case compiler.OP_DIV:
 		return "OP_DIV"
+	
+	case compiler.OP_MODULO:
+		return "OP_MODULO"
 
 	case compiler.OP_DEF_VAR:
 		return "OP_DEF_VAR"

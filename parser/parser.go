@@ -68,6 +68,7 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 		
 		token.TokenStar:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenStar) },
 		token.TokenSlash:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenSlash) },
+		token.TokenPercent:      func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenPercent) },
 		
 		token.TokenAndKw:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenAndKw) },
 		token.TokenOrKw:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenOrKw) },
@@ -91,6 +92,7 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 
 		token.TokenStar: PrecFactor,
 		token.TokenSlash: PrecFactor,
+		token.TokenPercent: PrecFactor,
 
 		token.TokenAndKw: PrecAnd,
 		token.TokenOrKw: PrecOr,

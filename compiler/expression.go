@@ -68,6 +68,9 @@ func (c *Compiler) expression(expr ast.Expression) {
 				case token.TokenSlash:
 					c.writeByte(OP_DIV)
 				
+				case token.TokenPercent:
+					c.writeByte(OP_MODULO)
+				
 				case token.TokenDoubleEqual:
 					c.writeByte(OP_EQUAL)
 				case token.TokenBangEqual:

@@ -15,6 +15,7 @@ const (
 	OP_SUB
 	OP_MUL
 	OP_DIV
+	OP_MODULO
 
 	OP_DEF_VAR
 	OP_GET_VAR

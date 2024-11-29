@@ -2,6 +2,7 @@ package vm
 
 import (
 	"reflect"
+	"vm-go/util"
 	"vm-go/value"
 )
 
@@ -19,6 +20,13 @@ func valuesEqual(a, b value.Value) bool {
 	}
 
 	return false
+}
+
+func (v *VM) getInt() int {
+	res, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
+	v.ip += 4
+
+	return res
 }
 
 func isNumber(v value.Value) bool {

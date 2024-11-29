@@ -23,6 +23,7 @@ const (
 
 	TokenBangEqual = "!="
 	TokenSemicolon = ";"
+	TokenPercent   = "%"
 
 	TokenGreater      = ">"
 	TokenGreaterEqual = ">="

@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/util"
@@ -47,12 +48,8 @@ func (v *VM) Run() InterpretResult {
 		i := v.nextByte()
 
 		switch i {
-			case compiler.OP_PUSH_CONST: {
-				index, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
-				v.ip += 4
-
-				v.Push(v.chunk.Constants[index])
-			}
+			case compiler.OP_PUSH_CONST:
+				v.Push(v.chunk.Constants[v.getInt()])
 
 			// TODO: add a separated opcode for concatenating strings when typechecking is added
 			case compiler.OP_ADD: {
@@ -61,6 +58,7 @@ func (v *VM) Run() InterpretResult {
 					return STATUS_TYPE_ERROR
 				}
 
+				// if one operand is string, the other should be too
 				if isString(v.Peek(0)) {
 					status := v.concatenateStrs()
 
@@ -79,7 +77,7 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV: {
+			case compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV, compiler.OP_MODULO: {
 				status := v.binaryNum(i)
 
 				if status != STATUS_OK {
@@ -87,50 +85,30 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_DEF_VAR: {
+			case compiler.OP_DEF_VAR:
 				v.variables = append(v.variables, v.Pop())
-			}
 
-			case compiler.OP_GET_VAR: {
-				index, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
-				v.ip += 4
+			case compiler.OP_GET_VAR:
+				v.Push(v.variables[v.getInt()])
 
-				v.Push(v.variables[index])
-			}
+			case compiler.OP_SET_VAR:
+				v.variables[v.getInt()] = v.Peek(0)
 
-			case compiler.OP_SET_VAR: {
-				index, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
-				v.ip += 4
-
-				v.variables[index] = v.Peek(0)
-			}
-
-			case compiler.OP_POP: {
+			case compiler.OP_POP:
 				v.Pop()
-			}
 
-			case compiler.OP_POP_VAR: {
+			case compiler.OP_POP_VAR:
 				v.PopVar()
-			}
 
-			case compiler.OP_POPN_VAR: {
-				amount, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
-				v.ip += 4
+			case compiler.OP_POPN_VAR:
+				v.PopnVar(v.getInt())
 
-				v.PopnVar(amount)
-			}
-
-			case compiler.OP_JUMP: {
-				amount, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
-
-				v.ip += 4
-				v.ip += amount
-			}
+			case compiler.OP_JUMP:
+				v.ip += v.getInt()
 
 			case compiler.OP_JUMP_FALSE: {
-				amount, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
-				v.ip += 4
-				
+				amount := v.getInt()
+
 				// TODO: check for out of bounds by checking nil
 				if b, ok := v.Peek(0).(value.ValueBool); ok {
 					if v.hadError {
@@ -146,12 +124,8 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_LOOP: {
-				amount, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
-				
-				v.ip += 4
-				v.ip -= amount
-			}
+			case compiler.OP_LOOP:
+				v.ip -= v.getInt()
 
 			case compiler.OP_EQUAL: {
 				b := v.Pop()
@@ -217,7 +191,8 @@ func (v *VM) Run() InterpretResult {
 				v.Push(value.ValueNumber{ Value: -opNum.Value })
 			}
 
-			case compiler.OP_PRINT: fmt.Println(v.Pop().String())
+			case compiler.OP_PRINT:
+				fmt.Println(v.Pop().String())
 
 			default:
 				panic(fmt.Sprintf("Unknown instruction: '%d'", i))
@@ -280,6 +255,14 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 			}
 
 			v.Push(value.ValueNumber{ Value: leftNum.Value / rightNum.Value })
+		}
+		case compiler.OP_MODULO: {
+			if rightNum.Value == 0 {
+				v.error("Cannot divide by zero")
+				return STATUS_DIV_ZERO
+			}
+
+			v.Push(value.ValueNumber{ Value: math.Mod(leftNum.Value, rightNum.Value) })
 		}
 	}
 

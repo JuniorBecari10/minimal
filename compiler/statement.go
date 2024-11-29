@@ -8,6 +8,8 @@ import (
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.IfStatement: {
+			c.beginScope()
+
 			c.expression(s.Condition)
 			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
 
@@ -33,9 +35,13 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				// insert the real offset into the instruction, if there's no else
 				c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 			}
+
+			c.writeBytes(c.endScope(s.Pos))
 		}
 
 		case ast.WhileStatement: {
+			c.beginScope()
+
 			conditionLocation := len(c.chunk.Code)
 			c.expression(s.Condition)
 
@@ -51,6 +57,8 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 			c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
 			c.writeBytePos(OP_POP, s.Pos)
+
+			c.writeBytes(c.endScope(s.Pos))
 		}
 
 		case ast.VarStatement: {
