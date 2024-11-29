@@ -148,7 +148,7 @@ func (c *Compiler) endScope(pos token.Position) []byte {
 
 // ---
 
-func (c *Compiler) AddConstant(v value.Value) int {
+func (c *Compiler) addConstant(v value.Value) int {
 	for i, constant := range c.chunk.Constants {
 		if constant == v {
 			return i

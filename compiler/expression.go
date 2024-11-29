@@ -15,28 +15,28 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 	switch e := expr.(type) {
 		case ast.NumberExpression: {
-			index := c.AddConstant(value.ValueNumber{ Value: e.Literal })
+			index := c.addConstant(value.ValueNumber{ Value: e.Literal })
 
 			c.writeBytePos(OP_PUSH_CONST, e.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.StringExpression: {
-			index := c.AddConstant(value.ValueString{ Value: e.Literal })
+			index := c.addConstant(value.ValueString{ Value: e.Literal })
 
 			c.writeBytePos(OP_PUSH_CONST, e.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.BoolExpression: {
-			index := c.AddConstant(value.ValueBool{ Value: e.Literal })
+			index := c.addConstant(value.ValueBool{ Value: e.Literal })
 
 			c.writeBytePos(OP_PUSH_CONST, e.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.NilExpression: {
-			index := c.AddConstant(value.ValueNil{})
+			index := c.addConstant(value.ValueNil{})
 
 			c.writeBytePos(OP_PUSH_CONST, e.Pos)
 			c.writeBytes(util.IntToBytes(index))
