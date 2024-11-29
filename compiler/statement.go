@@ -8,8 +8,6 @@ import (
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.IfStatement: {
-			c.beginScope()
-
 			c.expression(s.Condition)
 			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
 
@@ -17,7 +15,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytes(util.IntToBytes(0)) // dummy
 			c.writeBytePos(OP_POP, s.Pos)
 
-			c.statements(s.Then.Stmts)
+			c.block(s.Then.Stmts, s.Pos)
 
 			if s.Else != nil {
 				c.writeBytePos(OP_JUMP, s.Pos)
@@ -28,20 +26,16 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 
 				c.writeBytePos(OP_POP, s.Pos)
-				c.statements(s.Else.Stmts)
+				c.block(s.Else.Stmts, s.Pos)
  
 				c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
 			} else {
 				// insert the real offset into the instruction, if there's no else
 				c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 			}
-
-			c.writeBytes(c.endScope(s.Pos))
 		}
 
 		case ast.WhileStatement: {
-			c.beginScope()
-
 			conditionLocation := len(c.chunk.Code)
 			c.expression(s.Condition)
 
@@ -50,15 +44,13 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
 			c.writeBytePos(OP_POP, s.Pos)
-			c.statements(s.Block.Stmts)
+			c.block(s.Block.Stmts, s.Pos)
 
 			c.writeBytePos(OP_LOOP, s.Pos)
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionLocation + 4)) // index
 
 			c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
 			c.writeBytePos(OP_POP, s.Pos)
-
-			c.writeBytes(c.endScope(s.Pos))
 		}
 
 		case ast.VarStatement: {
@@ -73,11 +65,8 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_DEF_VAR, s.Pos)
 		}
 
-		case ast.BlockStatement: {
-			c.beginScope()
-			c.statements(s.Stmts)
-			c.writeBytes(c.endScope(s.Pos))
-		}
+		case ast.BlockStatement:
+			c.block(s.Stmts, s.Pos)
 
 		case ast.PrintStatement: {
 			c.expression(s.Expr)

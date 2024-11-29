@@ -3,6 +3,7 @@ package compiler
 import (
 	"bytes"
 	"fmt"
+	"vm-go/ast"
 	"vm-go/token"
 	"vm-go/util"
 	"vm-go/value"
@@ -105,21 +106,26 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 	}
 }
 
+func (c *Compiler) block(stmts []ast.Statement, pos token.Position) {
+	c.beginScope()
+	c.statements(stmts)
+	c.writeBytes(c.endScope(pos))
+}
+
 func (c *Compiler) beginScope() {
 	c.scopeDepth += 1
 }
 
-// this returns the instructions to pop the variables from the variable stack
+// This returns the instructions to pop the variables from the variable stack
 func (c *Compiler) endScope(pos token.Position) []byte {
 	res := bytes.Buffer{}
+	currentScopeDepth := c.scopeDepth
 	c.scopeDepth -= 1
 
 	if len(c.variables) > 0 {
-		lastDepth := c.variables[len(c.variables) - 1].depth
-
 		count := 0
 		for i := len(c.variables) - 1; i >= 0; i-- {
-			if c.variables[i].depth != lastDepth {
+			if c.variables[i].depth != currentScopeDepth {
 				break
 			}
 
@@ -132,7 +138,7 @@ func (c *Compiler) endScope(pos token.Position) []byte {
 		if count > 1 {
 			res.WriteByte(OP_POPN_VAR)
 			res.WriteString(string(util.IntToBytes(count)))
-		} else {
+		} else if count == 1 {
 			res.WriteByte(OP_POP_VAR)
 		}
 	}
