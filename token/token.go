@@ -1,6 +1,6 @@
 package token
 
-type TokenKind = string
+type TokenKind string
 
 const (
 	TokenNumber     = "Number"
@@ -34,6 +34,7 @@ const (
 	TokenIfKw    = "if"
 	TokenElseKw  = "else"
 	TokenWhileKw = "while"
+	TokenForKw   = "for"
 	TokenVarKw   = "var"
 	TokenPrintKw = "print"
 

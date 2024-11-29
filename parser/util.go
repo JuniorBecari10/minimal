@@ -35,6 +35,19 @@ func (p *Parser) expectToken(kind token.TokenKind) token.Token {
 	return p.advance()
 }
 
+func (p *Parser) expectTokenNoAdvance(kind token.TokenKind) token.Token {
+	if !p.check(kind) {
+		if p.isAtEnd(0) {
+			p.error(fmt.Sprintf("Expected '%s', reached end", kind))
+		} else {
+			p.error(fmt.Sprintf("Expected '%s', got '%s'", kind, p.peek(0).Kind))
+		}
+		return token.AbsentToken()
+	}
+
+	return p.peek(0)
+}
+
 func (p *Parser) requireSemicolon() {
 	p.expect(token.TokenSemicolon)
 }

@@ -15,6 +15,7 @@ func (p *Parser) statement() ast.Statement {
 	switch t.Kind {
 		case token.TokenIfKw: return p.ifStatement()
 		case token.TokenWhileKw: return p.whileStatement()
+		case token.TokenForKw: return p.forStatement()
 		case token.TokenVarKw: return p.varStatement()
 		case token.TokenPrintKw: return p.printStatement()
 		case token.TokenLeftBrace: return p.blockStatement()
@@ -75,9 +76,22 @@ func (p *Parser) ifStatement() ast.Statement {
 	}
 }
 
+// TODO: use this function to disambiguate between for (each) and for (var) loops
+func (p *Parser) forStatement() ast.Statement {
+	pos := p.advance().Pos // 'for' keyword
+	p.expectTokenNoAdvance(token.TokenVarKw) // for now, it is mandatory
+
+	decl := p.varStatement() // already requires a semicolon
+	condition := p.expression(PrecLowest)
+	p.requireSemicolon()
+
+	// increment can be omitted
+	
+}
+
 func (p *Parser) whileStatement() ast.Statement {
 	pos := p.advance().Pos // 'var' keyword
-	condition := p.expression(0)
+	condition := p.expression(PrecLowest)
 
 	blockPos := p.expectToken(token.TokenLeftBrace).Pos
 	block := p.parseBlock()
