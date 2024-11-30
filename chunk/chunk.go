@@ -5,7 +5,8 @@ import (
 	"vm-go/value"
 )
 
-type Chunk struct {
+// Because of import cycle, Chunk is a type alias, so it can be redeclared without importing it
+type Chunk = struct {
 	Code      []byte
 	Constants []value.Value
 

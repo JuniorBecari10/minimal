@@ -11,10 +11,10 @@ import (
 	"vm-go/vm"
 )
 
-type RunMode = int
+type RunMode int
 
 const (
-	ModeRun = iota
+	ModeRun RunMode = iota
 	ModeDisassemble
 )
 
