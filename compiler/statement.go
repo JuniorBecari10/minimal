@@ -36,7 +36,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		}
 
 		case ast.WhileStatement: {
-			conditionLocation := len(c.chunk.Code)
+			conditionPos := len(c.chunk.Code)
 			c.expression(s.Condition)
 
 			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
@@ -47,10 +47,39 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.block(s.Block.Stmts, s.Pos)
 
 			c.writeBytePos(OP_LOOP, s.Pos)
-			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionLocation + 4)) // index
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionPos + 4)) // index
 
 			c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
 			c.writeBytePos(OP_POP, s.Pos)
+		}
+
+		case ast.ForVarStatement: {
+			// the declaration stays inside a new scope
+			c.beginScope()
+			c.statement(s.Declaration)
+
+			conditionPos := len(c.chunk.Code)
+			c.expression(s.Condition)
+
+			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
+			jumpFalseOffsetIndex := len(c.chunk.Code)
+			c.writeBytes(util.IntToBytes(0)) // dummy
+
+			c.writeBytePos(OP_POP, s.Pos)
+			c.block(s.Block.Stmts, s.Pos)
+			
+			if s.Increment != nil {
+				c.expression(*s.Increment)
+				c.writeBytePos(OP_POP, s.Pos)
+			}
+
+			c.writeBytePos(OP_LOOP, s.Pos)
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionPos + 4)) // index
+
+			c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
+			c.writeBytePos(OP_POP, s.Pos)
+			
+			c.writeBytes(c.endScope(s.Pos))
 		}
 
 		case ast.VarStatement: {

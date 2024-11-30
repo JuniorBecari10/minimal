@@ -81,12 +81,34 @@ func (p *Parser) forStatement() ast.Statement {
 	pos := p.advance().Pos // 'for' keyword
 	p.expectTokenNoAdvance(token.TokenVarKw) // for now, it is mandatory
 
-	decl := p.varStatement() // already requires a semicolon
+	declaration := p.varStatement() // already requires a semicolon
 	condition := p.expression(PrecLowest)
-	p.requireSemicolon()
-
-	// increment can be omitted
+	var increment *ast.Expression = nil
 	
+	if p.match(token.TokenSemicolon) {
+		expr := p.expression(PrecLowest)
+		increment = &expr // it can escape the scope - the GC collects it later
+	}
+
+	blockPos := p.expectToken(token.TokenLeftBrace).Pos
+	block := p.parseBlock()
+
+	return ast.ForVarStatement{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+
+		Declaration: declaration,
+		Condition: condition,
+		Increment: increment,
+		
+		Block: ast.BlockStatement{
+			AstBase: ast.AstBase{
+				Pos: blockPos,
+			},
+			Stmts: block,
+		},
+	}
 }
 
 func (p *Parser) whileStatement() ast.Statement {

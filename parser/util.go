@@ -56,6 +56,7 @@ func (p *Parser) check(kind token.TokenKind) bool {
 	return p.peek(0).Kind == kind
 }
 
+// it advances
 func (p *Parser) match(kind token.TokenKind) bool {
 	if p.check(kind) {
 		p.advance()
