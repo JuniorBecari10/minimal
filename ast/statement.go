@@ -6,6 +6,18 @@ type Statement interface {
 	stmt()
 }
 
+type FnStatement struct {
+	AstBase
+	Name token.Token
+	Parameters []Parameter
+	Body BlockStatement
+}
+
+type ReturnStatement struct {
+	AstBase
+	Expression *Expression // optional
+}
+
 type VarStatement struct {
 	AstBase
 	Name token.Token
@@ -50,6 +62,8 @@ type ExprStatement struct {
 
 // ---
 
+func (x FnStatement) stmt() {}
+func (x ReturnStatement) stmt() {}
 func (x VarStatement) stmt()   {}
 func (x BlockStatement) stmt() {}
 func (x IfStatement) stmt()    {}

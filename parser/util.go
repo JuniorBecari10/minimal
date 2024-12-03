@@ -7,7 +7,8 @@ import (
 	"vm-go/util"
 )
 
-func (p *Parser) parseBlock() []ast.Statement {
+func (p *Parser) parseBlock() ast.BlockStatement {
+	pos := p.expectToken(token.TokenLeftBrace).Pos
 	stmts := []ast.Statement{}
 
 	for !p.isAtEnd(0) && !p.check(token.TokenRightBrace) && !p.hadError {
@@ -15,7 +16,26 @@ func (p *Parser) parseBlock() []ast.Statement {
 	}
 
 	p.expect(token.TokenRightBrace)
-	return stmts
+	return ast.BlockStatement{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+		Stmts: stmts,
+	}
+}
+
+func (p *Parser) parseParameters() []ast.Parameter {
+	p.expect(token.TokenLeftParen)
+	params := []ast.Parameter{}
+
+	for !p.match(token.TokenRightParen) {
+		name := p.expectToken(token.TokenIdentifier)
+		params = append(params, ast.Parameter{
+			Name: name,
+		})
+	}
+
+	return params
 }
 
 func (p *Parser) expect(kind token.TokenKind) bool {

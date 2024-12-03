@@ -13,10 +13,12 @@ func (p *Parser) statement() ast.Statement {
 	t := p.peek(0)
 	
 	switch t.Kind {
+		case token.TokenFnKw: return p.fnStatement()
 		case token.TokenIfKw: return p.ifStatement()
 		case token.TokenWhileKw: return p.whileStatement()
 		case token.TokenForKw: return p.forStatement()
 		case token.TokenVarKw: return p.varStatement()
+		case token.TokenReturnKw: return p.returnStatement()
 		case token.TokenPrintKw: return p.printStatement()
 		case token.TokenLeftBrace: return p.blockStatement()
 		
@@ -26,20 +28,54 @@ func (p *Parser) statement() ast.Statement {
 
 // ---
 
+func (p *Parser) fnStatement() ast.Statement {
+	pos := p.advance().Pos // 'fn' keyword
+
+	name := p.expectToken(token.TokenIdentifier)
+	parameters := p.parseParameters()
+	body := p.parseBlock()
+
+	return ast.FnStatement{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+		Name: name,
+		Parameters: parameters,
+		Body: body,
+	}
+}
+
+func (p *Parser) returnStatement() ast.Statement {
+	pos := p.advance().Pos // 'return' keyword
+	var expr *ast.Expression = nil
+
+	if !p.check(token.TokenSemicolon) {
+		expr_ := p.expression(PrecLowest)
+		expr = &expr_
+	}
+
+	p.requireSemicolon()
+	return ast.ReturnStatement{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+		Expression: expr,
+	}
+}
+
 func (p *Parser) ifStatement() ast.Statement {
 	pos := p.advance().Pos // 'if' keyword
-	condition := p.expression(0)
 
-	thenPos := p.expectToken(token.TokenLeftBrace).Pos
+	condition := p.expression(0)
 	then := p.parseBlock()
 
-	var elseBranch *ast.BlockStatement = nil
+	var else_ *ast.BlockStatement = nil
 
 	if p.match(token.TokenElseKw) {
 		if p.check(token.TokenIfKw) {
 			cond, _ := p.ifStatement().(ast.IfStatement) // this won't panic
 
-			elseBranch = &ast.BlockStatement{
+			else_ = &ast.BlockStatement{
 				AstBase: ast.AstBase{
 					Pos: cond.Pos,
 				},
@@ -48,15 +84,8 @@ func (p *Parser) ifStatement() ast.Statement {
 				},
 			}
 		} else {
-			elsePos := p.expectToken(token.TokenLeftBrace).Pos
 			elseBlock := p.parseBlock()
-
-			elseBranch = &ast.BlockStatement{
-				AstBase: ast.AstBase{
-					Pos: elsePos,
-				},
-				Stmts: elseBlock,
-			}
+			else_ = &elseBlock
 		}
 	}
 
@@ -66,13 +95,8 @@ func (p *Parser) ifStatement() ast.Statement {
 		},
 
 		Condition: condition,
-		Then: ast.BlockStatement{
-			AstBase: ast.AstBase{
-				Pos: thenPos,
-			},
-			Stmts: then,
-		},
-		Else: elseBranch,
+		Then: then,
+		Else: else_,
 	}
 }
 
@@ -90,7 +114,6 @@ func (p *Parser) forStatement() ast.Statement {
 		increment = &expr // it can escape the scope - the GC collects it later
 	}
 
-	blockPos := p.expectToken(token.TokenLeftBrace).Pos
 	block := p.parseBlock()
 
 	return ast.ForVarStatement{
@@ -102,20 +125,13 @@ func (p *Parser) forStatement() ast.Statement {
 		Condition: condition,
 		Increment: increment,
 		
-		Block: ast.BlockStatement{
-			AstBase: ast.AstBase{
-				Pos: blockPos,
-			},
-			Stmts: block,
-		},
+		Block: block,
 	}
 }
 
 func (p *Parser) whileStatement() ast.Statement {
-	pos := p.advance().Pos // 'var' keyword
+	pos := p.advance().Pos // 'while' keyword
 	condition := p.expression(PrecLowest)
-
-	blockPos := p.expectToken(token.TokenLeftBrace).Pos
 	block := p.parseBlock()
 
 	return ast.WhileStatement{
@@ -124,12 +140,7 @@ func (p *Parser) whileStatement() ast.Statement {
 		},
 
 		Condition: condition,
-		Block: ast.BlockStatement{
-			AstBase: ast.AstBase{
-				Pos: blockPos,
-			},
-			Stmts: block,
-		},
+		Block: block,
 	}
 }
 
@@ -167,16 +178,7 @@ func (p *Parser) printStatement() ast.Statement {
 }
 
 func (p *Parser) blockStatement() ast.BlockStatement {
-	pos := p.advance().Pos // '{'
-	stmts := p.parseBlock()
-
-	return ast.BlockStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
-		},
-
-		Stmts: stmts,
-	}
+	return p.parseBlock()
 }
 
 func (p *Parser) exprStatement() ast.Statement {
