@@ -124,6 +124,16 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_DEF_VAR, s.Pos)
 		}
 
+		case ast.ReturnStatement: {
+			if s.Expression != nil {
+				c.expression(*s.Expression)
+			} else {
+				c.writeBytePos(OP_VOID, s.Pos)
+			}
+
+			c.writeBytePos(OP_RETURN, s.Pos)
+		}
+
 		case ast.BlockStatement:
 			c.block(s.Stmts, s.Pos)
 
