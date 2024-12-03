@@ -9,9 +9,17 @@ import (
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.FnStatement: {
+			fnCompiler := NewCompiler(s.Body.Stmts, c.fileData)
+			fnChunk, hadError := fnCompiler.compileBody()
+
+			if hadError {
+				c.hadError = true
+				return
+			}
+
 			function := value.ValueFunction{
 				Arity: len(s.Parameters),
-				Chunk: value.Chunk{}, // TODO: add function's chunk
+				Chunk: fnChunk,
 				Name: &s.Name.Lexeme,
 			}
 

@@ -84,8 +84,11 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 
 func (c *Compiler) Compile() (chunk.Chunk, bool) {
 	c.hoistTopLevel()
+	return c.compileBody()
+}
+
+func (c *Compiler) compileBody() (chunk.Chunk, bool) {
 	c.statements(c.ast)
-	
 	return c.chunk, c.hadError
 }
 

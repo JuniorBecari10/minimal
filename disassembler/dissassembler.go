@@ -51,7 +51,13 @@ func (d *Disassembler) disassemble(name string) {
 		switch fn := c.(type) {
 			case value.ValueFunction: {
 				fnDiss := NewDisassembler(fn.Chunk, d.fileData)
-				fnDiss.disassemble(fmt.Sprintf("function in %s's constant table", name))
+				fnName := fmt.Sprintf("function, in %s", name)
+
+				if fn.Name != nil {
+					fnName = fmt.Sprintf("function '%s', in %s", *fn.Name, name)
+				}
+
+				fnDiss.disassemble(fnName)
 			}
 		}
 	}
