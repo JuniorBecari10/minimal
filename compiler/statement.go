@@ -15,7 +15,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				fnCompiler.addVariable(param.Name, param.Name.Pos)
 			}
 
-			fnChunk, hadError := fnCompiler.compileBody()
+			fnChunk, hadError := fnCompiler.compileFnBody(s.Pos)
 
 			if hadError {
 				c.hadError = true

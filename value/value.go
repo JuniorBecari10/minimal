@@ -32,6 +32,7 @@ type ValueBool struct {
 }
 
 type ValueNil struct {}
+type ValueVoid struct {}
 
 type ValueFunction struct {
 	Arity int
@@ -45,6 +46,7 @@ func (x ValueNumber) String() string { return fmt.Sprintf("%.2f", x.Value) }
 func (x ValueString) String() string { return x.Value }
 func (x ValueBool) String() string { return fmt.Sprintf("%t", x.Value) }
 func (x ValueNil) String() string { return "nil" }
+func (x ValueVoid) String() string { return "void" }
 
 func (x ValueFunction) String() string {
 	if x.Name == nil {

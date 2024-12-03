@@ -81,6 +81,19 @@ func getInstructionName(inst byte) string {
 	case compiler.OP_NEGATE:
 		return "OP_NEGATE"
 
+	case compiler.OP_RETURN:
+		return "OP_RETURN"
+
+	case compiler.OP_TRUE:
+		return "OP_TRUE"
+	case compiler.OP_FALSE:
+		return "OP_FALSE"
+
+	case compiler.OP_NIL:
+		return "OP_NIL"
+	case compiler.OP_VOID:
+		return "OP_VOID"
+
 	case compiler.OP_CALL:
 		return "OP_CALL"
 	case compiler.OP_PRINT:

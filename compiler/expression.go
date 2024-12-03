@@ -29,17 +29,19 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.BoolExpression: {
-			index := c.addConstant(value.ValueBool{ Value: e.Literal })
-
-			c.writeBytePos(OP_PUSH_CONST, e.Pos)
-			c.writeBytes(util.IntToBytes(index))
+			if e.Literal {
+				c.writeBytePos(OP_TRUE, e.Pos)
+			} else {
+				c.writeBytePos(OP_FALSE, e.Pos)
+			}
 		}
 
 		case ast.NilExpression: {
-			index := c.addConstant(value.ValueNil{})
+			c.writeBytePos(OP_NIL, e.Pos)
+		}
 
-			c.writeBytePos(OP_PUSH_CONST, e.Pos)
-			c.writeBytes(util.IntToBytes(index))
+		case ast.VoidExpression: {
+			c.writeBytePos(OP_VOID, e.Pos)
 		}
 
 		case ast.IdentifierExpression: {

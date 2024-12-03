@@ -49,6 +49,7 @@ const (
 	TokenTrueKw  = "true"
 	TokenFalseKw = "false"
 	TokenNilKw   = "nil"
+	TokenVoidKw  = "void"
 
 	TokenAbsent = "Absent"
 )

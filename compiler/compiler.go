@@ -45,6 +45,13 @@ const (
 	OP_NOT
 	OP_NEGATE
 
+	OP_RETURN
+
+	OP_TRUE
+	OP_FALSE
+	OP_NIL
+	OP_VOID
+
 	OP_CALL
 	OP_PRINT
 )
@@ -85,10 +92,6 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 
 func (c *Compiler) Compile() (chunk.Chunk, bool) {
 	c.hoistTopLevel()
-	return c.compileBody()
-}
-
-func (c *Compiler) compileBody() (chunk.Chunk, bool) {
 	c.statements(c.ast)
 	return c.chunk, c.hadError
 }

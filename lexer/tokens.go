@@ -60,6 +60,7 @@ func (l *Lexer) checkKeyword() token.TokenKind {
 		case "true": return token.TokenTrueKw
 		case "false": return token.TokenFalseKw
 		case "nil": return token.TokenNilKw
+		case "void": return token.TokenVoidKw
 
 		default: return token.TokenIdentifier
 	}

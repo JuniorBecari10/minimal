@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"vm-go/ast"
+	"vm-go/chunk"
 	"vm-go/token"
 	"vm-go/util"
 	"vm-go/value"
@@ -26,6 +27,14 @@ func (c *Compiler) resolveVariable(token token.Token) int {
 
 	c.error(token.Pos, fmt.Sprintf("'%s' doesn't exist", token.Lexeme))
 	return -1
+}
+
+func (c *Compiler) compileFnBody(pos token.Position) (chunk.Chunk, bool) {
+	c.statements(c.ast)
+
+	c.writeBytePos(OP_VOID, pos)
+	c.writeBytePos(OP_RETURN, pos)
+	return c.chunk, c.hadError
 }
 
 func (c *Compiler) writeByte(b byte) {

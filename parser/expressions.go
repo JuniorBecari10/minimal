@@ -92,6 +92,16 @@ func (p *Parser) parseNil() ast.Expression {
 	}
 }
 
+func (p *Parser) parseVoid() ast.Expression {
+	tok := p.advance()
+
+	return ast.VoidExpression{
+		AstBase: ast.AstBase{
+			Pos: tok.Pos,
+		},
+	}
+}
+
 func (p *Parser) parseGroup() ast.Expression {
 	pos := p.peek(0).Pos
 	p.expect(token.TokenLeftParen)

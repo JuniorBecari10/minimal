@@ -44,6 +44,11 @@ func isString(v value.Value) bool {
 	return ok
 }
 
+func isFunction(v value.Value) bool {
+	_, ok := v.(value.ValueFunction)
+	return ok
+}
+
 // ---
 
 func xor(a, b bool) bool {
