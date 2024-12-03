@@ -45,6 +45,7 @@ const (
 	OP_NOT
 	OP_NEGATE
 
+	OP_CALL
 	OP_PRINT
 )
 

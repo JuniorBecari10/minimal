@@ -114,7 +114,14 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.CallExpression: {
-			
+			c.expression(e.Callee)
+
+			for _, arg := range e.Arguments {
+				c.expression(arg)
+			}
+
+			c.writeBytePos(OP_CALL, e.Pos)
+			c.writeBytes(util.IntToBytes(len(e.Arguments)))
 		}
 
 		case ast.GroupExpression:

@@ -10,6 +10,11 @@ func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.FnStatement: {
 			fnCompiler := NewCompiler(s.Body.Stmts, c.fileData)
+
+			for _, param := range s.Parameters {
+				fnCompiler.addVariable(param.Name, param.Name.Pos)
+			}
+
 			fnChunk, hadError := fnCompiler.compileBody()
 
 			if hadError {
