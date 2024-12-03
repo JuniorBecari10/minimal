@@ -20,10 +20,12 @@ const (
 )
 
 type VM struct {
-	chunk chunk.Chunk
+	currentChunk *chunk.Chunk
+	topLevelChunk chunk.Chunk
 
 	stack     []value.Value
 	variables []value.Value
+	callStack []CallFrame
 
 	ip int
 	hadError bool
@@ -32,10 +34,12 @@ type VM struct {
 
 func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 	return &VM{
-		chunk: chunk,
+		currentChunk: &chunk,
+		topLevelChunk: chunk,
 
 		stack:     []value.Value{},
 		variables: []value.Value{},
+		callStack: []CallFrame{},
 
 		ip:        0,
 		hadError:  false,
@@ -49,7 +53,7 @@ func (v *VM) Run() InterpretResult {
 
 		switch i {
 			case compiler.OP_PUSH_CONST:
-				v.Push(v.chunk.Constants[v.getInt()])
+				v.Push(v.currentChunk.Constants[v.getInt()])
 
 			// TODO: add a separated opcode for concatenating strings when typechecking is added
 			case compiler.OP_ADD: {
@@ -330,7 +334,7 @@ func (v *VM) nextByte() byte {
 	ip := v.ip
 	v.ip += 1
 
-	return v.chunk.Code[ip]
+	return v.currentChunk.Code[ip]
 }
 
 func (v *VM) stackIsEmpty() bool {
@@ -338,7 +342,7 @@ func (v *VM) stackIsEmpty() bool {
 }
 
 func (v *VM) isAtEnd() bool {
-	return v.ip >= len(v.chunk.Code)
+	return v.ip >= len(v.currentChunk.Code)
 }
 
 // ---

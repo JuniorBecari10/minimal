@@ -23,9 +23,13 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				Name: &s.Name.Lexeme,
 			}
 
+			c.addVariable(s.Name, s.Pos)
+
 			index := c.addConstant(function)
 			c.writeBytePos(OP_PUSH_CONST, s.Pos)
 			c.writeBytes(util.IntToBytes(index))
+			
+			c.writeBytePos(OP_DEF_VAR, s.Pos)
 		}
 
 		case ast.IfStatement: {

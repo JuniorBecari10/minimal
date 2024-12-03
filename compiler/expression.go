@@ -113,6 +113,10 @@ func (c *Compiler) expression(expr ast.Expression) {
 			}
 		}
 
+		case ast.CallExpression: {
+			
+		}
+
 		case ast.GroupExpression:
 			c.expression(e.Expr)
 		

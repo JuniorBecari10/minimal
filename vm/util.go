@@ -23,7 +23,7 @@ func valuesEqual(a, b value.Value) bool {
 }
 
 func (v *VM) getInt() int {
-	res, _ := util.BytesToInt(v.chunk.Code[v.ip:v.ip + 4])
+	res, _ := util.BytesToInt(v.currentChunk.Code[v.ip:v.ip + 4])
 	v.ip += 4
 
 	return res
