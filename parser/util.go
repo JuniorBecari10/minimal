@@ -33,6 +33,10 @@ func (p *Parser) parseParameters() []ast.Parameter {
 		params = append(params, ast.Parameter{
 			Name: name,
 		})
+
+		if !p.check(token.TokenRightParen) {
+			p.expect(token.TokenComma)
+		}
 	}
 
 	return params

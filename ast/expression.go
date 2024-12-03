@@ -1,6 +1,8 @@
 package ast
 
-import "vm-go/token"
+import (
+	"vm-go/token"
+)
 
 type Expression interface {
 	expr()
@@ -40,6 +42,12 @@ type BinaryExpression struct {
 	Operator token.Token
 }
 
+type CallExpression struct {
+	AstBase
+	Callee Expression
+	Arguments []Expression
+}
+
 type GroupExpression struct {
 	AstBase
 	Expr Expression
@@ -65,5 +73,6 @@ func (x NilExpression) expr()        {}
 func (x UnaryExpression) expr()      {}
 func (x BinaryExpression) expr()     {}
 func (x GroupExpression) expr()      {}
+func (x CallExpression) expr()      {}
 func (x IdentifierExpression) expr() {}
 func (x IdentifierAssignmentExpression) expr() {}

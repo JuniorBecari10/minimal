@@ -6,6 +6,7 @@ import (
 	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/util"
+	"vm-go/value"
 )
 
 type Disassembler struct {
@@ -27,6 +28,11 @@ func NewDisassembler(chunk chunk.Chunk, fileData *util.FileData) *Disassembler {
 const MAX_INSTRUCTION_LENGTH = 16
 
 func (d *Disassembler) Disassemble() {
+	d.disassemble("top-level")
+}
+
+func (d *Disassembler) disassemble(name string) {
+	fmt.Printf("chunk: %s\n", name)
 	fmt.Println(" offset | position  | instruction      | index  | result")
 	fmt.Println("--------|-----------|------------------|--------|--------")
 
@@ -37,6 +43,17 @@ func (d *Disassembler) Disassemble() {
 
 		d.PrintInstruction(inst, ip, i)
 		i++
+	}
+
+	fmt.Println()
+
+	for _, c := range d.chunk.Constants {
+		switch fn := c.(type) {
+			case value.ValueFunction: {
+				fnDiss := NewDisassembler(fn.Chunk, d.fileData)
+				fnDiss.disassemble(fmt.Sprintf("function in %s's constant table", name))
+			}
+		}
 	}
 }
 

@@ -3,10 +3,23 @@ package compiler
 import (
 	"vm-go/ast"
 	"vm-go/util"
+	"vm-go/value"
 )
 
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
+		case ast.FnStatement: {
+			function := value.ValueFunction{
+				Arity: len(s.Parameters),
+				Chunk: value.Chunk{}, // TODO: add function's chunk
+				Name: &s.Name.Lexeme,
+			}
+
+			index := c.addConstant(function)
+			c.writeBytePos(OP_PUSH_CONST, s.Pos)
+			c.writeBytes(util.IntToBytes(index))
+		}
+
 		case ast.IfStatement: {
 			c.expression(s.Condition)
 			c.writeBytePos(OP_JUMP_FALSE, s.Pos)

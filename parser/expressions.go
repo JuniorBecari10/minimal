@@ -38,7 +38,10 @@ func (p *Parser) parseNumber() ast.Expression {
 	value, _ := strconv.ParseFloat(tok.Lexeme, 64)
 
 	return ast.NumberExpression{
-		AstBase: ast.AstBase{Pos: tok.Pos},
+		AstBase: ast.AstBase{
+			Pos: tok.Pos,
+		},
+
 		Literal: value,
 	}
 }
@@ -47,7 +50,10 @@ func (p *Parser) parseString() ast.Expression {
 	tok := p.advance()
 
 	return ast.StringExpression{
-		AstBase: ast.AstBase{Pos: tok.Pos},
+		AstBase: ast.AstBase{
+			Pos: tok.Pos,
+		},
+
 		Literal: tok.Lexeme,
 	}
 }
@@ -68,7 +74,10 @@ func (p *Parser) parseBool() ast.Expression {
 	tok := p.advance()
 
 	return ast.BoolExpression{
-		AstBase: ast.AstBase{Pos: tok.Pos},
+		AstBase: ast.AstBase{
+			Pos: tok.Pos,
+		},
+
 		Literal: tok.Kind == token.TokenTrueKw,
 	}
 }
@@ -77,7 +86,9 @@ func (p *Parser) parseNil() ast.Expression {
 	tok := p.advance()
 
 	return ast.NilExpression{
-		AstBase: ast.AstBase{Pos: tok.Pos},
+		AstBase: ast.AstBase{
+			Pos: tok.Pos,
+		},
 	}
 }
 
@@ -89,7 +100,10 @@ func (p *Parser) parseGroup() ast.Expression {
 	p.expect(token.TokenRightParen)
 
 	return ast.GroupExpression{
-		AstBase: ast.AstBase{Pos: pos},
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+
 		Expr:    expr,
 	}
 }
@@ -101,7 +115,10 @@ func (p *Parser) parseUnary(op token.TokenKind) ast.Expression {
 	operand := p.expression(PrecUnary)
 
 	return ast.UnaryExpression{
-		AstBase:  ast.AstBase{Pos: pos},
+		AstBase:  ast.AstBase{
+			Pos: pos,
+		},
+
 		Operand:  operand,
 		Operator: operator,
 	}
@@ -114,10 +131,35 @@ func (p *Parser) parseBinary(left ast.Expression, pos token.Position, op token.T
 	right := p.expression(precedence)
 
 	return ast.BinaryExpression{
-		AstBase:  ast.AstBase{Pos: pos},
+		AstBase:  ast.AstBase{
+			Pos: pos,
+		},
+
 		Left:     left,
 		Right:    right,
 		Operator: operator,
+	}
+}
+
+func (p *Parser) parseCall(left ast.Expression, pos token.Position) ast.Expression {
+	p.expectToken(token.TokenLeftParen)
+	arguments := []ast.Expression{}
+
+	for !p.match(token.TokenRightParen) {
+		arguments = append(arguments, p.expression(PrecLowest))
+		
+		if !p.check(token.TokenRightParen) {
+			p.expect(token.TokenComma)
+		}
+	}
+
+	return ast.CallExpression{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+
+		Callee: left,
+		Arguments: arguments,
 	}
 }
 
@@ -132,7 +174,10 @@ func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Ex
 	}
 
 	return ast.IdentifierAssignmentExpression{
-		AstBase:  ast.AstBase{Pos: pos},
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+
 		Name: name.Ident,
 		Expr: right,
 	}

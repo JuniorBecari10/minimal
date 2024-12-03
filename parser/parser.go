@@ -84,6 +84,7 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 		token.TokenBangEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenBangEqual) },
 
 		token.TokenEqual: p.parseAssignment,
+		token.TokenLeftParen: p.parseCall,
 	}
 
 	p.precedenceMap = map[token.TokenKind] int {
@@ -108,6 +109,7 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 		token.TokenBangEqual: PrecEqual,
 
 		token.TokenEqual: PrecAssignment,
+		token.TokenLeftParen: PrecCall,
 	}
 
 	return p
