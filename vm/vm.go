@@ -98,7 +98,7 @@ func (v *VM) Run() InterpretResult {
 				offset := 0
 
 				if len(v.callStack) != 0 {
-					offset = v.callStack[len(v.callStack) - 1].variableIndex
+					offset = v.callStack[len(v.callStack) - 1].variableOffset
 				}
 
 				v.push(v.variables[v.getInt() + offset])
@@ -283,7 +283,7 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 	v.callStack = append(v.callStack, CallFrame{
 		function: &function,
 		oldIp: v.ip,
-		variableIndex: len(v.variables),
+		variableOffset: len(v.variables),
 	})
 
 	vars := []value.Value{}
@@ -483,7 +483,7 @@ func (v *VM) error(message string) {
 	fmt.Printf("[-] Error at %s (%d, %d): %s\n", v.fileData.Name, pos.Line + 1, pos.Col + 1, message)
 	fmt.Printf(" | %s\n", v.fileData.Lines[pos.Line])
 	fmt.Printf(" | %s^\n", strings.Repeat(" ", pos.Col))
-	fmt.Print("[-]\n")
+	fmt.Println("[-]")
 
 	if len(v.callStack) > 0 {
 		for i := len(v.callStack) - 1; i >= 0; i-- {
@@ -498,7 +498,7 @@ func (v *VM) error(message string) {
 			}
 		}
 	} else {
-		fmt.Print("\n")
+		fmt.Println()
 	}
 	
 	fmt.Print("[-]\n\n")

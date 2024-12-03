@@ -5,5 +5,5 @@ import "vm-go/value"
 type CallFrame struct {
 	function *value.ValueFunction
 	oldIp int
-	variableIndex int
+	variableOffset int
 }

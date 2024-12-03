@@ -36,13 +36,11 @@ func (d *Disassembler) disassemble(name string) {
 	fmt.Println(" offset | position  | instruction      | index  | result")
 	fmt.Println("--------|-----------|------------------|--------|--------")
 
-	i := 0
-	for !d.isAtEnd() {
+	for i := 0; !d.isAtEnd(); i++ {
 		ip := d.ip
 		inst := d.nextByte()
 
 		d.PrintInstruction(inst, ip, i)
-		i++
 	}
 
 	fmt.Println()
