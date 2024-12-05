@@ -51,7 +51,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 				return
 			}
 
-			c.writeBytePos(OP_GET_VAR, e.Pos)
+			c.writeBytePos(OP_GET_LOCAL, e.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 
@@ -138,7 +138,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.expression(e.Expr)
 
-			c.writeBytePos(OP_SET_VAR, e.Pos)
+			c.writeBytePos(OP_SET_LOCAL, e.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 	}

@@ -9,7 +9,7 @@ import (
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.FnStatement: {
-			fnCompiler := NewCompiler(s.Body.Stmts, c.fileData)
+			fnCompiler := newFnCompiler(s.Body.Stmts, c.fileData, c.globals)
 
 			for _, param := range s.Parameters {
 				fnCompiler.addVariable(param.Name, param.Name.Pos)
@@ -28,13 +28,23 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				Name: &s.Name.Lexeme,
 			}
 
-			c.addVariable(s.Name, s.Pos)
-
 			index := c.addConstant(function)
 			c.writeBytePos(OP_PUSH_CONST, s.Pos)
 			c.writeBytes(util.IntToBytes(index))
-			
-			c.writeBytePos(OP_DEF_VAR, s.Pos)
+
+			c.addVariable(s.Name, s.Pos)
+			c.addDeclarationInstruction(s.Pos)
+		}
+
+		case ast.VarStatement: {
+			c.expression(s.Init)
+
+			if c.hadError {
+				return
+			}
+
+			c.addVariable(s.Name, s.Pos)
+			c.addDeclarationInstruction(s.Pos)
 		}
 
 		case ast.IfStatement: {
@@ -110,18 +120,6 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_POP, s.Pos)
 			
 			c.writeBytes(c.endScope(s.Pos))
-		}
-
-		case ast.VarStatement: {
-			c.addVariable(s.Name, s.Pos)
-			c.expression(s.Init)
-
-			if c.hadError {
-				return
-			}
-
-			// pop from stack and push to variable stack
-			c.writeBytePos(OP_DEF_VAR, s.Pos)
 		}
 
 		case ast.ReturnStatement: {

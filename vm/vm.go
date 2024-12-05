@@ -91,10 +91,10 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_DEF_VAR:
+			case compiler.OP_DEF_LOCAL:
 				v.variables = append(v.variables, v.pop())
 
-			case compiler.OP_GET_VAR:
+			case compiler.OP_GET_LOCAL:
 				offset := 0
 
 				if len(v.callStack) != 0 {
@@ -103,7 +103,7 @@ func (v *VM) Run() InterpretResult {
 
 				v.push(v.variables[v.getInt() + offset])
 
-			case compiler.OP_SET_VAR:
+			case compiler.OP_SET_LOCAL:
 				v.variables[v.getInt()] = v.peek(0)
 
 			case compiler.OP_POP:

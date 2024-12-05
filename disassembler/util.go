@@ -32,12 +32,19 @@ func getInstructionName(inst byte) string {
 	case compiler.OP_MODULO:
 		return "OP_MODULO"
 
-	case compiler.OP_DEF_VAR:
-		return "OP_DEF_VAR"
-	case compiler.OP_GET_VAR:
-		return "OP_GET_VAR"
-	case compiler.OP_SET_VAR:
-		return "OP_SET_VAR"
+	case compiler.OP_DEF_LOCAL:
+		return "OP_DEF_LOCAL"
+	case compiler.OP_GET_LOCAL:
+		return "OP_GET_LOCAL"
+	case compiler.OP_SET_LOCAL:
+		return "OP_SET_LOCAL"
+
+	case compiler.OP_DEF_GLOBAL:
+		return "OP_DEF_GLOBAL"
+	case compiler.OP_GET_GLOBAL:
+		return "OP_GET_GLOBAL"
+	case compiler.OP_SET_GLOBAL:
+		return "OP_SET_GLOBAL"
 
 	case compiler.OP_POP:
 		return "OP_POP"

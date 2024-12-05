@@ -87,7 +87,9 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst [int]
-		case compiler.OP_POPN_VAR, compiler.OP_GET_VAR, compiler.OP_SET_VAR, compiler.OP_CALL: {
+		case compiler.OP_POPN_VAR,
+			compiler.OP_GET_LOCAL, compiler.OP_SET_LOCAL,
+			compiler.OP_GET_GLOBAL, compiler.OP_SET_GLOBAL, compiler.OP_CALL: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -97,7 +99,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			)
 		}
 
-		// inst amount result
+		// inst amount result (add)
 		case compiler.OP_JUMP_FALSE, compiler.OP_JUMP: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
@@ -109,7 +111,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			)
 		}
 
-		// inst amount result
+		// inst amount result (subtract)
 		case compiler.OP_LOOP: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4

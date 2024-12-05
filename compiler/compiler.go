@@ -17,9 +17,13 @@ const (
 	OP_DIV
 	OP_MODULO
 
-	OP_DEF_VAR
-	OP_GET_VAR
-	OP_SET_VAR
+	OP_DEF_LOCAL
+	OP_GET_LOCAL
+	OP_SET_LOCAL
+
+	OP_DEF_GLOBAL
+	OP_GET_GLOBAL
+	OP_SET_GLOBAL
 
 	OP_POP
 	OP_POP_VAR
@@ -56,15 +60,20 @@ const (
 	OP_PRINT
 )
 
-type Variable struct {
+type Local struct {
 	name token.Token
 	depth int
-	initialized bool
+}
+
+type Global struct {
+	name token.Token
 }
 
 type Compiler struct {
 	ast []ast.Statement
-	variables []Variable
+
+	locals []Local
+	globals []Global
 
 	chunk chunk.Chunk
 	scopeDepth int
@@ -78,7 +87,8 @@ type Compiler struct {
 func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 	return &Compiler{
 		ast: ast,
-		variables: []Variable{},
+		locals: []Local{},
+		globals: []Global{},
 
 		chunk: chunk.Chunk{},
 		scopeDepth: 0,
@@ -88,6 +98,13 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 
 		fileData: fileData,
 	}
+}
+
+func newFnCompiler(ast []ast.Statement, fileData *util.FileData, globals []Global) *Compiler {
+	compiler := NewCompiler(ast, fileData)
+	compiler.globals = globals
+
+	return compiler
 }
 
 func (c *Compiler) Compile() (chunk.Chunk, bool) {
@@ -112,17 +129,13 @@ func (c *Compiler) hoistTopLevel() {
 	for _, decl := range c.ast {
 		switch s := decl.(type) {
 			case ast.VarStatement: {
-				c.variables = append(c.variables, Variable{
+				c.globals = append(c.globals, Global{
 					name: s.Name,
-					depth: c.scopeDepth,
-					initialized: false,
 				})
 			}
 			case ast.FnStatement: {
-				c.variables = append(c.variables, Variable{
+				c.globals = append(c.globals, Global{
 					name: s.Name,
-					depth: c.scopeDepth,
-					initialized: false,
 				})
 			}
 		}
