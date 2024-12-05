@@ -42,7 +42,14 @@ type ValueFunction struct {
 
 // ---
 
-func (x ValueNumber) String() string { return fmt.Sprintf("%.2f", x.Value) }
+func (x ValueNumber) String() string {
+	if x.Value == float64(int64(x.Value)) {
+		return fmt.Sprintf("%.0f", x.Value)
+	}
+	
+	return fmt.Sprintf("%.2f", x.Value)
+}
+
 func (x ValueString) String() string { return x.Value }
 func (x ValueBool) String() string { return fmt.Sprintf("%t", x.Value) }
 func (x ValueNil) String() string { return "nil" }

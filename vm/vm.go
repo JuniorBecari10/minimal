@@ -269,7 +269,7 @@ func (v *VM) concatenateStrs() InterpretResult {
 
 func (v *VM) call(callee value.Value, arity int) InterpretResult {
 	if !isFunction(callee) {
-		v.error("Can only call functions")
+		v.error(fmt.Sprintf("Can only call functions, called '%s'", callee.String()))
 		return STATUS_TYPE_ERROR
 	}
 
@@ -469,8 +469,8 @@ func (v *VM) popVar() value.Value {
 	return v.popnVar(1)
 }
 
-func (v *VM) popnVar(n int) value.Value {
-	lastIndex := len(v.variables) - n
+func (v *VM) popnVar(amount int) value.Value {
+	lastIndex := len(v.variables) - amount
 	topElement := v.variables[lastIndex]
 
 	v.variables = v.variables[:lastIndex]
@@ -478,9 +478,9 @@ func (v *VM) popnVar(n int) value.Value {
 }
 
 func (v *VM) error(message string) {
-	pos := v.currentChunk.Positions[v.ip]
+	pos := v.currentChunk.Positions[v.ip] // TODO: save the last ip to use here
 
-	fmt.Printf("[-] Error at %s (%d, %d): %s\n", v.fileData.Name, pos.Line + 1, pos.Col + 1, message)
+	fmt.Printf("[-] Runtime error at %s (%d, %d): %s\n", v.fileData.Name, pos.Line + 1, pos.Col + 1, message)
 	fmt.Printf(" | %s\n", v.fileData.Lines[pos.Line])
 	fmt.Printf(" | %s^\n", strings.Repeat(" ", pos.Col))
 	fmt.Println("[-]")
@@ -497,10 +497,11 @@ func (v *VM) error(message string) {
 				fmt.Printf(" | in %s (%d, %d)\n", *name, pos.Line + 1, pos.Col + 1)
 			}
 		}
+
+		fmt.Print("[-]\n\n")
 	} else {
 		fmt.Println()
 	}
 	
-	fmt.Print("[-]\n\n")
 	v.hadError = true
 }

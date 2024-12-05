@@ -39,9 +39,9 @@ func PadRight(s string, length int, padChar string) string {
 	return s + padding
 }
 
-func Error(pos token.Position, message string, fileData *FileData) {
+func Error(pos token.Position, length int, message string, fileData *FileData) {
 	fmt.Printf("[-] Error at %s (%d, %d): %s\n", fileData.Name, pos.Line + 1, pos.Col + 1, message)
 	fmt.Printf(" | %s\n", fileData.Lines[pos.Line])
-	fmt.Printf(" | %s^\n", strings.Repeat(" ", pos.Col))
+	fmt.Printf(" | %s%s\n", strings.Repeat(" ", pos.Col), strings.Repeat("^", length))
 	fmt.Printf("[-]\n\n")
 }

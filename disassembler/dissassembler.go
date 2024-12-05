@@ -66,8 +66,8 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		" %s | %s %s | %s | ",
 		util.PadLeft(strconv.Itoa(ip), 6, " "),
 
-		util.PadRight(strconv.Itoa(d.chunk.Positions[i].Line + 1), 4, " "),
-		util.PadRight(strconv.Itoa(d.chunk.Positions[i].Col + 1), 4, " "),
+		util.PadRight(strconv.Itoa(d.chunk.Positions[ip].Line + 1), 4, " "),
+		util.PadRight(strconv.Itoa(d.chunk.Positions[ip].Col + 1), 4, " "),
 
 		util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
 	)

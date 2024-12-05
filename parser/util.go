@@ -136,7 +136,7 @@ func (p *Parser) error(message string) {
 	pos := last.Pos
 
 	pos.Col += len(last.Lexeme)
-	util.Error(pos, message, p.fileData)
+	util.Error(pos, len(last.Lexeme), message, p.fileData)
 
 	p.hadError = true
 	p.panicMode = true

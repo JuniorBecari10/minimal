@@ -118,6 +118,13 @@ func (c *Compiler) hoistTopLevel() {
 					initialized: false,
 				})
 			}
+			case ast.FnStatement: {
+				c.variables = append(c.variables, Variable{
+					name: s.Name,
+					depth: c.scopeDepth,
+					initialized: false,
+				})
+			}
 		}
 	}
 }

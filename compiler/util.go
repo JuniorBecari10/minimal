@@ -17,7 +17,7 @@ func (c *Compiler) resolveVariable(token token.Token) int {
 				// TODO check if the scopeDepth is not 0 and allow its use,
 				// since functions are allowed in top level and the use of variables inside them is allowed,
 				// because it is guaranteed to have them defined, since we'll have a main function
-				c.error(token.Pos, fmt.Sprintf("'%s' is not defined yet", token.Lexeme))
+				c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' is not defined yet", token.Lexeme))
 				return -1
 			}
 
@@ -25,7 +25,7 @@ func (c *Compiler) resolveVariable(token token.Token) int {
 		}
 	}
 
-	c.error(token.Pos, fmt.Sprintf("'%s' doesn't exist", token.Lexeme))
+	c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist", token.Lexeme))
 	return -1
 }
 
@@ -48,6 +48,11 @@ func (c *Compiler) writeBytePos(b byte, pos token.Position) {
 
 func (c *Compiler) writeBytes(bytes []byte) {
 	c.chunk.Code = append(c.chunk.Code, bytes...)
+
+	// append dummy positions in the positions array
+	for range len(bytes) {
+		c.chunk.Positions = append(c.chunk.Positions, token.Position{})
+	}
 }
 
 func (c *Compiler) backpatch(index int, bytes []byte) {
@@ -101,7 +106,7 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 				c.variables[index].initialized = true
 			} else if existing.depth == c.scopeDepth {
 				// Redeclaration in the same scope is not allowed
-				c.error(pos, fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
+				c.error(pos, len(existing.name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
 				return
 			} else {
 				// the variable is in an enclosing scope, we'll shadow it
@@ -168,12 +173,12 @@ func (c *Compiler) addConstant(v value.Value) int {
 	return len(c.chunk.Constants) - 1
 }
 
-func (c *Compiler) error(pos token.Position, message string) {
+func (c *Compiler) error(pos token.Position, length int, message string) {
 	if c.hadError {
 		return
 	}
 
-	util.Error(pos, message, c.fileData)
+	util.Error(pos, length, message, c.fileData)
 
 	c.hadError = true
 	c.panicMode = true
