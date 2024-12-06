@@ -67,6 +67,7 @@ type Local struct {
 
 type Global struct {
 	name token.Token
+	initialized bool // to check redeclaration
 }
 
 type Compiler struct {
@@ -132,11 +133,13 @@ func (c *Compiler) hoistTopLevel() {
 			case ast.VarStatement: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
+					initialized: false,
 				})
 			}
 			case ast.FnStatement: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
+					initialized: false,
 				})
 			}
 		}

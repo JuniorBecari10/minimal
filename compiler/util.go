@@ -91,26 +91,42 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 		}
 	}
 
-	// didn't find it, can declare it safely
-	// if it's a global, it won't be in the locals list, and we don't need to do anything
+	// It didn't find it, we can declare it safely, if it's a local.
 	if index == -1 {
-		if c.scopeDepth != 0 {
+		if c.scopeDepth == 0 {
+			// If it's a global, it won't be in the locals list, and we don't need to declare it again,
+			// because when we hoisted them, we have already declared them.
+
+			// We just need to check for redeclaration, and mark it as initialized if it's not;
+			for i := len(c.globals) - 1; i >= 0; i-- {
+				if c.globals[i].name.Lexeme == token.Lexeme {
+					if c.globals[i].initialized {
+						// It's a redeclaration, so we throw an error.
+						c.error(pos, len(c.globals[i].name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
+						return
+					} else {
+						// It's not; mark it as initialized.
+						c.globals[i].initialized = true
+					}
+				}
+			}
+		} else {
+			// It's a local, so we declare it.
 			c.locals = append(c.locals, Local{
 				name:        token,
 				depth:       c.scopeDepth,
 			})
 		}
 	} else {
-		// found it, cannot declare, it can be in the same scope or not
+		// We found the variable, it can be in the same scope or not
 		existing := c.locals[index]
 
-		// if it's in the same scope, throw an error, because it's a redeclaration
+		// If it's in the same scope, throw an error, because it's a redeclaration
 		if existing.depth == c.scopeDepth {
-			// Redeclaration in the same scope is not allowed
 			c.error(pos, len(existing.name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
 			return
 		} else {
-			// the variable is in an enclosing scope, we'll shadow it by declaring it in this scope
+			// The variable is in an enclosing scope, we'll shadow it by declaring it in this scope
 			c.locals = append(c.locals, Local{
 				name:        token,
 				depth:       c.scopeDepth,

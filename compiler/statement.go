@@ -32,7 +32,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_PUSH_CONST, s.Pos)
 			c.writeBytes(util.IntToBytes(index))
 
-			c.addVariable(s.Name, s.Pos)
+			c.addVariable(s.Name, s.Name.Pos)
 			c.addDeclarationInstruction(s.Pos)
 		}
 
@@ -43,7 +43,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				return
 			}
 
-			c.addVariable(s.Name, s.Pos)
+			c.addVariable(s.Name, s.Name.Pos)
 			c.addDeclarationInstruction(s.Pos)
 		}
 
