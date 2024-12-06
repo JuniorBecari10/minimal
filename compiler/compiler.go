@@ -67,7 +67,6 @@ type Local struct {
 
 type Global struct {
 	name token.Token
-	initialized bool
 }
 
 type Compiler struct {
@@ -101,9 +100,10 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 	}
 }
 
-func newFnCompiler(ast []ast.Statement, fileData *util.FileData, globals []Global) *Compiler {
+func newFnCompiler(ast []ast.Statement, fileData *util.FileData, globals []Global, scopeDepth int) *Compiler {
 	compiler := NewCompiler(ast, fileData)
 	compiler.globals = globals
+	compiler.scopeDepth = scopeDepth + 1
 
 	return compiler
 }
@@ -132,13 +132,11 @@ func (c *Compiler) hoistTopLevel() {
 			case ast.VarStatement: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
-					initialized: false,
 				})
 			}
 			case ast.FnStatement: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
-					initialized: false,
 				})
 			}
 		}

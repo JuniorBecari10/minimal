@@ -9,7 +9,7 @@ import (
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.FnStatement: {
-			fnCompiler := newFnCompiler(s.Body.Stmts, c.fileData, c.globals)
+			fnCompiler := newFnCompiler(s.Body.Stmts, c.fileData, c.globals, c.scopeDepth)
 
 			for _, param := range s.Parameters {
 				fnCompiler.addVariable(param.Name, param.Name.Pos)
@@ -105,6 +105,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			jumpFalseOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
+			// and the block inside another
 			c.writeBytePos(OP_POP, s.Pos)
 			c.block(s.Block.Stmts, s.Pos)
 			
@@ -119,7 +120,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 			c.writeBytePos(OP_POP, s.Pos)
 			
-			c.writeBytes(c.endScope(s.Pos))
+			c.endScope(s.Pos)
 		}
 
 		case ast.ReturnStatement: {

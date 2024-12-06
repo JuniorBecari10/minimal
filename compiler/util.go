@@ -1,8 +1,8 @@
 package compiler
 
 import (
-	"bytes"
 	"fmt"
+	"reflect"
 	"vm-go/ast"
 	"vm-go/chunk"
 	"vm-go/token"
@@ -92,44 +92,29 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 	}
 
 	// didn't find it, can declare it safely
+	// if it's a global, it won't be in the locals list, and we don't need to do anything
 	if index == -1 {
-		if c.scopeDepth == 0 {
-			c.globals = append(c.globals, Global{
-				name: token,
-				initialized: true,
-			})
-		} else {
+		if c.scopeDepth != 0 {
 			c.locals = append(c.locals, Local{
 				name:        token,
 				depth:       c.scopeDepth,
 			})
 		}
 	} else {
-		// found it, cannot declare
+		// found it, cannot declare, it can be in the same scope or not
+		existing := c.locals[index]
 
-		// if it's a global and we've reached its declaration. also make sure that it isn't a redeclaration
-		// we do that by checking if the initialized field is true
-		if c.locals[index].depth == 0 && c.scopeDepth == 0 && !c.locals[index].initialized {
-			c.locals[index].initialized = true
+		// if it's in the same scope, throw an error, because it's a redeclaration
+		if existing.depth == c.scopeDepth {
+			// Redeclaration in the same scope is not allowed
+			c.error(pos, len(existing.name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
+			return
 		} else {
-			// Found a variable with the same name, it can be in the same scope or not
-			existing := c.locals[index]
-
-			if existing.depth == 0 && c.scopeDepth == 0 && !existing.initialized {
-				// If it's a global variable and uninitialized, allow redeclaration
-				c.locals[index].initialized = true
-			} else if existing.depth == c.scopeDepth {
-				// Redeclaration in the same scope is not allowed
-				c.error(pos, len(existing.name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
-				return
-			} else {
-				// the variable is in an enclosing scope, we'll shadow it
-				c.locals = append(c.locals, Local{
-					name:        token,
-					depth:       c.scopeDepth,
-					initialized: true,
-				})
-			}
+			// the variable is in an enclosing scope, we'll shadow it by declaring it in this scope
+			c.locals = append(c.locals, Local{
+				name:        token,
+				depth:       c.scopeDepth,
+			})
 		}
 	}
 }
@@ -137,16 +122,14 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 func (c *Compiler) block(stmts []ast.Statement, pos token.Position) {
 	c.beginScope()
 	c.statements(stmts)
-	c.writeBytes(c.endScope(pos))
+	c.endScope(pos)
 }
 
 func (c *Compiler) beginScope() {
 	c.scopeDepth += 1
 }
 
-// This returns the instructions to pop the variables from the variable stack
-func (c *Compiler) endScope(pos token.Position) []byte {
-	res := bytes.Buffer{}
+func (c *Compiler) endScope(pos token.Position) {
 	currentScopeDepth := c.scopeDepth
 	c.scopeDepth -= 1
 
@@ -164,21 +147,19 @@ func (c *Compiler) endScope(pos token.Position) []byte {
 		c.chunk.Positions = append(c.chunk.Positions, pos)
 
 		if count > 1 {
-			res.WriteByte(OP_POPN_VAR)
-			res.WriteString(string(util.IntToBytes(count)))
+			c.writeByte(OP_POPN_VAR)
+			c.writeBytes(util.IntToBytes(count))
 		} else if count == 1 {
-			res.WriteByte(OP_POP_VAR)
+			c.writeByte(OP_POP_VAR)
 		}
 	}
-
-	return res.Bytes()
 }
 
 // ---
 
 func (c *Compiler) addConstant(v value.Value) int {
 	for i, constant := range c.chunk.Constants {
-		if constant == v {
+		if reflect.DeepEqual(constant, v) {
 			return i
 		}
 	}
