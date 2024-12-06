@@ -10,25 +10,6 @@ import (
 	"vm-go/value"
 )
 
-func (c *Compiler) resolveVariable(token token.Token) int {
-	for i := len(c.locals) - 1; i >= 0; i-- {
-		if c.locals[i].name.Lexeme == token.Lexeme {
-			if !c.locals[i].initialized {
-				// TODO check if the scopeDepth is not 0 and allow its use,
-				// since functions are allowed in top level and the use of variables inside them is allowed,
-				// because it is guaranteed to have them defined, since we'll have a main function
-				c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' is not defined yet", token.Lexeme))
-				return -1
-			}
-
-			return i
-		}
-	}
-
-	c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist", token.Lexeme))
-	return -1
-}
-
 func (c *Compiler) compileFnBody(pos token.Position) (chunk.Chunk, bool) {
 	c.statements(c.ast)
 
@@ -78,6 +59,24 @@ func (c *Compiler) addDeclarationInstruction(pos token.Position) {
 	}
 }
 
+func (c *Compiler) resolveVariable(token token.Token) (int, Opcode) {
+	for i := len(c.locals) - 1; i >= 0; i-- {
+		if c.locals[i].name.Lexeme == token.Lexeme {
+			return i, OP_GET_LOCAL
+		}
+	}
+	// didn't find inside the locals, let's search it in globals
+	for i := len(c.globals) - 1; i >= 0; i-- {
+		if c.globals[i].name.Lexeme == token.Lexeme {
+			return i, OP_GET_GLOBAL
+		}
+	}
+
+	// the variable doesn't exist
+	c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist", token.Lexeme))
+	return -1, OP_GET_LOCAL
+}
+
 func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 	// Find the variable to check if it already exists or not, in this scope
 	index := -1
@@ -92,15 +91,22 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 		}
 	}
 
-	// didn't find it
+	// didn't find it, can declare it safely
 	if index == -1 {
-		c.locals = append(c.locals, Local{
-			name:        token,
-			depth:       c.scopeDepth,
-			initialized: true,
-		})
-		// found it
+		if c.scopeDepth == 0 {
+			c.globals = append(c.globals, Global{
+				name: token,
+				initialized: true,
+			})
+		} else {
+			c.locals = append(c.locals, Local{
+				name:        token,
+				depth:       c.scopeDepth,
+			})
+		}
 	} else {
+		// found it, cannot declare
+
 		// if it's a global and we've reached its declaration. also make sure that it isn't a redeclaration
 		// we do that by checking if the initialized field is true
 		if c.locals[index].depth == 0 && c.scopeDepth == 0 && !c.locals[index].initialized {

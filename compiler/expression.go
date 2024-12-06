@@ -45,13 +45,13 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.IdentifierExpression: {
-			index := c.resolveVariable(e.Ident)
+			index, opcode := c.resolveVariable(e.Ident)
 
 			if index < 0 {
 				return
 			}
 
-			c.writeBytePos(OP_GET_LOCAL, e.Pos)
+			c.writeBytePos(byte(opcode), e.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 
@@ -130,7 +130,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			c.expression(e.Expr)
 		
 		case ast.IdentifierAssignmentExpression: {
-			index := c.resolveVariable(e.Name)
+			index, opcode := c.resolveVariable(e.Name)
 
 			if index < 0 {
 				return
@@ -138,7 +138,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.expression(e.Expr)
 
-			c.writeBytePos(OP_SET_LOCAL, e.Pos)
+			c.writeBytePos(byte(opcode), e.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 	}
