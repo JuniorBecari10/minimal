@@ -53,6 +53,7 @@ const (
 
 	OP_TRUE
 	OP_FALSE
+	
 	OP_NIL
 	OP_VOID
 

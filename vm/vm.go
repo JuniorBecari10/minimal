@@ -26,7 +26,8 @@ type VM struct {
 	topLevel chunk.Chunk
 
 	stack     []value.Value
-	variables []value.Value
+	locals    []value.Value
+	globals   []value.Value
 	callStack []CallFrame
 
 	ip int
@@ -40,7 +41,8 @@ func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 		topLevel: chunk,
 
 		stack:     []value.Value{},
-		variables: []value.Value{},
+		locals:    []value.Value{},
+		globals:   []value.Value{},
 		callStack: []CallFrame{},
 
 		ip:        0,
@@ -92,7 +94,7 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_DEF_LOCAL:
-				v.variables = append(v.variables, v.pop())
+				v.locals = append(v.locals, v.pop())
 
 			case compiler.OP_GET_LOCAL:
 				offset := 0
@@ -101,10 +103,25 @@ func (v *VM) Run() InterpretResult {
 					offset = v.callStack[len(v.callStack) - 1].variableOffset
 				}
 
-				v.push(v.variables[v.getInt() + offset])
+				v.push(v.locals[v.getInt() + offset])
 
 			case compiler.OP_SET_LOCAL:
-				v.variables[v.getInt()] = v.peek(0)
+				v.locals[v.getInt()] = v.peek(0)
+
+			case compiler.OP_DEF_GLOBAL:
+				v.globals = append(v.globals, v.pop())
+
+			case compiler.OP_GET_GLOBAL:
+				offset := 0
+
+				if len(v.callStack) != 0 {
+					offset = v.callStack[len(v.callStack) - 1].variableOffset
+				}
+
+				v.push(v.globals[v.getInt() + offset])
+
+			case compiler.OP_SET_GLOBAL:
+				v.globals[v.getInt()] = v.peek(0)
 
 			case compiler.OP_POP:
 				v.pop()
@@ -203,6 +220,20 @@ func (v *VM) Run() InterpretResult {
 				v.push(value.ValueNumber{ Value: -opNum.Value })
 			}
 
+			case compiler.OP_RETURN: {
+				frame := v.popFrame()
+				var chunk chunk.Chunk
+
+				if len(v.callStack) == 0 {
+					chunk = v.topLevel
+				} else {
+					chunk = v.callStack[len(v.callStack) - 1].function.Chunk
+				}
+
+				v.ip = frame.oldIp
+				v.currentChunk = &chunk
+			}
+
 			case compiler.OP_TRUE: v.push(value.ValueBool{ Value: true })
 			case compiler.OP_FALSE: v.push(value.ValueBool{ Value: false })
 
@@ -216,20 +247,6 @@ func (v *VM) Run() InterpretResult {
 				if status != STATUS_OK {
 					return status
 				}
-			}
-
-			case compiler.OP_RETURN: {
-				frame := v.popFrame()
-				var chunk chunk.Chunk
-
-				if len(v.callStack) == 0 {
-					chunk = v.topLevel
-				} else {
-					chunk = v.callStack[len(v.callStack) - 1].function.Chunk
-				}
-
-				v.ip = frame.oldIp
-				v.currentChunk = &chunk
 			}
 
 			case compiler.OP_PRINT:
@@ -283,7 +300,7 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 	v.callStack = append(v.callStack, CallFrame{
 		function: &function,
 		oldIp: v.ip,
-		variableOffset: len(v.variables),
+		variableOffset: len(v.locals),
 	})
 
 	vars := []value.Value{}
@@ -293,7 +310,7 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 	}
 
 	for i := len(vars) - 1; i >= 0; i-- {
-		v.variables = append(v.variables, vars[i])
+		v.locals = append(v.locals, vars[i])
 	}
 
 	v.ip = 0
@@ -470,10 +487,10 @@ func (v *VM) popVar() value.Value {
 }
 
 func (v *VM) popnVar(amount int) value.Value {
-	lastIndex := len(v.variables) - amount
-	topElement := v.variables[lastIndex]
+	lastIndex := len(v.locals) - amount
+	topElement := v.locals[lastIndex]
 
-	v.variables = v.variables[:lastIndex]
+	v.locals = v.locals[:lastIndex]
 	return topElement
 }
 
