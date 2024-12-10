@@ -51,7 +51,7 @@ func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 
 func (v *VM) Run() InterpretResult {
 	for !v.isAtEnd() && !v.hadError {
-		i := v.nextByte()
+ 		i := v.nextByte()
 
 		switch i {
 			case compiler.OP_PUSH_CONST:
@@ -95,13 +95,7 @@ func (v *VM) Run() InterpretResult {
 				v.callStack[len(v.callStack)-1].locals = append(v.callStack[len(v.callStack)-1].locals, v.pop())
 
 			case compiler.OP_GET_LOCAL:
-				offset := 0
-
-				if len(v.callStack) != 0 {
-					offset = v.callStack[len(v.callStack) - 1].variableOffset
-				}
-
-				v.push(v.callStack[len(v.callStack)-1].locals[v.getInt() + offset])
+				v.push(v.callStack[len(v.callStack)-1].locals[v.getInt()])
 
 			case compiler.OP_SET_LOCAL:
 				v.callStack[len(v.callStack)-1].locals[v.getInt()] = v.peek(0)
@@ -110,13 +104,7 @@ func (v *VM) Run() InterpretResult {
 				v.globals = append(v.globals, v.pop())
 
 			case compiler.OP_GET_GLOBAL:
-				offset := 0
-
-				if len(v.callStack) != 0 {
-					offset = v.callStack[len(v.callStack) - 1].variableOffset
-				}
-
-				v.push(v.globals[v.getInt() + offset])
+				v.push(v.globals[v.getInt()])
 
 			case compiler.OP_SET_GLOBAL:
 				v.globals[v.getInt()] = v.peek(0)
@@ -295,16 +283,9 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 		return STATUS_INCORRECT_ARITY
 	}
 
-	offset := 0
-
-	if len(v.callStack) > 0 {
-		offset = len(v.callStack[len(v.callStack)-1].locals)
-	}
-
 	v.callStack = append(v.callStack, CallFrame{
 		function: &function,
 		oldIp: v.ip,
-		variableOffset: offset,
 	})
 
 	vars := []value.Value{}
@@ -457,9 +438,10 @@ func (v *VM) pop() value.Value {
 	}
 
 	lastIndex := len(v.stack) - 1
+	
 	topElement := v.stack[lastIndex]
-
 	v.stack = v.stack[:lastIndex]
+
 	return topElement
 }
 
@@ -470,9 +452,10 @@ func (v *VM) popFrame() CallFrame {
 	}
 
 	lastIndex := len(v.callStack) - 1
-	topElement := v.callStack[lastIndex]
 
-	v.callStack = v.callStack[:len(v.stack)]
+	topElement := v.callStack[lastIndex]
+	v.callStack = v.callStack[:lastIndex]
+
 	return topElement
 }
 
