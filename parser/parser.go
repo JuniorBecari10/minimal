@@ -120,7 +120,7 @@ func (p *Parser) Parse() ([]ast.Statement, bool) {
 	stmts := []ast.Statement{}
 
 	for !p.isAtEnd(0) {
-		stmts = append(stmts, p.statement())
+		stmts = append(stmts, p.declaration(false))
 	}
 
 	return stmts, p.hadError

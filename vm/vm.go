@@ -26,7 +26,6 @@ type VM struct {
 	topLevel chunk.Chunk
 
 	stack     []value.Value
-	locals    []value.Value
 	globals   []value.Value
 	callStack []CallFrame
 
@@ -41,7 +40,6 @@ func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 		topLevel: chunk,
 
 		stack:     []value.Value{},
-		locals:    []value.Value{},
 		globals:   []value.Value{},
 		callStack: []CallFrame{},
 
@@ -94,7 +92,7 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_DEF_LOCAL:
-				v.locals = append(v.locals, v.pop())
+				v.callStack[len(v.callStack)-1].locals = append(v.callStack[len(v.callStack)-1].locals, v.pop())
 
 			case compiler.OP_GET_LOCAL:
 				offset := 0
@@ -103,10 +101,10 @@ func (v *VM) Run() InterpretResult {
 					offset = v.callStack[len(v.callStack) - 1].variableOffset
 				}
 
-				v.push(v.locals[v.getInt() + offset])
+				v.push(v.callStack[len(v.callStack)-1].locals[v.getInt() + offset])
 
 			case compiler.OP_SET_LOCAL:
-				v.locals[v.getInt()] = v.peek(0)
+				v.callStack[len(v.callStack)-1].locals[v.getInt()] = v.peek(0)
 
 			case compiler.OP_DEF_GLOBAL:
 				v.globals = append(v.globals, v.pop())
@@ -297,10 +295,16 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 		return STATUS_INCORRECT_ARITY
 	}
 
+	offset := 0
+
+	if len(v.callStack) > 0 {
+		offset = len(v.callStack[len(v.callStack)-1].locals)
+	}
+
 	v.callStack = append(v.callStack, CallFrame{
 		function: &function,
 		oldIp: v.ip,
-		variableOffset: len(v.locals),
+		variableOffset: offset,
 	})
 
 	vars := []value.Value{}
@@ -310,7 +314,7 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 	}
 
 	for i := len(vars) - 1; i >= 0; i-- {
-		v.locals = append(v.locals, vars[i])
+		v.callStack[len(v.callStack)-1].locals = append(v.callStack[len(v.callStack)-1].locals, vars[i])
 	}
 
 	v.ip = 0
@@ -468,7 +472,7 @@ func (v *VM) popFrame() CallFrame {
 	lastIndex := len(v.callStack) - 1
 	topElement := v.callStack[lastIndex]
 
-	v.callStack = v.callStack[:len(v.stack) - 1]
+	v.callStack = v.callStack[:len(v.stack)]
 	return topElement
 }
 
@@ -487,10 +491,10 @@ func (v *VM) popVar() value.Value {
 }
 
 func (v *VM) popnVar(amount int) value.Value {
-	lastIndex := len(v.locals) - amount
-	topElement := v.locals[lastIndex]
+	lastIndex := len(v.callStack[len(v.callStack)-1].locals) - amount
+	topElement := v.callStack[len(v.callStack)-1].locals[lastIndex]
 
-	v.locals = v.locals[:lastIndex]
+	v.callStack[len(v.callStack)-1].locals = v.callStack[len(v.callStack)-1].locals[:lastIndex]
 	return topElement
 }
 

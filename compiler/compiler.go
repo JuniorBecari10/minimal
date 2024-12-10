@@ -113,6 +113,8 @@ func newFnCompiler(ast []ast.Statement, fileData *util.FileData, globals []Globa
 func (c *Compiler) Compile() (chunk.Chunk, bool) {
 	c.hoistTopLevel()
 	c.statements(c.ast)
+	c.callMain()
+
 	return c.chunk, c.hadError
 }
 
@@ -145,4 +147,23 @@ func (c *Compiler) hoistTopLevel() {
 			}
 		}
 	}
+}
+
+func (c *Compiler) callMain() {
+	for i, global := range c.globals {
+		if global.name.Lexeme == "main" {
+			// check if it's a function
+			// in the meanwhile, this error will be caught at runtime
+
+			c.writeBytePos(OP_GET_GLOBAL, global.name.Pos)
+			c.writeBytes(util.IntToBytes(i))
+
+			c.writeBytePos(OP_CALL, global.name.Pos)
+			c.writeBytes(util.IntToBytes(0))
+
+			return
+		}
+	}
+
+	c.error(token.Position{}, 1, "A main function wasn't found")
 }

@@ -5,7 +5,7 @@ import (
 	"vm-go/token"
 )
 
-func (p *Parser) statement() ast.Statement {
+func (p *Parser) declaration(allowStatements bool) ast.Statement {
 	if p.panicMode {
 		p.synchronize()
 	}
@@ -14,10 +14,27 @@ func (p *Parser) statement() ast.Statement {
 	
 	switch t.Kind {
 		case token.TokenFnKw: return p.fnStatement()
+		case token.TokenVarKw: return p.varStatement()
+		
+		default: {
+			if allowStatements {
+				return p.statement()
+			} else {
+				p.error("Statements are not allowed at top-level")
+				p.advance()
+				return nil
+			}
+		}
+	}
+}
+
+func (p *Parser) statement() ast.Statement {
+	t := p.peek(0)
+	
+	switch t.Kind {
 		case token.TokenIfKw: return p.ifStatement()
 		case token.TokenWhileKw: return p.whileStatement()
 		case token.TokenForKw: return p.forStatement()
-		case token.TokenVarKw: return p.varStatement()
 		case token.TokenReturnKw: return p.returnStatement()
 		case token.TokenPrintKw: return p.printStatement()
 		case token.TokenLeftBrace: return p.blockStatement()

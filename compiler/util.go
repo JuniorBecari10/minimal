@@ -13,8 +13,11 @@ import (
 func (c *Compiler) compileFnBody(pos token.Position) (chunk.Chunk, bool) {
 	c.statements(c.ast)
 
-	c.writeBytePos(OP_VOID, pos)
-	c.writeBytePos(OP_RETURN, pos)
+	if c.chunk.Code[len(c.chunk.Code) - 1] != OP_RETURN {
+		c.writeBytePos(OP_VOID, pos)
+		c.writeBytePos(OP_RETURN, pos)
+	}
+
 	return c.chunk, c.hadError
 }
 

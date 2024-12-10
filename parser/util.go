@@ -12,7 +12,7 @@ func (p *Parser) parseBlock() ast.BlockStatement {
 	stmts := []ast.Statement{}
 
 	for !p.isAtEnd(0) && !p.check(token.TokenRightBrace) && !p.hadError {
-		stmts = append(stmts, p.statement())
+		stmts = append(stmts, p.declaration(true))
 	}
 
 	p.expect(token.TokenRightBrace)
