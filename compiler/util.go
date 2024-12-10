@@ -13,7 +13,7 @@ import (
 func (c *Compiler) compileFnBody(pos token.Position) (chunk.Chunk, bool) {
 	c.statements(c.ast)
 
-	if c.chunk.Code[len(c.chunk.Code) - 1] != OP_RETURN {
+	if len(c.chunk.Code) > 0 && c.chunk.Code[len(c.chunk.Code) - 1] != OP_RETURN {
 		c.writeBytePos(OP_VOID, pos)
 		c.writeBytePos(OP_RETURN, pos)
 	}
@@ -71,6 +71,13 @@ func (c *Compiler) resolveVariable(token token.Token) (int, Opcode) {
 	// didn't find inside the locals, let's search it in globals
 	for i := len(c.globals) - 1; i >= 0; i-- {
 		if c.globals[i].name.Lexeme == token.Lexeme {
+			// the scope depth is also verified, because if the compiler is in an inner scope, the global is
+			// guaranteed to be initialized, because the program always starts at main(), and it is called after
+			// all globals are initialized.
+			if !c.globals[i].initialized && c.scopeDepth == 0 {
+				c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' is used before being initialized", token.Lexeme))
+			}
+
 			return i, OP_GET_GLOBAL
 		}
 	}

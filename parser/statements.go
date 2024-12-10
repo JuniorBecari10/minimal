@@ -20,7 +20,7 @@ func (p *Parser) declaration(allowStatements bool) ast.Statement {
 			if allowStatements {
 				return p.statement()
 			} else {
-				p.error("Statements are not allowed at top-level")
+				p.errorHere("Statements are not allowed at top-level")
 				p.advance()
 				return nil
 			}

@@ -126,6 +126,20 @@ func (p *Parser) synchronize() {
 	}
 }
 
+func (p *Parser) errorHere(message string) {
+	if p.panicMode {
+		return
+	}
+
+	last := p.peek(0)
+	pos := last.Pos
+	
+	util.Error(pos, len(last.Lexeme), message, p.fileData)
+
+	p.hadError = true
+	p.panicMode = true
+}
+
 func (p *Parser) error(message string) {
 	if p.panicMode {
 		return

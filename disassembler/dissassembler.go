@@ -33,6 +33,12 @@ func (d *Disassembler) Disassemble() {
 
 func (d *Disassembler) disassemble(name string) {
 	fmt.Printf("chunk: %s\n", name)
+
+	if len(d.chunk.Code) == 0 {
+		fmt.Println("chunk is empty.")
+		return
+	}
+
 	fmt.Println(" offset | position  | instruction      | index  | result")
 	fmt.Println("--------|-----------|------------------|--------|--------")
 
