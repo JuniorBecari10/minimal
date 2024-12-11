@@ -55,6 +55,44 @@ func (c *Compiler) expression(expr ast.Expression) {
 			c.writeBytes(util.IntToBytes(index))
 		}
 
+		case ast.LogicalExpression: {
+			if e.ShortCircuit {
+				var operation byte
+
+				switch e.Operator.Kind {
+					case token.TokenAndKw:
+						operation = OP_JUMP_FALSE
+					case token.TokenOrKw:
+						operation = OP_JUMP_TRUE
+					default:
+						panic(fmt.Sprintf("Unknown logical operator: '%s'", e.Operator.Lexeme))
+				}				
+
+				c.expression(e.Left)
+				c.writeBytePos(operation, e.Pos)
+
+				jumpFalseOffsetIndex := len(c.chunk.Code)
+				c.writeBytes(util.IntToBytes(0)) // dummy
+				c.writeBytePos(OP_POP, e.Pos)
+
+				c.expression(e.Right)
+				c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
+			} else {
+				c.expression(e.Left)
+				c.expression(e.Right)
+
+				switch e.Operator.Kind {
+					case token.TokenAndKw:
+						c.writeByte(OP_AND)
+					case token.TokenOrKw:
+						c.writeByte(OP_OR)
+
+					default:
+						panic(fmt.Sprintf("Unknown logical operator: '%s'", e.Operator.Kind))
+				}
+			}
+		}
+
 		case ast.BinaryExpression: {
 			c.expression(e.Left)
 			c.expression(e.Right)
@@ -92,8 +130,6 @@ func (c *Compiler) expression(expr ast.Expression) {
 					c.writeByte(OP_AND)
 				case token.TokenOrKw:
 					c.writeByte(OP_OR)
-				case token.TokenXorKw:
-					c.writeByte(OP_XOR)
 
 				default:
 					panic(fmt.Sprintf("Unknown binary operator: '%s'", e.Operator.Kind))

@@ -54,7 +54,6 @@ func (l *Lexer) checkKeyword() token.TokenKind {
 
 		case "and": return token.TokenAndKw
 		case "or": return token.TokenOrKw
-		case "xor": return token.TokenXorKw
 		case "not": return token.TokenNotKw
 
 		case "true": return token.TokenTrueKw

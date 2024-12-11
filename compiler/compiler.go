@@ -30,6 +30,7 @@ const (
 	OP_POPN_VAR
 
 	OP_JUMP
+	OP_JUMP_TRUE
 	OP_JUMP_FALSE
 	OP_LOOP
 
@@ -44,7 +45,6 @@ const (
 
 	OP_AND
 	OP_OR
-	OP_XOR
 
 	OP_NOT
 	OP_NEGATE

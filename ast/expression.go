@@ -38,6 +38,15 @@ type UnaryExpression struct {
 	Operator token.Token
 }
 
+type LogicalExpression struct {
+	AstBase
+
+	Left     Expression
+	Right    Expression
+	Operator token.Token
+	ShortCircuit bool
+}
+
 type BinaryExpression struct {
 	AstBase
 
@@ -76,6 +85,7 @@ func (x BoolExpression) expr()       {}
 func (x NilExpression) expr()        {}
 func (x VoidExpression) expr()        {}
 func (x UnaryExpression) expr()      {}
+func (x LogicalExpression) expr()     {}
 func (x BinaryExpression) expr()     {}
 func (x GroupExpression) expr()      {}
 func (x CallExpression) expr()      {}

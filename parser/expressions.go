@@ -151,6 +151,26 @@ func (p *Parser) parseBinary(left ast.Expression, pos token.Position, op token.T
 	}
 }
 
+func (p *Parser) parseLogical(left ast.Expression, pos token.Position, op token.TokenKind) ast.Expression {
+	precedence := p.precedenceMap[op]
+
+	operator := p.expectToken(op)
+	shortCircuit := !p.match(token.TokenStar)
+
+	right := p.expression(precedence)
+
+	return ast.LogicalExpression{
+		AstBase:  ast.AstBase{
+			Pos: pos,
+		},
+
+		Left:     left,
+		Right:    right,
+		Operator: operator,
+		ShortCircuit: shortCircuit,
+	}
+}
+
 func (p *Parser) parseCall(left ast.Expression, pos token.Position) ast.Expression {
 	p.expectToken(token.TokenLeftParen)
 	arguments := []ast.Expression{}

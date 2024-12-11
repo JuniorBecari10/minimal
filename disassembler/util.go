@@ -55,6 +55,8 @@ func getInstructionName(inst byte) string {
 
 	case compiler.OP_JUMP:
 		return "OP_JUMP"
+	case compiler.OP_JUMP_TRUE:
+		return "OP_JUMP_TRUE"
 	case compiler.OP_JUMP_FALSE:
 		return "OP_JUMP_FALSE"
 	case compiler.OP_LOOP:
@@ -79,8 +81,6 @@ func getInstructionName(inst byte) string {
 		return "OP_AND"
 	case compiler.OP_OR:
 		return "OP_OR"
-	case compiler.OP_XOR:
-		return "OP_XOR"
 	
 	case compiler.OP_NOT:
 		return "OP_NOT"

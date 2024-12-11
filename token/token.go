@@ -43,7 +43,6 @@ const (
 
 	TokenAndKw = "and"
 	TokenOrKw  = "or"
-	TokenXorKw = "xor"
 	TokenNotKw = "not"
 
 	TokenTrueKw  = "true"

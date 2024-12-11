@@ -136,6 +136,24 @@ func (v *VM) Run() InterpretResult {
 			case compiler.OP_JUMP:
 				v.ip += v.getInt()
 
+			case compiler.OP_JUMP_TRUE: {
+				amount := v.getInt()
+
+				// TODO: check for out of bounds by checking nil
+				if b, ok := v.peek(0).(value.ValueBool); ok {
+					if v.hadError {
+						return STATUS_OUT_OF_BOUNDS
+					}
+
+					if b.Value {
+						v.ip += amount
+					}
+				} else {
+					v.error(fmt.Sprintf("Expression is not a boolean. (value: '%s')", v.peek(0).String()))
+					return STATUS_TYPE_ERROR
+				}
+			}
+
 			case compiler.OP_JUMP_FALSE: {
 				amount := v.getInt()
 
@@ -201,7 +219,7 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_AND, compiler.OP_OR, compiler.OP_XOR: {
+			case compiler.OP_AND, compiler.OP_OR: {
 				status := v.binaryBool(i)
 
 				if status != STATUS_OK {
@@ -474,7 +492,6 @@ func (v *VM) binaryBool(operator byte) InterpretResult {
 	switch operator {
 		case compiler.OP_AND: v.push(value.ValueBool{ Value: leftNum.Value && rightNum.Value })
 		case compiler.OP_OR: v.push(value.ValueBool{ Value: leftNum.Value || rightNum.Value })
-		case compiler.OP_XOR: v.push(value.ValueBool{ Value: xor(leftNum.Value, rightNum.Value) })
 	}
 
 	return STATUS_OK

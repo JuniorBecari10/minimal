@@ -48,9 +48,3 @@ func isFunction(v value.Value) bool {
 	_, ok := v.(value.ValueFunction)
 	return ok
 }
-
-// ---
-
-func xor(a, b bool) bool {
-    return (a || b) && !(a && b)
-}
