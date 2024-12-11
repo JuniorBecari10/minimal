@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
+	"strconv"
 	"strings"
 	"vm-go/token"
 )
@@ -47,7 +48,7 @@ func PadRight(s string, length int, padChar string) string {
 
 func Error(pos token.Position, length int, message string, fileData *FileData) {
 	fmt.Printf("[-] Error at %s (%d, %d): %s\n", fileData.Name, pos.Line + 1, pos.Col + 1, message)
-	fmt.Printf(" | %s\n", fileData.Lines[pos.Line])
-	fmt.Printf(" | %s%s\n", strings.Repeat(" ", pos.Col), strings.Repeat("^", length))
+	fmt.Printf(" |  %d | %s\n", pos.Line + 1, fileData.Lines[pos.Line])
+	fmt.Printf(" | %s    %s%s\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))), strings.Repeat(" ", pos.Col), strings.Repeat("^", length))
 	fmt.Printf("[-]\n\n")
 }

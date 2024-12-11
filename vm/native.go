@@ -21,6 +21,11 @@ func (v *VM) includeNativeFns() {
 		Arity: 0,
 		Fn: nativeTime,
 	})
+
+	v.globals = append(v.globals, value.ValueNativeFn{
+		Arity: 1,
+		Fn: nativeStr,
+	})
 }
 
 // ---
@@ -37,4 +42,8 @@ func nativePrintln(args []value.Value) value.Value {
 
 func nativeTime(_ []value.Value) value.Value {
 	return value.ValueNumber{ Value: float64(time.Now().UnixMilli()) }
+}
+
+func nativeStr(args []value.Value) value.Value {
+	return value.ValueString{ Value: args[0].String() }
 }

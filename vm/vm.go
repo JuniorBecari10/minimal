@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"vm-go/chunk"
 	"vm-go/compiler"
@@ -601,8 +602,8 @@ func (v *VM) error(message string) {
 	pos := v.currentChunk.Positions[v.oldIp] // TODO: save the last ip to use here
 
 	fmt.Printf("[-] Runtime error at %s (%d, %d): %s\n", v.fileData.Name, pos.Line + 1, pos.Col + 1, message)
-	fmt.Printf(" | %s\n", v.fileData.Lines[pos.Line])
-	fmt.Printf(" | %s^\n", strings.Repeat(" ", pos.Col))
+	fmt.Printf(" |  %d | %s\n", pos.Line + 1, v.fileData.Lines[pos.Line])
+	fmt.Printf(" | %s    %s^\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))), strings.Repeat(" ", pos.Col))
 	fmt.Println("[-]")
 
 	if len(v.callStack) > 0 {
