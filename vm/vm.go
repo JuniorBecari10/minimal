@@ -386,6 +386,7 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			util.Reverse(vars)
 			result := function.Fn(vars)
 
+			v.pop() // the function
 			v.push(result)
 		}
 	}
