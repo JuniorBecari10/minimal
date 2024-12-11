@@ -11,7 +11,7 @@ func (p *Parser) parseBlock() ast.BlockStatement {
 	pos := p.expectToken(token.TokenLeftBrace).Pos
 	stmts := []ast.Statement{}
 
-	for !p.isAtEnd(0) && !p.check(token.TokenRightBrace) && !p.hadError {
+	for !p.isAtEnd(0) && !p.check(token.TokenRightBrace) {
 		stmts = append(stmts, p.declaration(true))
 	}
 
@@ -110,23 +110,27 @@ func (p *Parser) isAtEnd(offset int) bool {
 }
 
 func (p *Parser) synchronize() {
-	p.panicMode = false
+    p.panicMode = false
 
-	for !p.isAtEnd(0) {
-		switch p.peek(0).Kind {
-		case token.TokenVarKw, token.TokenLeftBrace, token.TokenIfKw:
-			return
-		}
+    for !p.isAtEnd(0) {
+        kind := p.peek(0).Kind
 
-		if p.peek(0).Kind == token.TokenSemicolon {
-			return
-		}
+        // Return if a synchronization point is found
+        switch kind {
+			case token.TokenVarKw, token.TokenLeftBrace, token.TokenRightBrace,
+				token.TokenIfKw, token.TokenElseKw, token.TokenWhileKw,
+				token.TokenForKw, token.TokenFnKw, token.TokenReturnKw,
+				token.TokenSemicolon:  
+				return
+        }
 
-		p.advance()
-	}
+        // Advance to the next token if no synchronization point is found
+        p.advance()
+    }
 }
 
-func (p *Parser) errorHere(message string) {
+
+func (p *Parser) error(message string) {
 	if p.panicMode {
 		return
 	}
@@ -134,22 +138,6 @@ func (p *Parser) errorHere(message string) {
 	last := p.peek(0)
 	pos := last.Pos
 	
-	util.Error(pos, len(last.Lexeme), message, p.fileData)
-
-	p.hadError = true
-	p.panicMode = true
-}
-
-func (p *Parser) error(message string) {
-	if p.panicMode {
-		return
-	}
-
-	// TODO: if reached end, get the position of the last token
-	last := p.peek(-1)
-	pos := last.Pos
-
-	pos.Col += len(last.Lexeme)
 	util.Error(pos, len(last.Lexeme), message, p.fileData)
 
 	p.hadError = true

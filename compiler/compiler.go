@@ -166,6 +166,12 @@ func (c *Compiler) addNativeFunctions() {
 		name: token.Token{ Lexeme: "println" },
 		initialized: true,
 	})
+
+	// fn time() -> number
+	c.globals = append(c.globals, Global{
+		name: token.Token{ Lexeme: "time" },
+		initialized: true,
+	})
 }
 
 func (c *Compiler) callMain() {
