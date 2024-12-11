@@ -30,6 +30,7 @@ type VM struct {
 	callStack []CallFrame
 
 	ip int
+	oldIp int
 	hadError bool
 	fileData *util.FileData
 }
@@ -44,6 +45,7 @@ func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 		callStack: []CallFrame{},
 
 		ip:        0,
+		oldIp:     0,
 		hadError:  false,
 		fileData: fileData,
 	}
@@ -51,6 +53,7 @@ func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 
 func (v *VM) Run() InterpretResult {
 	for !v.isAtEnd() && !v.hadError {
+		v.oldIp = v.ip
  		i := v.nextByte()
 
 		switch i {
@@ -60,7 +63,13 @@ func (v *VM) Run() InterpretResult {
 			// TODO: add a separated opcode for concatenating strings when typechecking is added
 			case compiler.OP_ADD: {
 				if !typesEqual(v.peek(0), v.peek(1)) {
-					v.error("Operands types must be equal when adding/concatenating")
+					v.error(
+						fmt.Sprintf(
+							"Operands types must be equal when adding/concatenating. (left: '%s', right: '%s')",
+							v.peek(1).String(),
+							v.peek(0).String(),
+						),
+					)
 					return STATUS_TYPE_ERROR
 				}
 
@@ -78,7 +87,13 @@ func (v *VM) Run() InterpretResult {
 						return status
 					}
 				} else {
-					v.error("Operands must be numbers or strings when adding/concatenating")
+					v.error(
+						fmt.Sprintf(
+							"Operands must be numbers or strings when adding/concatenating. (left: '%s', right: '%s')",
+							v.peek(1).String(),
+							v.peek(0).String(),
+						),
+					)
 					return STATUS_TYPE_ERROR
 				}
 			}
@@ -134,7 +149,7 @@ func (v *VM) Run() InterpretResult {
 						v.ip += amount
 					}
 				} else {
-					v.error("Expression is not a boolean")
+					v.error(fmt.Sprintf("Expression is not a boolean. (value: '%s')", v.peek(0).String()))
 					return STATUS_TYPE_ERROR
 				}
 			}
@@ -147,7 +162,13 @@ func (v *VM) Run() InterpretResult {
 				a := v.pop()
 
 				if !typesEqual(a, b) {
-					v.error("Types must be the same when comparing")
+					v.error(
+						fmt.Sprintf(
+							"Types must be the same when comparing. (left: '%s', right: '%s')",
+							a.String(),
+							b.String(),
+						),
+					)
 					return STATUS_TYPE_ERROR
 				}
 
@@ -159,7 +180,13 @@ func (v *VM) Run() InterpretResult {
 				a := v.pop()
 
 				if !typesEqual(a, b) {
-					v.error("Types must be the same when comparing")
+					v.error(
+						fmt.Sprintf(
+							"Types must be the same when comparing. (left: '%s', right: '%s')",
+							a.String(),
+							b.String(),
+						),
+					)
 					return STATUS_TYPE_ERROR
 				}
 
@@ -186,7 +213,12 @@ func (v *VM) Run() InterpretResult {
 				op := v.pop()
 
 				if !isBool(op) {
-					v.error("Operand must be a boolean for logical not")
+					v.error(
+						fmt.Sprintf(
+							"Operand must be a boolean for performing a logical not. (value: '%s')",
+							op.String(),
+						),
+					)
 					return STATUS_TYPE_ERROR
 				}
 
@@ -198,7 +230,12 @@ func (v *VM) Run() InterpretResult {
 				op := v.pop()
 
 				if !isNumber(op) {
-					v.error("Operand must be a number for number negation")
+					v.error(
+						fmt.Sprintf(
+							"Operand must be a boolean for performing a number negation. (value: '%s')",
+							op.String(),
+						),
+					)
 					return STATUS_TYPE_ERROR
 				}
 
@@ -259,7 +296,13 @@ func (v *VM) concatenateStrs() InterpretResult {
 	left := v.pop()
 
 	if !isString(left) || !isString(right) {
-		v.error("Operands must be strings when performing concatenation")
+		v.error(
+			fmt.Sprintf(
+				"Operands must be strings when performing concatenation. (left: '%s', right: '%s')",
+				left.String(),
+				right.String(),
+			),
+		)
 		return STATUS_TYPE_ERROR
 	}
 
@@ -272,14 +315,14 @@ func (v *VM) concatenateStrs() InterpretResult {
 
 func (v *VM) call(callee value.Value, arity int) InterpretResult {
 	if !isFunction(callee) {
-		v.error(fmt.Sprintf("Can only call functions, called '%s'", callee.String()))
+		v.error(fmt.Sprintf("Can only call functions. (Called '%s')", callee.String()))
 		return STATUS_TYPE_ERROR
 	}
 
 	function := callee.(value.ValueFunction)
 
 	if function.Arity != arity {
-		v.error(fmt.Sprintf("Expected %d arguments, but got %d", function.Arity, arity))
+		v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Arity, arity))
 		return STATUS_INCORRECT_ARITY
 	}
 
@@ -316,7 +359,13 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 	left := v.pop()
 
 	if !isNumber(left) || !isNumber(right) {
-		v.error("Operands must be numbers when performing arithmetic")
+		v.error(
+			fmt.Sprintf(
+				"Operands must be numbers when performing arithmetic. (left: '%s', right: '%s')",
+				left.String(),
+				right.String(),
+			),
+		)
 		return STATUS_TYPE_ERROR
 	}
 
@@ -329,7 +378,13 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 		case compiler.OP_MUL: v.push(value.ValueNumber{ Value: leftNum.Value * rightNum.Value })
 		case compiler.OP_DIV: {
 			if rightNum.Value == 0 {
-				v.error("Cannot divide by zero")
+				v.error(
+					fmt.Sprintf(
+						"Cannot divide by zero. (left: '%s', right: '%s')",
+						left.String(),
+						right.String(),
+					),
+				)
 				return STATUS_DIV_ZERO
 			}
 
@@ -337,7 +392,13 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 		}
 		case compiler.OP_MODULO: {
 			if rightNum.Value == 0 {
-				v.error("Cannot divide by zero")
+				v.error(
+					fmt.Sprintf(
+						"Cannot divide by zero. (left: '%s', right: '%s')",
+						left.String(),
+						right.String(),
+					),
+				)
 				return STATUS_DIV_ZERO
 			}
 
@@ -359,7 +420,13 @@ func (v *VM) binaryComparison(operator byte) InterpretResult {
 	left := v.pop()
 
 	if !isNumber(left) || !isNumber(right) {
-		v.error("Operands must be numbers when performing comparison")
+		v.error(
+			fmt.Sprintf(
+				"Operands must be numbers when performing comparison. (left: '%s', right: '%s')",
+				left.String(),
+				right.String(),
+			),
+		)
 		return STATUS_TYPE_ERROR
 	}
 
@@ -391,7 +458,13 @@ func (v *VM) binaryBool(operator byte) InterpretResult {
 	left := v.pop()
 
 	if !isBool(left) || !isBool(right) {
-		v.error("Operands must be booleans when performing boolean operations")
+		v.error(
+			fmt.Sprintf(
+				"Operands must be booleans when performing boolean operations. (left: '%s', right: '%s')",
+				left.String(),
+				right.String(),
+			),
+		)
 		return STATUS_TYPE_ERROR
 	}
 
@@ -482,7 +555,7 @@ func (v *VM) popnVar(amount int) value.Value {
 }
 
 func (v *VM) error(message string) {
-	pos := v.currentChunk.Positions[v.ip] // TODO: save the last ip to use here
+	pos := v.currentChunk.Positions[v.oldIp] // TODO: save the last ip to use here
 
 	fmt.Printf("[-] Runtime error at %s (%d, %d): %s\n", v.fileData.Name, pos.Line + 1, pos.Col + 1, message)
 	fmt.Printf(" | %s\n", v.fileData.Lines[pos.Line])
@@ -491,9 +564,15 @@ func (v *VM) error(message string) {
 
 	if len(v.callStack) > 0 {
 		for i := len(v.callStack) - 1; i >= 0; i-- {
+			posChunk := v.topLevel
 			frame := v.callStack[i]
-			pos := v.currentChunk.Positions[frame.oldIp]
-			name := v.callStack[i].function.Name
+
+			if i > 0 {
+				posChunk = v.callStack[i - 1].function.Chunk
+			}
+
+			pos := posChunk.Positions[frame.oldIp - 1]
+			name := frame.function.Name
 
 			if name == nil {
 				fmt.Printf(" | in (%d, %d)\n", pos.Line + 1, pos.Col + 1)

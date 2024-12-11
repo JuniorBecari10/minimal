@@ -130,6 +130,7 @@ func (c *Compiler) statements(stmts []ast.Statement){
 	}
 }
 
+// TODO: hoist the inner scopes too, to improve the error messages?
 func (c *Compiler) hoistTopLevel() {
 	for _, decl := range c.ast {
 		switch s := decl.(type) {

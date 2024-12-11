@@ -34,7 +34,7 @@ func (l *Lexer) string() {
 }
 
 func (l *Lexer) identifier() {
-	for unicode.IsLetter(rune(l.peek())) || l.peek() == '_' {
+	for unicode.IsLetter(rune(l.peek())) || unicode.IsDigit(rune(l.peek())) || l.peek() == '_' {
 		l.advance()
 	}
 
