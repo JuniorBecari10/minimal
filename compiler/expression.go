@@ -66,7 +66,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 						operation = OP_JUMP_TRUE
 					default:
 						panic(fmt.Sprintf("Unknown logical operator: '%s'", e.Operator.Lexeme))
-				}				
+				}
 
 				c.expression(e.Left)
 				c.writeBytePos(operation, e.Pos)

@@ -48,3 +48,8 @@ func isFunction(v value.Value) bool {
 	_, ok := v.(value.ValueFunction)
 	return ok
 }
+
+func isNativeFunction(v value.Value) bool {
+	_, ok := v.(value.ValueNativeFn)
+	return ok
+}

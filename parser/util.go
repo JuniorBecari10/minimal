@@ -28,7 +28,7 @@ func (p *Parser) parseParameters() []ast.Parameter {
 	p.expect(token.TokenLeftParen)
 	params := []ast.Parameter{}
 
-	for !p.match(token.TokenRightParen) {
+	for !p.match(token.TokenRightParen) && !p.isAtEnd(0) && !p.panicMode {
 		name := p.expectToken(token.TokenIdentifier)
 		params = append(params, ast.Parameter{
 			Name: name,

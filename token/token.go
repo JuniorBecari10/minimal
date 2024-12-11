@@ -3,9 +3,9 @@ package token
 type TokenKind string
 
 const (
-	TokenNumber     = "Number"
-	TokenString     = "String"
-	TokenIdentifier = "Identifier"
+	TokenNumber     = "number"
+	TokenString     = "string"
+	TokenIdentifier = "identifier"
 
 	TokenPlus  = "+"
 	TokenMinus = "-"
@@ -32,23 +32,23 @@ const (
 	TokenLess      = "<"
 	TokenLessEqual = "<="
 
-	TokenIfKw     = "if"
-	TokenElseKw   = "else"
-	TokenWhileKw  = "while"
-	TokenForKw    = "for"
-	TokenVarKw    = "var"
-	TokenFnKw     = "fn"
-	TokenReturnKw = "return"
-	TokenPrintKw  = "print"
+	TokenIfKw     = "if keyword"
+	TokenElseKw   = "else keyword"
+	TokenWhileKw  = "while keyword"
+	TokenForKw    = "for keyword"
+	TokenVarKw    = "var keyword"
+	TokenFnKw     = "fn keyword"
+	TokenReturnKw = "return keyword"
+	TokenPrintKw  = "print keyword"
 
-	TokenAndKw = "and"
-	TokenOrKw  = "or"
-	TokenNotKw = "not"
+	TokenAndKw = "and keyword"
+	TokenOrKw  = "or keyword"
+	TokenNotKw = "not keyword"
 
-	TokenTrueKw  = "true"
-	TokenFalseKw = "false"
-	TokenNilKw   = "nil"
-	TokenVoidKw  = "void"
+	TokenTrueKw  = "true keyword"
+	TokenFalseKw = "false keyword"
+	TokenNilKw   = "nil keyword"
+	TokenVoidKw  = "void keyword"
 
 	TokenAbsent = "Absent"
 )

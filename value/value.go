@@ -5,6 +5,8 @@ import (
 	"vm-go/token"
 )
 
+type NativeFn = func(args []Value) Value
+
 // Another alias for Chunk, because of import cycle
 type Chunk = struct {
 	Code      []byte
@@ -40,6 +42,11 @@ type ValueFunction struct {
 	Name *string // optional
 }
 
+type ValueNativeFn struct {
+	Arity int
+	Fn NativeFn
+}
+
 // ---
 
 func (x ValueNumber) String() string {
@@ -62,3 +69,5 @@ func (x ValueFunction) String() string {
 		return fmt.Sprintf("<fn %s>", *x.Name)
 	}
 }
+
+func (x ValueNativeFn) String() string { return "<native fn>" }

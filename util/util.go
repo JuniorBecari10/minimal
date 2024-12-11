@@ -23,6 +23,12 @@ func BytesToInt(b []byte) (int, error) {
 	return int(binary.LittleEndian.Uint32(b)), nil
 }
 
+func Reverse[T any](slice []T) {
+    for i, j := 0, len(slice) - 1; i < j; i, j = i + 1, j - 1 {
+        slice[i], slice[j] = slice[j], slice[i]
+    }
+}
+
 func PadLeft(s string, length int, padChar string) string {
 	if len(s) >= length {
 		return s

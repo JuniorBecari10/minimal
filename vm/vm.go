@@ -31,12 +31,13 @@ type VM struct {
 
 	ip int
 	oldIp int
+
 	hadError bool
 	fileData *util.FileData
 }
 
 func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
-	return &VM{
+	vm := VM{
 		currentChunk: &chunk,
 		topLevel: chunk,
 
@@ -46,9 +47,13 @@ func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 
 		ip:        0,
 		oldIp:     0,
+
 		hadError:  false,
 		fileData: fileData,
 	}
+
+	vm.includeNativeFns()
+	return &vm
 }
 
 func (v *VM) Run() InterpretResult {
@@ -332,37 +337,58 @@ func (v *VM) concatenateStrs() InterpretResult {
 }
 
 func (v *VM) call(callee value.Value, arity int) InterpretResult {
-	if !isFunction(callee) {
+	if !isFunction(callee) && !isNativeFunction(callee) {
 		v.error(fmt.Sprintf("Can only call functions. (Called '%s')", callee.String()))
 		return STATUS_TYPE_ERROR
 	}
 
-	function := callee.(value.ValueFunction)
+	switch function := callee.(type) {
+		case value.ValueFunction: {
+			if function.Arity != arity {
+				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Arity, arity))
+				return STATUS_INCORRECT_ARITY
+			}
+		
+			v.callStack = append(v.callStack, CallFrame{
+				function: &function,
+				oldIp: v.ip,
+			})
+		
+			vars := []value.Value{}
+		
+			for range arity {
+				vars = append(vars, v.pop())
+			}
+		
+			for i := len(vars) - 1; i >= 0; i-- {
+				v.callStack[len(v.callStack) - 1].locals = append(v.callStack[len(v.callStack) - 1].locals, vars[i])
+			}
+		
+			v.ip = 0
+			v.currentChunk = &function.Chunk
+		
+			v.pop() // the function
+		}
 
-	if function.Arity != arity {
-		v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Arity, arity))
-		return STATUS_INCORRECT_ARITY
+		case value.ValueNativeFn: {
+			if function.Arity != arity {
+				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Arity, arity))
+				return STATUS_INCORRECT_ARITY
+			}
+
+			vars := []value.Value{}
+		
+			for range arity {
+				vars = append(vars, v.pop())
+			}
+
+			util.Reverse(vars)
+			result := function.Fn(vars)
+
+			v.push(result)
+		}
 	}
 
-	v.callStack = append(v.callStack, CallFrame{
-		function: &function,
-		oldIp: v.ip,
-	})
-
-	vars := []value.Value{}
-
-	for range arity {
-		vars = append(vars, v.pop())
-	}
-
-	for i := len(vars) - 1; i >= 0; i-- {
-		v.callStack[len(v.callStack)-1].locals = append(v.callStack[len(v.callStack)-1].locals, vars[i])
-	}
-
-	v.ip = 0
-	v.currentChunk = &function.Chunk
-
-	v.pop() // the function
 	return STATUS_OK
 }
 

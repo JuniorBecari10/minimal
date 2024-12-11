@@ -111,7 +111,9 @@ func newFnCompiler(ast []ast.Statement, fileData *util.FileData, globals []Globa
 }
 
 func (c *Compiler) Compile() (chunk.Chunk, bool) {
+	c.addNativeFunctions()
 	c.hoistTopLevel()
+
 	c.statements(c.ast)
 	c.callMain()
 
@@ -148,6 +150,22 @@ func (c *Compiler) hoistTopLevel() {
 			}
 		}
 	}
+}
+
+func (c *Compiler) addNativeFunctions() {
+	// they will be set to initialized to prevent shadowing in the global scope
+
+	// fn print() -> void
+	c.globals = append(c.globals, Global{
+		name: token.Token{ Lexeme: "print" },
+		initialized: true,
+	})
+
+	// fn println() -> void
+	c.globals = append(c.globals, Global{
+		name: token.Token{ Lexeme: "println" },
+		initialized: true,
+	})
 }
 
 func (c *Compiler) callMain() {
