@@ -190,5 +190,5 @@ func (c *Compiler) callMain() {
 		}
 	}
 
-	c.error(token.Position{}, 1, "A main function wasn't found")
+	c.errorNoBody("A main function wasn't found.")
 }

@@ -12,7 +12,7 @@ func (p *Parser) expression(precedence int) ast.Expression {
 	prefixFn, ok := p.prefixMap[p.peek(0).Kind]
 
 	if !ok {
-		p.error(fmt.Sprintf("Unexpected token: '%s'", p.peek(0).Lexeme))
+		p.error(fmt.Sprintf("Unexpected token: '%s'.", p.peek(0).Lexeme))
 		return nil
 	}
 
@@ -200,7 +200,8 @@ func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Ex
 	name, ok := left.(ast.IdentifierExpression)
 
 	if !ok {
-		p.error(fmt.Sprintf("Invalid assignment target: '%v'", left))
+		// TODO: change this
+		p.error(fmt.Sprintf("Invalid assignment target: '%v'.", left))
 	}
 
 	return ast.IdentifierAssignmentExpression{

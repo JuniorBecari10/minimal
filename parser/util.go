@@ -49,9 +49,9 @@ func (p *Parser) expect(kind token.TokenKind) bool {
 func (p *Parser) expectToken(kind token.TokenKind) token.Token {
 	if !p.check(kind) {
 		if p.isAtEnd(0) {
-			p.error(fmt.Sprintf("Expected '%s', reached end", kind))
+			p.error(fmt.Sprintf("Expected '%s', reached end.", kind))
 		} else {
-			p.error(fmt.Sprintf("Expected '%s', got '%s'", kind, p.peek(0).Kind))
+			p.error(fmt.Sprintf("Expected '%s', got '%s' instead.", kind, p.peek(0).Kind))
 		}
 		return token.AbsentToken()
 	}
@@ -62,9 +62,9 @@ func (p *Parser) expectToken(kind token.TokenKind) token.Token {
 func (p *Parser) expectTokenNoAdvance(kind token.TokenKind) token.Token {
 	if !p.check(kind) {
 		if p.isAtEnd(0) {
-			p.error(fmt.Sprintf("Expected '%s', reached end", kind))
+			p.error(fmt.Sprintf("Expected '%s', reached end.", kind))
 		} else {
-			p.error(fmt.Sprintf("Expected '%s', got '%s'", kind, p.peek(0).Kind))
+			p.error(fmt.Sprintf("Expected '%s', got '%s' instead", kind, p.peek(0).Kind))
 		}
 		return token.AbsentToken()
 	}

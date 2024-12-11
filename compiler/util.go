@@ -75,7 +75,7 @@ func (c *Compiler) resolveVariable(token token.Token) (int, Opcode) {
 			// guaranteed to be initialized, because the program always starts at main(), and it is called after
 			// all globals are initialized.
 			if !c.globals[i].initialized && c.scopeDepth == 0 {
-				c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' is used before being initialized", token.Lexeme))
+				c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' is used before being initialized.", token.Lexeme))
 			}
 
 			return i, OP_GET_GLOBAL
@@ -83,7 +83,7 @@ func (c *Compiler) resolveVariable(token token.Token) (int, Opcode) {
 	}
 
 	// the variable doesn't exist
-	c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist", token.Lexeme))
+	c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist in this or in a parent scope.", token.Lexeme))
 	return -1, OP_GET_LOCAL
 }
 
@@ -112,7 +112,8 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 				if c.globals[i].name.Lexeme == token.Lexeme {
 					if c.globals[i].initialized {
 						// It's a redeclaration, so we throw an error.
-						c.error(pos, len(c.globals[i].name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
+						// this message is for the global scope.
+						c.error(pos, len(c.globals[i].name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope.", token.Lexeme))
 						return
 					} else {
 						// It's not; mark it as initialized.
@@ -131,9 +132,10 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 		// We found the variable, it can be in the same scope or not
 		existing := c.locals[index]
 
-		// If it's in the same scope, throw an error, because it's a redeclaration
+		// If it's in the same scope, throw an error, because it's a redeclaration.
+		// this message is for local scopes.
 		if existing.depth == c.scopeDepth {
-			c.error(pos, len(existing.name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope", token.Lexeme))
+			c.error(pos, len(existing.name.Lexeme), fmt.Sprintf("'%s' has already been declared in this scope.", token.Lexeme))
 			return
 		} else {
 			// The variable is in an enclosing scope, we'll shadow it by declaring it in this scope
@@ -200,6 +202,17 @@ func (c *Compiler) error(pos token.Position, length int, message string) {
 	}
 
 	util.Error(pos, length, message, c.fileData)
+
+	c.hadError = true
+	c.panicMode = true
+}
+
+func (c *Compiler) errorNoBody(message string) {
+	if c.hadError {
+		return
+	}
+
+	fmt.Printf("[-] Error at %s: %s\n", c.fileData.Name, message)
 
 	c.hadError = true
 	c.panicMode = true

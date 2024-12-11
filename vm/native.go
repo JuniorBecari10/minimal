@@ -36,5 +36,5 @@ func nativePrintln(args []value.Value) value.Value {
 }
 
 func nativeTime(_ []value.Value) value.Value {
-	return value.ValueNumber{ Value: float64(time.Now().UnixNano()) }
+	return value.ValueNumber{ Value: float64(time.Now().UnixMilli()) }
 }
