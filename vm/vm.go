@@ -296,9 +296,6 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_PRINT:
-				fmt.Println(v.pop().String())
-
 			default:
 				panic(fmt.Sprintf("Unknown instruction: '%d'", i))
 		}

@@ -50,11 +50,6 @@ type ForVarStatement struct {
 	Block BlockStatement
 }
 
-type PrintStatement struct {
-	AstBase
-	Expr Expression
-}
-
 type ExprStatement struct {
 	AstBase
 	Expr Expression
@@ -69,5 +64,4 @@ func (x BlockStatement) stmt() {}
 func (x IfStatement) stmt()    {}
 func (x WhileStatement) stmt() {}
 func (x ForVarStatement) stmt() {}
-func (x PrintStatement) stmt() {}
 func (x ExprStatement) stmt()  {}

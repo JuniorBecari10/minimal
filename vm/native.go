@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 	"vm-go/value"
 )
@@ -26,6 +27,11 @@ func (v *VM) includeNativeFns() {
 		Arity: 1,
 		Fn: nativeStr,
 	})
+
+	v.globals = append(v.globals, value.ValueNativeFn{
+		Arity: 1,
+		Fn: nativeNum,
+	})
 }
 
 // ---
@@ -46,4 +52,20 @@ func nativeTime(_ []value.Value) value.Value {
 
 func nativeStr(args []value.Value) value.Value {
 	return value.ValueString{ Value: args[0].String() }
+}
+
+func nativeNum(args []value.Value) value.Value {
+	argStr, ok := args[0].(value.ValueString)
+
+	if !ok {
+		return value.ValueNil{}
+	}
+
+	asNum, err := strconv.ParseFloat(argStr.Value, 64)
+
+	if err != nil {
+		return value.ValueNil{}
+	}
+
+	return value.ValueNumber{ Value: asNum }
 }

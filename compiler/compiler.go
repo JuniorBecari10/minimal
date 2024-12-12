@@ -58,7 +58,6 @@ const (
 	OP_VOID
 
 	OP_CALL
-	OP_PRINT
 )
 
 type Local struct {
@@ -176,6 +175,12 @@ func (c *Compiler) addNativeFunctions() {
 	// fn str(n: any) -> str
 	c.globals = append(c.globals, Global{
 		name: token.Token{ Lexeme: "str" },
+		initialized: true,
+	})
+
+	// fn num(n: str) -> num?
+	c.globals = append(c.globals, Global{
+		name: token.Token{ Lexeme: "num" },
 		initialized: true,
 	})
 }

@@ -136,16 +136,6 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		case ast.BlockStatement:
 			c.block(s.Stmts, s.Pos)
 
-		case ast.PrintStatement: {
-			c.expression(s.Expr)
-
-			if c.hadError {
-				return
-			}
-
-			c.writeBytePos(OP_PRINT, s.Pos)
-		}
-
 		case ast.ExprStatement: {
 			c.expression(s.Expr)
 			c.writeBytePos(OP_POP, s.Pos)

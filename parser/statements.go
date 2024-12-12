@@ -36,7 +36,6 @@ func (p *Parser) statement() ast.Statement {
 		case token.TokenWhileKw: return p.whileStatement()
 		case token.TokenForKw: return p.forStatement()
 		case token.TokenReturnKw: return p.returnStatement()
-		case token.TokenPrintKw: return p.printStatement()
 		case token.TokenLeftBrace: return p.blockStatement()
 		
 		default: return p.exprStatement()
@@ -176,21 +175,6 @@ func (p *Parser) varStatement() ast.VarStatement {
 
 		Name: name,
 		Init: expr,
-	}
-}
-
-func (p *Parser) printStatement() ast.Statement {
-	pos := p.advance().Pos // 'print' keyword
-	expr := p.expression(0)
-
-	p.requireSemicolon()
-
-	return ast.PrintStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
-		},
-
-		Expr: expr,
 	}
 }
 

@@ -39,7 +39,6 @@ const (
 	TokenVarKw    = "var keyword"
 	TokenFnKw     = "fn keyword"
 	TokenReturnKw = "return keyword"
-	TokenPrintKw  = "print keyword"
 
 	TokenAndKw = "and keyword"
 	TokenOrKw  = "or keyword"
