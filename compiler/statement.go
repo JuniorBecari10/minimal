@@ -9,7 +9,7 @@ import (
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.FnStatement: {
-			fnCompiler := newFnCompiler(s.Body.Stmts, c.fileData, c.globals, c.scopeDepth)
+			fnCompiler := newFnCompiler(s.Body.Stmts, c)
 
 			for _, param := range s.Parameters {
 				fnCompiler.addVariable(param.Name, param.Name.Pos)
@@ -24,6 +24,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 			function := value.ValueFunction{
 				Arity: len(s.Parameters),
+				UpvalueCount: len(fnCompiler.upvalues),
 				Chunk: fnChunk,
 				Name: &s.Name.Lexeme,
 			}
@@ -31,6 +32,20 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			index := c.addConstant(function)
 			c.writeBytePos(OP_PUSH_CLOSURE, s.Pos)
 			c.writeBytes(util.IntToBytes(index))
+
+			c.writeBytes(util.IntToBytes(len(fnCompiler.upvalues)))
+
+			// emit upvalue data
+			// structure: 0/1 | index
+			for i := range len(fnCompiler.upvalues) {
+				if fnCompiler.upvalues[i].isLocal {
+					c.writeBytePos(1, s.Pos)
+				} else {
+					c.writeBytePos(0, s.Pos)
+				}
+
+				c.writeBytes(util.IntToBytes(fnCompiler.upvalues[i].index))
+			}
 
 			c.addVariable(s.Name, s.Name.Pos)
 			c.addDeclarationInstruction(s.Pos)

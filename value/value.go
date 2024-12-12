@@ -38,6 +38,7 @@ type ValueVoid struct {}
 
 type ValueFunction struct {
 	Arity int
+	UpvalueCount int
 	Chunk Chunk
 	Name *string // optional
 }
@@ -54,6 +55,7 @@ type ValueNativeFn struct {
 // ---
 
 func (x ValueNumber) String() string {
+	// if it's an integer
 	if x.Value == float64(int64(x.Value)) {
 		return fmt.Sprintf("%.0f", x.Value)
 	}

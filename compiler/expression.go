@@ -45,7 +45,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.IdentifierExpression: {
-			index, opcode := c.resolveVariable(e.Ident)
+			index, opcode := c.resolveVariable(e.Ident, false)
 
 			if index < 0 {
 				return
@@ -166,21 +166,13 @@ func (c *Compiler) expression(expr ast.Expression) {
 			c.expression(e.Expr)
 		
 		case ast.IdentifierAssignmentExpression: {
-			index, opcode := c.resolveVariable(e.Name)
+			index, opcode := c.resolveVariable(e.Name, true)
 
 			if index < 0 {
 				return
 			}
 
 			c.expression(e.Expr)
-
-			if opcode == OP_GET_GLOBAL {
-				opcode = OP_SET_GLOBAL
-			} else if opcode == OP_GET_LOCAL {
-				opcode = OP_SET_LOCAL
-			} else {
-				panic(fmt.Sprintf("Unknown opcode returned: %d", opcode))
-			}
 
 			c.writeBytePos(byte(opcode), e.Pos)
 			c.writeBytes(util.IntToBytes(index))

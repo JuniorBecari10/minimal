@@ -23,6 +23,9 @@ const (
 	OP_GET_LOCAL
 	OP_SET_LOCAL
 
+	OP_GET_UPVALUE
+	OP_SET_UPVALUE
+
 	OP_DEF_GLOBAL
 	OP_GET_GLOBAL
 	OP_SET_GLOBAL
@@ -72,11 +75,17 @@ type Global struct {
 	initialized bool // to check redeclaration
 }
 
+type Upvalue struct {
+	index int
+	isLocal bool
+}
+
 type Compiler struct {
 	ast []ast.Statement
 
 	locals []Local
 	globals []Global
+	upvalues []Upvalue
 
 	chunk chunk.Chunk
 	scopeDepth int
@@ -85,13 +94,16 @@ type Compiler struct {
 	panicMode bool
 
 	fileData *util.FileData
+	enclosing *Compiler
 }
 
 func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 	return &Compiler{
 		ast: ast,
+		
 		locals: []Local{},
 		globals: []Global{},
+		upvalues: []Upvalue{},
 
 		chunk: chunk.Chunk{},
 		scopeDepth: 0,
@@ -100,15 +112,27 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 		panicMode: false,
 
 		fileData: fileData,
+		enclosing: nil,
 	}
 }
 
-func newFnCompiler(ast []ast.Statement, fileData *util.FileData, globals []Global, scopeDepth int) *Compiler {
-	compiler := NewCompiler(ast, fileData)
-	compiler.globals = globals
-	compiler.scopeDepth = scopeDepth + 1
+func newFnCompiler(ast []ast.Statement, enclosing *Compiler) *Compiler {
+	return &Compiler{
+		ast: ast,
 
-	return compiler
+		locals: []Local{},
+		globals: enclosing.globals,
+		upvalues: []Upvalue{}, // TODO: inherit?
+
+		chunk: chunk.Chunk{},
+		scopeDepth: enclosing.scopeDepth + 1,
+
+		hadError: false,
+		panicMode: false,
+
+		fileData: enclosing.fileData,
+		enclosing: enclosing,
+	}
 }
 
 func (c *Compiler) Compile() (chunk.Chunk, bool) {
@@ -168,7 +192,7 @@ func (c *Compiler) addNativeFunctions() {
 		initialized: true,
 	})
 
-	// fn time() -> number
+	// fn time() -> num
 	c.globals = append(c.globals, Global{
 		name: token.Token{ Lexeme: "time" },
 		initialized: true,

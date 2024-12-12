@@ -3,6 +3,7 @@ package disassembler
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/util"
@@ -80,7 +81,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 	switch inst {
 		// inst index value
-		case compiler.OP_PUSH_CONST, compiler.OP_PUSH_CLOSURE: {
+		case compiler.OP_PUSH_CONST: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -92,9 +93,55 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			)
 		}
 
+		// inst index value count + metadata
+		case compiler.OP_PUSH_CLOSURE: {
+			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			d.ip += 4
+
+			upvalueCount, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			d.ip += 4
+
+			// TODO: print the type as well
+			fmt.Printf(
+				"%s | '%s'\n",
+				util.PadRight(strconv.Itoa(index), 6, " "),
+				d.chunk.Constants[index].String(),
+			)
+
+			for i := range upvalueCount {
+				isLocal := d.chunk.Code[d.ip] == 1
+				d.ip += 1
+
+				upvalueIndex, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+				d.ip += 4
+
+				var text string
+				
+				if isLocal {
+					text = "local"
+				} else {
+					text = "upvalue"
+				}
+
+				fmt.Printf(
+					" %s | %s %s | |%s | %s | %s\n",
+					util.PadLeft(strconv.Itoa(ip + 5 * (i + 1)), 6, " "),
+			
+					util.PadRight(strconv.Itoa(d.chunk.Positions[ip].Line + 1), 4, " "),
+					util.PadRight(strconv.Itoa(d.chunk.Positions[ip].Col + 1), 4, " "),
+			
+					strings.Repeat(" ", MAX_INSTRUCTION_LENGTH - 1),
+
+					util.PadRight(strconv.Itoa(upvalueIndex), 6, " "),
+					text,
+				)
+			}
+		}
+
 		// inst [int]
 		case compiler.OP_POPN_VAR,
 			compiler.OP_GET_LOCAL, compiler.OP_SET_LOCAL,
+			compiler.OP_GET_UPVALUE, compiler.OP_SET_UPVALUE,
 			compiler.OP_GET_GLOBAL, compiler.OP_SET_GLOBAL, compiler.OP_CALL: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4

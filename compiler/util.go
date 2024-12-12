@@ -62,13 +62,91 @@ func (c *Compiler) addDeclarationInstruction(pos token.Position) {
 	}
 }
 
-func (c *Compiler) resolveVariable(token token.Token) (int, Opcode) {
+func (c *Compiler) resolveVariable(token token.Token, set bool) (int, Opcode) {
+	// search it in locals
+	index, opcode := c.resolveLocal(token, set)
+
+	// found it in locals.
+	if index != -1 {
+		return index, opcode
+	}
+
+	// didn't find inside locals, let's search it in enclosing compilers for upvalues
+	index, opcode = c.resolveUpvalue(token, set)
+
+	// found it in enclosing compilers.
+	if index != -1 {
+		return index, opcode
+	}
+
+	// didn't find in enclosing compilers, let's search it in globals
+	index, opcode = c.resolveGlobal(token, set)
+
+	// found it in globals.
+	if index != -1 {
+		return index, opcode
+	}
+
+	// the variable doesn't exist.
+	c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist in this or in a parent scope.", token.Lexeme))
+	return -1, OP_GET_LOCAL
+}
+
+func (c *Compiler) resolveLocal(token token.Token, set bool) (int, Opcode) {
 	for i := len(c.locals) - 1; i >= 0; i-- {
 		if c.locals[i].name.Lexeme == token.Lexeme {
-			return i, OP_GET_LOCAL
+			var opcode Opcode
+
+			if set {
+				opcode = OP_SET_LOCAL
+			} else {
+				opcode = OP_GET_LOCAL
+			}
+
+			return i, opcode
 		}
 	}
-	// didn't find inside the locals, let's search it in globals
+
+	return -1, OP_GET_LOCAL
+}
+
+func (c *Compiler) resolveUpvalue(token token.Token, set bool) (int, Opcode) {
+	if c.enclosing == nil {
+		return -1, OP_GET_UPVALUE
+	}
+
+	var opcode Opcode
+
+	if set {
+		opcode = OP_SET_UPVALUE
+	} else {
+		opcode = OP_GET_UPVALUE
+	}
+
+	// search it in enclosing's locals.
+	// the opcode is not necessary
+	index, _ := c.enclosing.resolveLocal(token, set)
+
+	// found it in enclosing's locals.
+	if index != -1 {
+		upIndex := c.addUpvalue(index, true)
+		return upIndex, opcode
+	}
+
+	// didn't find inside the locals of the enclosing function. let's search it in its enclosing recursively.
+	index, _ = c.enclosing.resolveUpvalue(token, set)
+
+	// found it. let's capture that upvalue and add it to the list of upvalues of this function.
+	if index != -1 {
+		upIndex := c.addUpvalue(index, false)
+		return upIndex, opcode
+	}
+
+	// didn't find it in any enclosing function.
+	return -1, OP_GET_UPVALUE
+}
+
+func (c *Compiler) resolveGlobal(token token.Token, set bool) (int, Opcode) {
 	for i := len(c.globals) - 1; i >= 0; i-- {
 		if c.globals[i].name.Lexeme == token.Lexeme {
 			// the scope depth is also verified, because if the compiler is in an inner scope, the global is
@@ -78,13 +156,38 @@ func (c *Compiler) resolveVariable(token token.Token) (int, Opcode) {
 				c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' is used before being initialized.", token.Lexeme))
 			}
 
-			return i, OP_GET_GLOBAL
+			var opcode Opcode
+
+			if set {
+				opcode = OP_SET_GLOBAL
+			} else {
+				opcode = OP_GET_GLOBAL
+			}
+
+			return i, opcode
 		}
 	}
 
-	// the variable doesn't exist
-	c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist in this or in a parent scope.", token.Lexeme))
-	return -1, OP_GET_LOCAL
+	return -1, OP_GET_GLOBAL
+}
+
+func (c *Compiler) addUpvalue(index int, isLocal bool) int {
+	// check if an upvalue to the same variable already exists
+	// if so, return it
+    for i, upvalue := range c.upvalues {
+        if upvalue.index == index && upvalue.isLocal == isLocal {
+            return i
+        }
+    }
+
+	// if not, add a new one and return its index (which is len(c.upvalues) - 1),
+	// because it's the last element.
+    c.upvalues = append(c.upvalues, Upvalue{
+        index:   index,
+        isLocal: isLocal,
+    })
+
+    return len(c.upvalues) - 1
 }
 
 func (c *Compiler) addVariable(token token.Token, pos token.Position) {
