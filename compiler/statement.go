@@ -29,7 +29,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			}
 
 			index := c.addConstant(function)
-			c.writeBytePos(OP_PUSH_CONST, s.Pos)
+			c.writeBytePos(OP_PUSH_CLOSURE, s.Pos)
 			c.writeBytes(util.IntToBytes(index))
 
 			c.addVariable(s.Name, s.Name.Pos)

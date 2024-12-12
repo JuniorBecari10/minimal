@@ -80,7 +80,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 	switch inst {
 		// inst index value
-		case compiler.OP_PUSH_CONST: {
+		case compiler.OP_PUSH_CONST, compiler.OP_PUSH_CLOSURE: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 

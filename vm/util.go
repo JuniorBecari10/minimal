@@ -44,8 +44,8 @@ func isString(v value.Value) bool {
 	return ok
 }
 
-func isFunction(v value.Value) bool {
-	_, ok := v.(value.ValueFunction)
+func isClosure(v value.Value) bool {
+	_, ok := v.(value.ValueClosure)
 	return ok
 }
 

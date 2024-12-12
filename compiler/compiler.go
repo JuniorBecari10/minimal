@@ -11,6 +11,8 @@ type Opcode int
 
 const (
 	OP_PUSH_CONST = iota
+	OP_PUSH_CLOSURE
+
 	OP_ADD
 	OP_SUB
 	OP_MUL

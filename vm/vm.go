@@ -66,6 +66,15 @@ func (v *VM) Run() InterpretResult {
 			case compiler.OP_PUSH_CONST:
 				v.push(v.currentChunk.Constants[v.getInt()])
 
+			case compiler.OP_PUSH_CLOSURE:
+				// this won't panic, because the compiler only emits this instruction if the
+				// constant is a function.
+				fn := v.currentChunk.Constants[v.getInt()].(value.ValueFunction)
+
+				v.push(value.ValueClosure{
+					Fn: &fn,
+				})
+
 			// TODO: add a separated opcode for concatenating strings when typechecking is added
 			case compiler.OP_ADD: {
 				if !typesEqual(v.peek(0), v.peek(1)) {
@@ -274,7 +283,7 @@ func (v *VM) Run() InterpretResult {
 				if len(v.callStack) == 0 {
 					chunk = v.topLevel
 				} else {
-					chunk = v.callStack[len(v.callStack) - 1].function.Chunk
+					chunk = v.callStack[len(v.callStack) - 1].function.Fn.Chunk
 				}
 
 				v.ip = frame.oldIp
@@ -335,15 +344,15 @@ func (v *VM) concatenateStrs() InterpretResult {
 }
 
 func (v *VM) call(callee value.Value, arity int) InterpretResult {
-	if !isFunction(callee) && !isNativeFunction(callee) {
+	if !isClosure(callee) && !isNativeFunction(callee) {
 		v.error(fmt.Sprintf("Can only call functions. (Called '%s')", callee.String()))
 		return STATUS_TYPE_ERROR
 	}
 
 	switch function := callee.(type) {
-		case value.ValueFunction: {
-			if function.Arity != arity {
-				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Arity, arity))
+		case value.ValueClosure: {
+			if function.Fn.Arity != arity {
+				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Fn.Arity, arity))
 				return STATUS_INCORRECT_ARITY
 			}
 		
@@ -363,7 +372,7 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			}
 		
 			v.ip = 0
-			v.currentChunk = &function.Chunk
+			v.currentChunk = &function.Fn.Chunk
 		
 			v.pop() // the function
 		}
@@ -386,6 +395,9 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			v.pop() // the function
 			v.push(result)
 		}
+
+		default:
+			panic(fmt.Sprintf("Unknown called value: '%v'", callee))
 	}
 
 	return STATUS_OK
@@ -610,11 +622,11 @@ func (v *VM) error(message string) {
 			frame := v.callStack[i]
 
 			if i > 0 {
-				posChunk = v.callStack[i - 1].function.Chunk
+				posChunk = v.callStack[i - 1].function.Fn.Chunk
 			}
 
 			pos := posChunk.Positions[frame.oldIp - 1]
-			name := frame.function.Name
+			name := frame.function.Fn.Name
 
 			if name == nil {
 				fmt.Printf(" | in (%d, %d)\n", pos.Line + 1, pos.Col + 1)

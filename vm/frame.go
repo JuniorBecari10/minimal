@@ -3,7 +3,7 @@ package vm
 import "vm-go/value"
 
 type CallFrame struct {
-	function *value.ValueFunction
+	function *value.ValueClosure
 	oldIp int
 	locals []value.Value
 }

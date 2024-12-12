@@ -42,6 +42,10 @@ type ValueFunction struct {
 	Name *string // optional
 }
 
+type ValueClosure struct {
+	Fn *ValueFunction
+}
+
 type ValueNativeFn struct {
 	Arity int
 	Fn NativeFn
@@ -71,3 +75,4 @@ func (x ValueFunction) String() string {
 }
 
 func (x ValueNativeFn) String() string { return "<native fn>" }
+func (x ValueClosure) String() string { return x.Fn.String() }
