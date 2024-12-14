@@ -31,8 +31,10 @@ const (
 	OP_SET_GLOBAL
 
 	OP_POP
-	OP_POP_VAR
-	OP_POPN_VAR
+	OP_POP_LOCAL
+	OP_POPN_LOCAL
+
+	OP_CLOSE_UPVALUE
 
 	OP_JUMP
 	OP_JUMP_TRUE
@@ -68,6 +70,7 @@ const (
 type Local struct {
 	name token.Token
 	depth int
+	isCaptured bool
 }
 
 type Global struct {

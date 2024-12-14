@@ -70,9 +70,23 @@ func (v *VM) Run() InterpretResult {
 				// this won't panic, because the compiler only emits this instruction if the
 				// constant is a function.
 				fn := v.currentChunk.Constants[v.getInt()].(value.ValueFunction)
+				upvalues := []*value.ValueUpvalue{}
+				upvalueCount := v.getInt()
+
+				for range upvalueCount {
+					isLocal := v.getByte()
+					index := v.getInt()
+
+					if isLocal == 1 {
+						upvalues = append(upvalues, captureUpvalue(&v.callStack[len(v.callStack)-1].locals[index]))
+					} else {
+						upvalues = append(upvalues, v.callStack[len(v.callStack)-1].function.Upvalues[index])
+					}
+				}
 
 				v.push(value.ValueClosure{
 					Fn: &fn,
+					Upvalues: upvalues,
 				})
 
 			// TODO: add a separated opcode for concatenating strings when typechecking is added
@@ -130,6 +144,16 @@ func (v *VM) Run() InterpretResult {
 			case compiler.OP_SET_LOCAL:
 				v.callStack[len(v.callStack)-1].locals[v.getInt()] = v.peek(0)
 
+			case compiler.OP_GET_UPVALUE: {
+				slot := v.getInt()
+				v.push(*v.callStack[len(v.callStack)-1].function.Upvalues[slot].Location)
+			}
+
+			case compiler.OP_SET_UPVALUE: {
+				slot := v.getInt()
+				*v.callStack[len(v.callStack)-1].function.Upvalues[slot].Location = v.peek(0)
+			}
+
 			case compiler.OP_DEF_GLOBAL:
 				v.globals = append(v.globals, v.pop())
 
@@ -142,10 +166,10 @@ func (v *VM) Run() InterpretResult {
 			case compiler.OP_POP:
 				v.pop()
 
-			case compiler.OP_POP_VAR:
+			case compiler.OP_POP_LOCAL:
 				v.popVar()
 
-			case compiler.OP_POPN_VAR:
+			case compiler.OP_POPN_LOCAL:
 				v.popnVar(v.getInt())
 
 			case compiler.OP_JUMP:

@@ -81,6 +81,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 				c.expression(e.Left)
 				c.expression(e.Right)
 
+				c.chunk.Positions = append(c.chunk.Positions, e.Operator.Pos)
 				switch e.Operator.Kind {
 					case token.TokenAndKw:
 						c.writeByte(OP_AND)

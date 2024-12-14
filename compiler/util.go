@@ -129,6 +129,10 @@ func (c *Compiler) resolveUpvalue(token token.Token, set bool) (int, Opcode) {
 
 	// found it in enclosing's locals.
 	if index != -1 {
+		// mark the variable as captured, so the compiler can emit an instruction
+		// to close the upvalues that reference it, when it goes out of scope.
+		c.enclosing.locals[index].isCaptured = true
+
 		upIndex := c.addUpvalue(index, true)
 		return upIndex, opcode
 	}
@@ -229,6 +233,7 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 			c.locals = append(c.locals, Local{
 				name:        token,
 				depth:       c.scopeDepth,
+				isCaptured:  false,
 			})
 		}
 	} else {
@@ -245,6 +250,7 @@ func (c *Compiler) addVariable(token token.Token, pos token.Position) {
 			c.locals = append(c.locals, Local{
 				name:        token,
 				depth:       c.scopeDepth,
+				isCaptured:  false,
 			})
 		}
 	}
@@ -267,26 +273,44 @@ func (c *Compiler) endScope(pos token.Position) {
 	if len(c.locals) > 0 {
 		count := 0
 		for i := len(c.locals) - 1; i >= 0; i-- {
-			if c.locals[i].depth != currentScopeDepth {
+			local := &c.locals[i]
+
+			// If the local variable is not in the current scope, stop popping.
+			if local.depth != currentScopeDepth {
 				break
 			}
 
-			count += 1
+			if local.isCaptured {
+				// Pop the other variables, which were counted before this captured one.
+				c.emitPop(count, pos)
+
+				// Pop the captured variable and reset the count for further counting.
+				c.writeBytePos(OP_CLOSE_UPVALUE, pos)
+				count = 0
+			} else {
+				// Count non-captured variables for potential batch popping.
+				count++
+			}
 		}
 
+		// Remove the variables from locals and pop the remaining variables, if any.
 		c.locals = c.locals[:len(c.locals)-count]
-		c.chunk.Positions = append(c.chunk.Positions, pos)
-
-		if count > 1 {
-			c.writeByte(OP_POPN_VAR)
-			c.writeBytes(util.IntToBytes(count))
-		} else if count == 1 {
-			c.writeByte(OP_POP_VAR)
-		}
+		c.emitPop(count, pos)
 	}
 }
 
 // ---
+
+func (c *Compiler) emitPop(count int, pos token.Position) {
+	// If count <= 0 this function does nothing.
+
+	if count > 1 {
+		c.writeBytePos(OP_POPN_LOCAL, pos)
+		c.writeBytes(util.IntToBytes(count))
+	} else if count == 1 {
+		c.writeBytePos(OP_POP_LOCAL, pos)
+	}
+}
 
 func (c *Compiler) addConstant(v value.Value) int {
 	for i, constant := range c.chunk.Constants {

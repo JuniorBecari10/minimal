@@ -56,10 +56,13 @@ func getInstructionName(inst byte) string {
 
 		case compiler.OP_POP:
 			return "OP_POP"
-		case compiler.OP_POP_VAR:
-			return "OP_POP_VAR"
-		case compiler.OP_POPN_VAR:
-			return "OP_POPN_VAR"
+		case compiler.OP_POP_LOCAL:
+			return "OP_POP_LOCAL"
+		case compiler.OP_POPN_LOCAL:
+			return "OP_POPN_LOCAL"
+
+		case compiler.OP_CLOSE_UPVALUE:
+			return "OP_CLOSE_UPVALUE"
 
 		case compiler.OP_JUMP:
 			return "OP_JUMP"

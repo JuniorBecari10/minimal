@@ -22,6 +22,13 @@ func valuesEqual(a, b value.Value) bool {
 	return false
 }
 
+func (v *VM) getByte() byte {
+	res := v.currentChunk.Code[v.ip]
+	v.ip += 1
+
+	return res
+}
+
 func (v *VM) getInt() int {
 	res, _ := util.BytesToInt(v.currentChunk.Code[v.ip:v.ip + 4])
 	v.ip += 4
@@ -52,4 +59,14 @@ func isClosure(v value.Value) bool {
 func isNativeFunction(v value.Value) bool {
 	_, ok := v.(value.ValueNativeFn)
 	return ok
+}
+
+// ---
+
+func captureUpvalue(local *value.Value) *value.ValueUpvalue {
+	upvalue := value.ValueUpvalue{
+		Location: local,
+	}
+
+	return &upvalue
 }

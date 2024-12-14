@@ -139,7 +139,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst [int]
-		case compiler.OP_POPN_VAR,
+		case compiler.OP_POPN_LOCAL,
 			compiler.OP_GET_LOCAL, compiler.OP_SET_LOCAL,
 			compiler.OP_GET_UPVALUE, compiler.OP_SET_UPVALUE,
 			compiler.OP_GET_GLOBAL, compiler.OP_SET_GLOBAL, compiler.OP_CALL: {
