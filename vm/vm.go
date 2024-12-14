@@ -14,7 +14,7 @@ import (
 type InterpretResult int
 
 const (
-	STATUS_OK = iota
+	STATUS_OK InterpretResult = iota
 	STATUS_STACK_EMPTY
 	STATUS_OUT_OF_BOUNDS
 	STATUS_DIV_ZERO
@@ -24,13 +24,14 @@ const (
 
 type VM struct {
 	currentChunk *chunk.Chunk
-	topLevel chunk.Chunk
+	topLevel     chunk.Chunk
 
 	stack     []value.Value
 	globals   []value.Value
 	callStack []CallFrame
-
-	ip int
+	upvalues  []value.Upvalue // can be a linked list also, and it owns them.
+ 
+	ip    int
 	oldIp int
 
 	hadError bool
@@ -45,6 +46,7 @@ func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 		stack:     []value.Value{},
 		globals:   []value.Value{},
 		callStack: []CallFrame{},
+		upvalues:  []value.Upvalue{},
 
 		ip:        0,
 		oldIp:     0,
@@ -67,19 +69,23 @@ func (v *VM) Run() InterpretResult {
 				v.push(v.currentChunk.Constants[v.getInt()])
 
 			case compiler.OP_PUSH_CLOSURE:
-				// this won't panic, because the compiler only emits this instruction if the
-				// constant is a function.
+				// This won't panic, because the compiler only emits this instruction
+				// if the constant is a function.
 				fn := v.currentChunk.Constants[v.getInt()].(value.ValueFunction)
-				upvalues := []*value.ValueUpvalue{}
+
+				upvalues := []*value.Upvalue{}
 				upvalueCount := v.getInt()
 
+				// Decode upvalue data from the instruction and put it into the object
 				for range upvalueCount {
 					isLocal := v.getByte()
 					index := v.getInt()
 
 					if isLocal == 1 {
-						upvalues = append(upvalues, captureUpvalue(&v.callStack[len(v.callStack)-1].locals[index]))
+						// If it's a local, create an upvalue and put it there
+						upvalues = append(upvalues, v.captureUpvalue(&v.callStack[len(v.callStack)-1].locals[index]))
 					} else {
+						// If it's not, get it from the enclosing function's upvalue list.
 						upvalues = append(upvalues, v.callStack[len(v.callStack)-1].function.Upvalues[index])
 					}
 				}
@@ -162,6 +168,11 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_SET_GLOBAL:
 				v.globals[v.getInt()] = v.peek(0)
+
+			case compiler.OP_CLOSE_UPVALUE: {
+				v.closeUpvalue(&v.callStack[len(v.callStack)-1].locals[len(v.callStack[len(v.callStack)-1].locals) - 1])
+				v.callStack[len(v.callStack)-1].locals = v.callStack[len(v.callStack)-1].locals[:len(v.callStack[len(v.callStack)-1].locals)]
+			}
 
 			case compiler.OP_POP:
 				v.pop()

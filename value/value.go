@@ -38,23 +38,18 @@ type ValueVoid struct {}
 
 type ValueFunction struct {
 	Arity int
-	UpvalueCount int // TODO: remove
 	Chunk Chunk
 	Name *string // optional
 }
 
 type ValueClosure struct {
 	Fn *ValueFunction
-	Upvalues []*ValueUpvalue
+	Upvalues []*Upvalue
 }
 
 type ValueNativeFn struct {
 	Arity int
 	Fn NativeFn
-}
-
-type ValueUpvalue struct {
-	Location *Value
 }
 
 // ---
@@ -83,4 +78,3 @@ func (x ValueFunction) String() string {
 
 func (x ValueNativeFn) String() string { return "<native fn>" }
 func (x ValueClosure) String() string { return x.Fn.String() }
-func (x ValueUpvalue) String() string { return "upvalue" }

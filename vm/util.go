@@ -63,10 +63,36 @@ func isNativeFunction(v value.Value) bool {
 
 // ---
 
-func captureUpvalue(local *value.Value) *value.ValueUpvalue {
-	upvalue := value.ValueUpvalue{
-		Location: local,
+func (v *VM) captureUpvalue(slot *value.Value) *value.Upvalue {
+	// Search for an existing upvalue for that variable.
+	for i, upvalue := range v.upvalues {
+		// If an upvalue to this location already exists, return it.
+		if upvalue.Location == slot {
+			return &v.upvalues[i]
+		}
 	}
 
-	return &upvalue
+	// Otherwise, create a new upvalue, and return a reference to it.
+	v.upvalues = append(v.upvalues, value.Upvalue{
+		Location: slot,
+		IsClosed: false,
+	})
+
+	return &v.upvalues[len(v.upvalues)-1]
+}
+
+func (v *VM) closeUpvalue(slot *value.Value) {
+	for i := range v.upvalues {
+		if v.upvalues[i].Location == slot {
+			upvalue := value.Upvalue{
+				ClosedValue: *slot,
+				IsClosed: true,
+			}
+	
+			upvalue.Location = &upvalue.ClosedValue
+			v.upvalues[i] = upvalue
+
+			return
+		}
+	}
 }

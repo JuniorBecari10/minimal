@@ -24,7 +24,6 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 			function := value.ValueFunction{
 				Arity: len(s.Parameters),
-				UpvalueCount: len(fnCompiler.upvalues),
 				Chunk: fnChunk,
 				Name: &s.Name.Lexeme,
 			}
