@@ -171,6 +171,9 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_CLOSE_UPVALUE: {
 				v.closeUpvalue(&v.callStack[len(v.callStack)-1].locals[len(v.callStack[len(v.callStack)-1].locals) - 1])
+
+				// pop the variable, as it's now safe to pop it,
+				// since it's captured and put into the upvalue that captures it.
 				v.callStack[len(v.callStack)-1].locals = v.callStack[len(v.callStack)-1].locals[:len(v.callStack[len(v.callStack)-1].locals)]
 			}
 
