@@ -144,6 +144,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				c.writeBytePos(OP_VOID, s.Pos)
 			}
 
+			c.endScope(s.Pos)
 			c.writeBytePos(OP_RETURN, s.Pos)
 		}
 

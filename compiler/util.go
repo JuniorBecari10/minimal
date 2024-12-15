@@ -14,6 +14,8 @@ func (c *Compiler) compileFnBody(pos token.Position) (chunk.Chunk, bool) {
 	c.statements(c.ast)
 
 	if len(c.chunk.Code) > 0 && c.chunk.Code[len(c.chunk.Code) - 1] != OP_RETURN {
+		c.endScope(pos)
+
 		c.writeBytePos(OP_VOID, pos)
 		c.writeBytePos(OP_RETURN, pos)
 	}

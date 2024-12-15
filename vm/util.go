@@ -63,18 +63,18 @@ func isNativeFunction(v value.Value) bool {
 
 // ---
 
-func (v *VM) captureUpvalue(locals *[]value.Value, index int) *value.Upvalue {
+func (v *VM) captureUpvalue(localsIndex int, index int) *value.Upvalue {
 	// Search for an existing upvalue for that variable.
 	for i, upvalue := range v.openUpvalues {
 		// If an upvalue to this location already exists, return it.
-		if upvalue.Locals == locals && upvalue.Index == index {
+		if upvalue.LocalsIndex == localsIndex && upvalue.Index == index {
 			return v.openUpvalues[i]
 		}
 	}
 
 	// Otherwise, create a new upvalue, and return a reference to it.
 	up := value.Upvalue{
-		Locals: locals,
+		LocalsIndex: localsIndex,
 		Index: index,
 		IsClosed: false,
 	}
@@ -83,12 +83,11 @@ func (v *VM) captureUpvalue(locals *[]value.Value, index int) *value.Upvalue {
 	return v.openUpvalues[len(v.openUpvalues)-1]
 }
 
-// watch out for this pointer not to be invalidated
-func (v *VM) closeUpvalue(locals *[]value.Value, index int) {
+func (v *VM) closeUpvalue(localsIndex int, index int) {
 	for i, upvalue := range v.openUpvalues {
-		if upvalue.Locals == locals && upvalue.Index == index {
+		if upvalue.LocalsIndex == localsIndex && upvalue.Index == index {
 			upvalue := value.Upvalue{
-				ClosedValue: getUpvalueValue(upvalue),
+				ClosedValue: v.getUpvalueValue(upvalue),
 				IsClosed: true,
 			}
 	
@@ -105,10 +104,18 @@ func (v *VM) closeUpvalue(locals *[]value.Value, index int) {
 
 // ---
 
-func getUpvalueValue(upvalue *value.Upvalue) value.Value {
+func (v *VM) getUpvalueValue(upvalue *value.Upvalue) value.Value {
 	if upvalue.IsClosed {
 		return upvalue.ClosedValue
 	} else {
-		return (*upvalue.Locals)[upvalue.Index]
+		return v.callStack[upvalue.LocalsIndex].locals[upvalue.Index]
+	}
+}
+
+func (v *VM) setUpvalueValue(upvalue *value.Upvalue, val value.Value) {
+	if upvalue.IsClosed {
+		upvalue.ClosedValue = val
+	} else {
+		v.callStack[upvalue.LocalsIndex].locals[upvalue.Index] = val
 	}
 }

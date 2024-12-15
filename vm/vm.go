@@ -83,11 +83,11 @@ func (v *VM) Run() InterpretResult {
 
 					if isLocal == 1 {
 						// If it's a local, create an upvalue and put it there.
-						up := v.captureUpvalue(&v.callStack[len(v.callStack)-1].locals, index)
+						up := v.captureUpvalue(len(v.callStack) - 1, index)
 						upvalues = append(upvalues, up)
 					} else {
 						// If it's not, get it from the enclosing function's upvalue list.
-						upvalues = append(upvalues, v.callStack[len(v.callStack)-1].function.Upvalues[index])
+						upvalues = append(upvalues, v.callStack[len(v.callStack) - 2].function.Upvalues[index])
 					}
 				}
 				
@@ -153,12 +153,12 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_GET_UPVALUE: {
 				slot := v.getInt()
-				v.push(getUpvalueValue(v.callStack[len(v.callStack)-1].function.Upvalues[slot]))
+				v.push(v.getUpvalueValue(v.callStack[len(v.callStack)-1].function.Upvalues[slot]))
 			}
 
 			case compiler.OP_SET_UPVALUE: {
 				slot := v.getInt()
-				(*v.callStack[len(v.callStack)-1].function.Upvalues[slot].Locals)[v.callStack[len(v.callStack)-1].function.Upvalues[slot].Index] = v.peek(0)
+				v.setUpvalueValue(v.callStack[len(v.callStack)-1].function.Upvalues[slot], v.peek(0))
 			}
 
 			case compiler.OP_DEF_GLOBAL:
@@ -171,11 +171,11 @@ func (v *VM) Run() InterpretResult {
 				v.globals[v.getInt()] = v.peek(0)
 
 			case compiler.OP_CLOSE_UPVALUE: {
-				v.closeUpvalue(&v.callStack[len(v.callStack)-1].locals, len(v.callStack[len(v.callStack)-1].locals) - 1)
+				v.closeUpvalue(len(v.callStack) - 1, len(v.callStack[len(v.callStack)-1].locals) - 1)
 
 				// pop the variable, as it's now safe to pop it,
 				// since it's captured and put into the upvalue that captures it.
-				v.callStack[len(v.callStack)-1].locals = v.callStack[len(v.callStack)-1].locals[:len(v.callStack[len(v.callStack)-1].locals)]
+				v.callStack[len(v.callStack)-1].locals = v.callStack[len(v.callStack)-1].locals[:len(v.callStack[len(v.callStack)-1].locals) - 1]
 			}
 
 			case compiler.OP_POP:
@@ -429,9 +429,9 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			}
 
 			util.Reverse(vars)
-			result := function.Fn(vars)
-
 			v.pop() // the function
+
+			result := function.Fn(vars)
 			v.push(result)
 		}
 
