@@ -274,6 +274,8 @@ func (c *Compiler) endScope(pos token.Position) {
 
 	if len(c.locals) > 0 {
 		count := 0
+		realCount := 0
+
 		for i := len(c.locals) - 1; i >= 0; i-- {
 			local := &c.locals[i]
 
@@ -289,14 +291,16 @@ func (c *Compiler) endScope(pos token.Position) {
 				// Pop the captured variable and reset the count for further counting.
 				c.writeBytePos(OP_CLOSE_UPVALUE, pos)
 				count = 0
+				realCount++
 			} else {
 				// Count non-captured variables for potential batch popping.
 				count++
+				realCount++
 			}
 		}
 
 		// Remove the variables from locals and pop the remaining variables, if any.
-		c.locals = c.locals[:len(c.locals)-count]
+		c.locals = c.locals[:len(c.locals)-realCount]
 		c.emitPop(count, pos)
 	}
 }

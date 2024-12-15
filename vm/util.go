@@ -7,19 +7,26 @@ import (
 )
 
 func typesEqual(a, b value.Value) bool {
+	// Bypass the check if either side is nil, to allow for nil checking.
+	if isNil(a) || isNil(b) {
+		return true
+	}
+
+	// Check if the types of a and b are the same
 	return reflect.TypeOf(a) == reflect.TypeOf(b)
 }
 
 func valuesEqual(a, b value.Value) bool {
-	switch val := a.(type) {
-		case value.ValueNumber:
-			return val.Value == b.(value.ValueNumber).Value
+	switch a.(type) {
+		case value.ValueNil:
+			return true;
 		
-		case value.ValueBool:
-			return val.Value == b.(value.ValueBool).Value
+		case value.ValueVoid:
+			return true;
+		
+		default:
+			return reflect.DeepEqual(a, b)
 	}
-
-	return false
 }
 
 func (v *VM) getByte() byte {
@@ -43,6 +50,11 @@ func isNumber(v value.Value) bool {
 
 func isBool(v value.Value) bool {
 	_, ok := v.(value.ValueBool)
+	return ok
+}
+
+func isNil(v value.Value) bool {
+	_, ok := v.(value.ValueNil)
 	return ok
 }
 
