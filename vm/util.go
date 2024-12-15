@@ -63,36 +63,52 @@ func isNativeFunction(v value.Value) bool {
 
 // ---
 
-func (v *VM) captureUpvalue(slot *value.Value) *value.Upvalue {
+func (v *VM) captureUpvalue(locals *[]value.Value, index int) *value.Upvalue {
 	// Search for an existing upvalue for that variable.
-	for i, upvalue := range v.upvalues {
+	for i, upvalue := range v.openUpvalues {
 		// If an upvalue to this location already exists, return it.
-		if upvalue.Location == slot {
-			return &v.upvalues[i]
+		if upvalue.Locals == locals && upvalue.Index == index {
+			return v.openUpvalues[i]
 		}
 	}
 
 	// Otherwise, create a new upvalue, and return a reference to it.
-	v.upvalues = append(v.upvalues, value.Upvalue{
-		Location: slot,
+	up := value.Upvalue{
+		Locals: locals,
+		Index: index,
 		IsClosed: false,
-	})
+	}
 
-	return &v.upvalues[len(v.upvalues)-1]
+	v.openUpvalues = append(v.openUpvalues, &up)
+	return v.openUpvalues[len(v.openUpvalues)-1]
 }
 
-func (v *VM) closeUpvalue(slot *value.Value) {
-	for i := range v.upvalues {
-		if v.upvalues[i].Location == slot {
+// watch out for this pointer not to be invalidated
+func (v *VM) closeUpvalue(locals *[]value.Value, index int) {
+	for i, upvalue := range v.openUpvalues {
+		if upvalue.Locals == locals && upvalue.Index == index {
 			upvalue := value.Upvalue{
-				ClosedValue: *slot,
+				ClosedValue: getUpvalueValue(upvalue),
 				IsClosed: true,
 			}
 	
-			upvalue.Location = &upvalue.ClosedValue
-			v.upvalues[i] = upvalue
+			*v.openUpvalues[i] = upvalue
 
+			// remove the upvalue from the list, as it's not open anymore.
+			// this isn't a concurrency problem because after changing the list,
+			// we'll return from this function.
+			util.Remove(v.openUpvalues, i)
 			return
 		}
+	}
+}
+
+// ---
+
+func getUpvalueValue(upvalue *value.Upvalue) value.Value {
+	if upvalue.IsClosed {
+		return upvalue.ClosedValue
+	} else {
+		return (*upvalue.Locals)[upvalue.Index]
 	}
 }

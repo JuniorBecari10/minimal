@@ -29,7 +29,7 @@ type VM struct {
 	stack     []value.Value
 	globals   []value.Value
 	callStack []CallFrame
-	upvalues  []value.Upvalue // can be a linked list also, and it owns them.
+	openUpvalues  []*value.Upvalue // can be a linked list also, and it owns them.
  
 	ip    int
 	oldIp int
@@ -46,7 +46,7 @@ func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
 		stack:     []value.Value{},
 		globals:   []value.Value{},
 		callStack: []CallFrame{},
-		upvalues:  []value.Upvalue{},
+		openUpvalues:  []*value.Upvalue{},
 
 		ip:        0,
 		oldIp:     0,
@@ -76,20 +76,21 @@ func (v *VM) Run() InterpretResult {
 				upvalues := []*value.Upvalue{}
 				upvalueCount := v.getInt()
 
-				// Decode upvalue data from the instruction and put it into the object
+				// Decode upvalue data from the instruction and put it into the object.
 				for range upvalueCount {
 					isLocal := v.getByte()
 					index := v.getInt()
 
 					if isLocal == 1 {
-						// If it's a local, create an upvalue and put it there
-						upvalues = append(upvalues, v.captureUpvalue(&v.callStack[len(v.callStack)-1].locals[index]))
+						// If it's a local, create an upvalue and put it there.
+						up := v.captureUpvalue(&v.callStack[len(v.callStack)-1].locals, index)
+						upvalues = append(upvalues, up)
 					} else {
 						// If it's not, get it from the enclosing function's upvalue list.
 						upvalues = append(upvalues, v.callStack[len(v.callStack)-1].function.Upvalues[index])
 					}
 				}
-
+				
 				v.push(value.ValueClosure{
 					Fn: &fn,
 					Upvalues: upvalues,
@@ -152,12 +153,12 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_GET_UPVALUE: {
 				slot := v.getInt()
-				v.push(*v.callStack[len(v.callStack)-1].function.Upvalues[slot].Location)
+				v.push(getUpvalueValue(v.callStack[len(v.callStack)-1].function.Upvalues[slot]))
 			}
 
 			case compiler.OP_SET_UPVALUE: {
 				slot := v.getInt()
-				*v.callStack[len(v.callStack)-1].function.Upvalues[slot].Location = v.peek(0)
+				(*v.callStack[len(v.callStack)-1].function.Upvalues[slot].Locals)[v.callStack[len(v.callStack)-1].function.Upvalues[slot].Index] = v.peek(0)
 			}
 
 			case compiler.OP_DEF_GLOBAL:
@@ -170,7 +171,7 @@ func (v *VM) Run() InterpretResult {
 				v.globals[v.getInt()] = v.peek(0)
 
 			case compiler.OP_CLOSE_UPVALUE: {
-				v.closeUpvalue(&v.callStack[len(v.callStack)-1].locals[len(v.callStack[len(v.callStack)-1].locals) - 1])
+				v.closeUpvalue(&v.callStack[len(v.callStack)-1].locals, len(v.callStack[len(v.callStack)-1].locals) - 1)
 
 				// pop the variable, as it's now safe to pop it,
 				// since it's captured and put into the upvalue that captures it.
