@@ -77,6 +77,12 @@ type IdentifierAssignmentExpression struct {
 	Expr Expression
 }
 
+type FnExpression struct {
+	AstBase
+	Parameters []Parameter
+	Body BlockStatement
+}
+
 // ---
 
 func (x NumberExpression) expr()     {}
@@ -91,3 +97,4 @@ func (x GroupExpression) expr()      {}
 func (x CallExpression) expr()      {}
 func (x IdentifierExpression) expr() {}
 func (x IdentifierAssignmentExpression) expr() {}
+func (x FnExpression) expr() {}

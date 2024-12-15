@@ -102,6 +102,55 @@ func (p *Parser) parseVoid() ast.Expression {
 	}
 }
 
+func (p *Parser) lParen() ast.Expression {
+	// lambda: ')' | ( ident ',' | ')' )
+	if p.peek(1).Kind == token.TokenRightParen ||
+		(p.peek(1).Kind == token.TokenIdentifier && (p.peek(2).Kind == token.TokenRightParen || p.peek(2).Kind == token.TokenComma)) {
+		return p.parseLambda()
+	} else {
+		return p.parseGroup()
+	}
+}
+
+func (p *Parser) parseLambda() ast.Expression {
+	pos := p.peek(0).Pos
+	parameters := p.parseParameters()
+
+	p.expect(token.TokenArrow)
+
+	var body ast.BlockStatement
+
+	if p.peek(0).Kind == token.TokenLeftBrace {
+		body = p.parseBlock()
+	} else {
+		pos := p.peek(0).Pos
+		expr := p.expression(PrecLowest)
+
+		body = ast.BlockStatement{
+			AstBase: ast.AstBase{
+				Pos: pos,
+			},
+			Stmts: []ast.Statement{
+				ast.ReturnStatement{
+					AstBase: ast.AstBase{
+						Pos: pos,
+					},
+					Expression: &expr,
+				},
+			},
+		}
+	}
+
+	return ast.FnExpression{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+
+		Parameters: parameters,
+		Body: body,
+	}
+}
+
 func (p *Parser) parseGroup() ast.Expression {
 	pos := p.peek(0).Pos
 	p.expect(token.TokenLeftParen)

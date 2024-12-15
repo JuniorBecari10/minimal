@@ -56,7 +56,7 @@ func (d *Disassembler) disassemble(name string) {
 		switch fn := c.(type) {
 			case value.ValueFunction: {
 				fnDiss := NewDisassembler(fn.Chunk, d.fileData)
-				fnName := fmt.Sprintf("function, in %s", name)
+				fnName := fmt.Sprintf("anonymous function, in %s", name)
 
 				if fn.Name != nil {
 					fnName = fmt.Sprintf("function '%s', in %s", *fn.Name, name)

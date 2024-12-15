@@ -10,6 +10,45 @@ import (
 	"vm-go/value"
 )
 
+func (c *Compiler) compileFunction(parameters []ast.Parameter, body ast.BlockStatement, name *string, pos token.Position) {
+	fnCompiler := newFnCompiler(body.Stmts, c)
+
+	for _, param := range parameters {
+		fnCompiler.addVariable(param.Name, param.Name.Pos)
+	}
+
+	fnChunk, hadError := fnCompiler.compileFnBody(pos)
+
+	if hadError {
+		c.hadError = true
+		return
+	}
+
+	function := value.ValueFunction{
+		Arity: len(parameters),
+		Chunk: fnChunk,
+		Name: name,
+	}
+
+	index := c.addConstant(function)
+	c.writeBytePos(OP_PUSH_CLOSURE, pos)
+	c.writeBytes(util.IntToBytes(index))
+
+	c.writeBytes(util.IntToBytes(len(fnCompiler.upvalues)))
+
+	// emit upvalue data
+	// structure: 0/1 | index
+	for i := range len(fnCompiler.upvalues) {
+		if fnCompiler.upvalues[i].isLocal {
+			c.writeBytePos(1, pos)
+		} else {
+			c.writeBytePos(0, pos)
+		}
+
+		c.writeBytes(util.IntToBytes(fnCompiler.upvalues[i].index))
+	}
+}
+
 func (c *Compiler) compileFnBody(pos token.Position) (chunk.Chunk, bool) {
 	c.statements(c.ast)
 

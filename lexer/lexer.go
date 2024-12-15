@@ -66,7 +66,15 @@ func (l *Lexer) scanToken() {
 
 	switch c {
 		case '+': l.addToken(token.TokenPlus)
-		case '-': l.addToken(token.TokenMinus)
+
+		case '-': {
+			if l.match('>') {
+				l.addToken(token.TokenArrow)
+			} else {
+				l.addToken(token.TokenMinus)
+			}
+		}
+
 		case '*': l.addToken(token.TokenStar)
 		case '/': {
 			if l.match('/') {

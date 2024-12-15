@@ -3,48 +3,12 @@ package compiler
 import (
 	"vm-go/ast"
 	"vm-go/util"
-	"vm-go/value"
 )
 
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.FnStatement: {
-			fnCompiler := newFnCompiler(s.Body.Stmts, c)
-
-			for _, param := range s.Parameters {
-				fnCompiler.addVariable(param.Name, param.Name.Pos)
-			}
-
-			fnChunk, hadError := fnCompiler.compileFnBody(s.Pos)
-
-			if hadError {
-				c.hadError = true
-				return
-			}
-
-			function := value.ValueFunction{
-				Arity: len(s.Parameters),
-				Chunk: fnChunk,
-				Name: &s.Name.Lexeme,
-			}
-
-			index := c.addConstant(function)
-			c.writeBytePos(OP_PUSH_CLOSURE, s.Pos)
-			c.writeBytes(util.IntToBytes(index))
-
-			c.writeBytes(util.IntToBytes(len(fnCompiler.upvalues)))
-
-			// emit upvalue data
-			// structure: 0/1 | index
-			for i := range len(fnCompiler.upvalues) {
-				if fnCompiler.upvalues[i].isLocal {
-					c.writeBytePos(1, s.Pos)
-				} else {
-					c.writeBytePos(0, s.Pos)
-				}
-
-				c.writeBytes(util.IntToBytes(fnCompiler.upvalues[i].index))
-			}
+			c.compileFunction(s.Parameters, s.Body, &s.Name.Lexeme, s.Pos)
 
 			c.addVariable(s.Name, s.Name.Pos)
 			c.addDeclarationInstruction(s.Pos)

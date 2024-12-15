@@ -26,6 +26,8 @@ const (
 	TokenComma     = ","
 	TokenPercent   = "%"
 
+	TokenArrow = "->"
+
 	TokenGreater      = ">"
 	TokenGreaterEqual = ">="
 

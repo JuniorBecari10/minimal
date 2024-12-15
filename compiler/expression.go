@@ -178,5 +178,8 @@ func (c *Compiler) expression(expr ast.Expression) {
 			c.writeBytePos(byte(opcode), e.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
+
+		case ast.FnExpression:
+			c.compileFunction(e.Parameters, e.Body, nil, e.Pos)	
 	}
 }
