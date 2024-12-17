@@ -180,6 +180,14 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.FnExpression:
-			c.compileFunction(e.Parameters, e.Body, nil, e.Pos)	
+			c.compileFunction(e.Parameters, e.Body, nil, e.Pos)
+		
+		case ast.IfExpression:
+			elseFn := func() {
+				c.expression(e.Else)
+			}
+			
+			else_ := &elseFn
+			c.compileIf(e.Condition, func() { c.expression(e.Then) }, else_, e.Pos)
 	}
 }

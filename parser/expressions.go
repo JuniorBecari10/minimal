@@ -151,6 +151,35 @@ func (p *Parser) parseLambda() ast.Expression {
 	}
 }
 
+func (p *Parser) parseIfExpr() ast.Expression {
+	pos := p.advance().Pos
+	cond := p.expression(PrecLowest)
+
+	p.expect(token.TokenColon)
+	then := p.expression(PrecLowest)
+
+	p.expect(token.TokenElseKw)
+	var else_ ast.Expression
+
+	// Check 'else if' chain and not require the colon if so.
+	if p.check(token.TokenIfKw) {
+		else_ = p.expression(PrecLowest)
+	} else {
+		p.expect(token.TokenColon)
+		else_ = p.expression(PrecLowest)
+	}
+
+	return ast.IfExpression{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+
+		Condition: cond,
+		Then: then,
+		Else: else_,
+	}
+}
+
 func (p *Parser) parseGroup() ast.Expression {
 	pos := p.peek(0).Pos
 	p.expect(token.TokenLeftParen)

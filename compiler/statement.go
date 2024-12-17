@@ -26,31 +26,17 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		}
 
 		case ast.IfStatement: {
-			c.expression(s.Condition)
-			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
-
-			jumpFalseOffsetIndex := len(c.chunk.Code)
-			c.writeBytes(util.IntToBytes(0)) // dummy
-			c.writeBytePos(OP_POP, s.Pos)
-
-			c.block(s.Then.Stmts, s.Pos)
+			var else_ *func() = nil
 
 			if s.Else != nil {
-				c.writeBytePos(OP_JUMP, s.Pos)
-				jumpOffsetIndex := len(c.chunk.Code)
-				c.writeBytes(util.IntToBytes(0)) // dummy
+				elseFn := func() {
+					c.block(s.Else.Stmts, s.Pos)
+				}
 
-				// insert the real offset into the instruction, right before OP_POP
-				c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
-
-				c.writeBytePos(OP_POP, s.Pos)
-				c.block(s.Else.Stmts, s.Pos)
- 
-				c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
-			} else {
-				// insert the real offset into the instruction, if there's no else
-				c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
+				else_ = &elseFn
 			}
+
+			c.compileIf(s.Condition, func() { c.block(s.Then.Stmts, s.Pos) }, else_, s.Pos)
 		}
 
 		case ast.WhileStatement: {

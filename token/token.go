@@ -24,6 +24,7 @@ const (
 	TokenBangEqual = "!="
 	TokenSemicolon = ";"
 	TokenComma     = ","
+	TokenColon     = ":"
 	TokenPercent   = "%"
 
 	TokenArrow = "->"

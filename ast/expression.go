@@ -83,6 +83,13 @@ type FnExpression struct {
 	Body BlockStatement
 }
 
+type IfExpression struct {
+	AstBase
+	Condition Expression
+	Then Expression
+	Else Expression
+}
+
 // ---
 
 func (x NumberExpression) expr()     {}
@@ -98,3 +105,4 @@ func (x CallExpression) expr()      {}
 func (x IdentifierExpression) expr() {}
 func (x IdentifierAssignmentExpression) expr() {}
 func (x FnExpression) expr() {}
+func (x IfExpression) expr() {}

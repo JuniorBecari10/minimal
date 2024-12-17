@@ -10,6 +10,36 @@ import (
 	"vm-go/value"
 )
 
+// 'then' aNd 'else_' are functions because it accepts both statements and expressions, and functions that
+// compile these things don't return and have side effects.
+func (c *Compiler) compileIf(condition ast.Expression, then func(), else_ *func(), pos token.Position) {
+	c.expression(condition)
+	c.writeBytePos(OP_JUMP_FALSE, pos)
+
+	jumpFalseOffsetIndex := len(c.chunk.Code)
+	c.writeBytes(util.IntToBytes(0)) // dummy
+	c.writeBytePos(OP_POP, pos)
+
+	then()
+
+	if else_ != nil {
+		c.writeBytePos(OP_JUMP, pos)
+		jumpOffsetIndex := len(c.chunk.Code)
+		c.writeBytes(util.IntToBytes(0)) // dummy
+
+		// insert the real offset into the instruction, right before OP_POP
+		c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
+
+		c.writeBytePos(OP_POP, pos)
+		(*else_)()
+
+		c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
+	} else {
+		// insert the real offset into the instruction, if there's no else
+		c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
+	}
+}
+
 func (c *Compiler) compileFunction(parameters []ast.Parameter, body ast.BlockStatement, name *string, pos token.Position) {
 	fnCompiler := newFnCompiler(body.Stmts, c)
 

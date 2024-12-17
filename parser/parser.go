@@ -58,6 +58,7 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 		token.TokenVoidKw: p.parseVoid,
 
 		token.TokenLeftParen: p.lParen,
+		token.TokenIfKw: p.parseIfExpr,
 
 		token.TokenNotKw: func() ast.Expression { return p.parseUnary(token.TokenNotKw) },
 		token.TokenMinus: func() ast.Expression { return p.parseUnary(token.TokenMinus) },
