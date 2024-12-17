@@ -87,7 +87,7 @@ func (v *VM) Run() InterpretResult {
 						upvalues = append(upvalues, up)
 					} else {
 						// If it's not, get it from the enclosing function's upvalue list.
-						upvalues = append(upvalues, v.callStack[len(v.callStack) - 2].function.Upvalues[index])
+						upvalues = append(upvalues, v.callStack[len(v.callStack) - 1].function.Upvalues[index])
 					}
 				}
 				
@@ -668,7 +668,7 @@ func (v *VM) error(message string) {
 			name := frame.function.Fn.Name
 
 			if name == nil {
-				fmt.Printf(" | in (%d, %d)\n", pos.Line + 1, pos.Col + 1)
+				fmt.Printf(" | in <anonymous> (%d, %d)\n", pos.Line + 1, pos.Col + 1)
 			} else {
 				fmt.Printf(" | in %s (%d, %d)\n", *name, pos.Line + 1, pos.Col + 1)
 			}
