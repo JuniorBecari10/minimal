@@ -1,8 +1,11 @@
 package vm
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 	"vm-go/value"
 )
@@ -16,6 +19,11 @@ func (v *VM) includeNativeFns() {
 	v.globals = append(v.globals, value.ValueNativeFn{
 		Arity: 1,
 		Fn: nativePrintln,
+	})
+
+	v.globals = append(v.globals, value.ValueNativeFn{
+		Arity: 1,
+		Fn: nativeInput,
 	})
 
 	v.globals = append(v.globals, value.ValueNativeFn{
@@ -44,6 +52,26 @@ func nativePrint(args []value.Value) value.Value {
 func nativePrintln(args []value.Value) value.Value {
 	fmt.Println(args[0])
 	return value.ValueVoid{}
+}
+
+func nativeInput(args []value.Value) value.Value {
+	prompt, ok := args[0].(value.ValueString)
+    if !ok {
+        return value.ValueNil{}
+    }
+
+    fmt.Print(prompt.Value)
+
+    reader := bufio.NewReader(os.Stdin)
+    input, err := reader.ReadString('\n')
+
+    if err != nil {
+        return value.ValueNil{}
+    }
+
+    // Trim the newline character from the input
+    input = strings.TrimSpace(input)
+    return value.ValueString{Value: input}
 }
 
 func nativeTime(_ []value.Value) value.Value {

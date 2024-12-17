@@ -195,6 +195,12 @@ func (c *Compiler) addNativeFunctions() {
 		initialized: true,
 	})
 
+	// fn input(prompt: str) -> str
+	c.globals = append(c.globals, Global{
+		name: token.Token{ Lexeme: "input" },
+		initialized: true,
+	})
+
 	// fn time() -> num
 	c.globals = append(c.globals, Global{
 		name: token.Token{ Lexeme: "time" },
