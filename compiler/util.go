@@ -10,8 +10,10 @@ import (
 	"vm-go/value"
 )
 
-// 'then' aNd 'else_' are functions because it accepts both statements and expressions, and functions that
-// compile these things don't return and have side effects.
+// 'then' and 'else_' are functions because this function accepts both statements and expressions, and functions that
+// compile these things don't return and have side effects, so the caller creates a new function and inserts the
+// code inside it to generate the desired branch. 'else_' is a pointer because it's nullable. If it's not present,
+// please pass in 'nil' for it.
 func (c *Compiler) compileIf(condition ast.Expression, then func(), else_ *func(), pos token.Position) {
 	c.expression(condition)
 	c.writeBytePos(OP_JUMP_FALSE, pos)

@@ -90,6 +90,19 @@ type IfExpression struct {
 	Else Expression
 }
 
+type GetPropertyExpression struct {
+	AstBase
+	Left Expression
+	Property token.Token
+}
+
+type SetPropertyExpression struct {
+	AstBase
+	Left Expression
+	Property token.Token
+	Value Expression
+}
+
 // ---
 
 func (x NumberExpression) expr()     {}
@@ -106,3 +119,5 @@ func (x IdentifierExpression) expr() {}
 func (x IdentifierAssignmentExpression) expr() {}
 func (x FnExpression) expr() {}
 func (x IfExpression) expr() {}
+func (x GetPropertyExpression) expr() {}
+func (x SetPropertyExpression) expr() {}

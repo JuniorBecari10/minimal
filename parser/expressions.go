@@ -212,6 +212,8 @@ func (p *Parser) parseUnary(op token.TokenKind) ast.Expression {
 	}
 }
 
+// --- Infix ---
+
 func (p *Parser) parseBinary(left ast.Expression, pos token.Position, op token.TokenKind) ast.Expression {
 	precedence := p.precedenceMap[op]
 
@@ -272,22 +274,48 @@ func (p *Parser) parseCall(left ast.Expression, pos token.Position) ast.Expressi
 }
 
 func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Expression {
-	p.expectToken(token.TokenEqual)
 	right := p.expression(PrecLowest) // accept one level higher because assignment is right-associative
 
-	name, ok := left.(ast.IdentifierExpression)
+	switch lValue := left.(type) {
+		case ast.IdentifierExpression: {
+			return ast.IdentifierAssignmentExpression{
+				AstBase: ast.AstBase{
+					Pos: pos,
+				},
+		
+				Name: lValue.Ident,
+				Expr: right,
+			}
+		}
 
-	if !ok {
-		// TODO: change this
-		p.error(fmt.Sprintf("Invalid assignment target: '%v'.", left))
+		case ast.GetPropertyExpression: {
+			return ast.SetPropertyExpression{
+				AstBase: ast.AstBase{
+					Pos: pos,
+				},
+		
+				Left: lValue.Left,
+				Property: lValue.Property,
+				Value: right,
+			}
+		}
+
+		default: {
+			p.error(fmt.Sprintf("Invalid assignment target: '%v'.", left))
+			return nil
+		}
 	}
+}
 
-	return ast.IdentifierAssignmentExpression{
+func (p *Parser) parseDot(left ast.Expression, pos token.Position) ast.Expression {
+	p.advance() // '.'
+	property := p.expectToken(token.TokenIdentifier)
+
+	return ast.GetPropertyExpression{
 		AstBase: ast.AstBase{
 			Pos: pos,
 		},
-
-		Name: name.Ident,
-		Expr: right,
+		Left: left,
+		Property: property,
 	}
 }

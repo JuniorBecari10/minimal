@@ -25,6 +25,7 @@ const (
 	TokenSemicolon = ";"
 	TokenComma     = ","
 	TokenColon     = ":"
+	TokenDot       = "."
 	TokenPercent   = "%"
 
 	TokenArrow = "->"

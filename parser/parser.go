@@ -18,7 +18,8 @@ const (
 	PrecFactor              // * /
 	PrecUnary               // not -
 	PrecCall                // ()
-	PrecPrimary             // literals, identifiers
+	PrecGetProperty			// .
+	// PrecPrimary          // literals, identifiers (unused)
 )
 
 
@@ -86,6 +87,7 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 
 		token.TokenEqual: p.parseAssignment,
 		token.TokenLeftParen: p.parseCall,
+		token.TokenDot: p.parseDot,
 	}
 
 	p.precedenceMap = map[token.TokenKind] int {
@@ -110,6 +112,8 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 
 		token.TokenEqual: PrecAssignment,
 		token.TokenLeftParen: PrecCall,
+
+		token.TokenDot: PrecGetProperty,
 	}
 
 	return p

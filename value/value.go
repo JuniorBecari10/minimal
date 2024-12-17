@@ -58,9 +58,6 @@ type ValueRecord struct {
 	Name string
 }
 
-// We could make the instance an array and index the fields,
-// but it would be hard to debug, since the VM would have no information
-// about the names.
 type ValueInstance struct {
 	Fields []Value
 	Record *ValueRecord
@@ -80,7 +77,10 @@ func (x ValueNumber) String() string {
 }
 
 func (x ValueString) String() string { return x.Value }
+
+// '%t' is the built-in formatter for bools in Go.
 func (x ValueBool) String() string { return fmt.Sprintf("%t", x.Value) }
+
 func (x ValueNil) String() string { return "nil" }
 func (x ValueVoid) String() string { return "void" }
 
