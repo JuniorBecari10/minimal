@@ -9,7 +9,16 @@ import (
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
 		case ast.RecordStatement: {
-			index := c.addConstant(value.ValueRecord{ Arity: len(s.Fields) })
+			fieldNames := []string{}
+
+			for _, field := range s.Fields {
+				fieldNames = append(fieldNames, field.Name.Lexeme)
+			}
+
+			index := c.addConstant(value.ValueRecord{
+				FieldNames: fieldNames,
+				Name: s.Name.Lexeme,
+			})
 
 			c.writeBytePos(OP_PUSH_CONST, s.Pos)
 			c.writeBytes(util.IntToBytes(index))

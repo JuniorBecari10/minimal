@@ -73,6 +73,11 @@ func isNativeFunction(v value.Value) bool {
 	return ok
 }
 
+func isRecord(v value.Value) bool {
+	_, ok := v.(value.ValueRecord)
+	return ok
+}
+
 // ---
 
 func (v *VM) captureUpvalue(localsIndex int, index int) *value.Upvalue {

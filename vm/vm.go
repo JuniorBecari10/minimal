@@ -383,7 +383,7 @@ func (v *VM) concatenateStrs() InterpretResult {
 }
 
 func (v *VM) call(callee value.Value, arity int) InterpretResult {
-	if !isClosure(callee) && !isNativeFunction(callee) {
+	if !isClosure(callee) && !isNativeFunction(callee) && !isRecord(callee) {
 		v.error(fmt.Sprintf("Can only call functions. (Called '%s')", callee.String()))
 		return STATUS_TYPE_ERROR
 	}
@@ -413,7 +413,7 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			v.ip = 0
 			v.currentChunk = &function.Fn.Chunk
 		
-			v.pop() // the function
+			v.pop() // The function.
 		}
 
 		case value.ValueNativeFn: {
@@ -429,10 +429,35 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			}
 
 			util.Reverse(vars)
-			v.pop() // the function
+			v.pop() // The function.
 
 			result := function.Fn(vars)
 			v.push(result)
+		}
+
+		case value.ValueRecord: {
+			if len(function.FieldNames) != arity {
+				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", len(function.FieldNames), arity))
+				return STATUS_INCORRECT_ARITY
+			}
+
+			vars := []value.Value{}
+		
+			for range arity {
+				vars = append(vars, v.pop())
+			}
+
+			util.Reverse(vars)
+			v.pop() // The record.
+
+			// Create the object.
+			instance := value.ValueInstance{
+				Fields: vars,
+				Record: &function,
+			}
+			
+			// Push it to the stack.
+			v.push(instance)
 		}
 
 		default:
