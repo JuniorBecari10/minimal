@@ -41,6 +41,7 @@ const (
 	TokenForKw    = "for keyword"
 	TokenVarKw    = "var keyword"
 	TokenFnKw     = "fn keyword"
+	TokenRecordKw = "record keyword"
 	TokenReturnKw = "return keyword"
 
 	TokenAndKw = "and keyword"

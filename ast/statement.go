@@ -13,6 +13,13 @@ type FnStatement struct {
 	Body BlockStatement
 }
 
+type RecordStatement struct {
+	AstBase
+	Name token.Token
+	Fields []Field
+	// TODO: methods
+}
+
 type ReturnStatement struct {
 	AstBase
 	Expression *Expression // optional
@@ -57,6 +64,7 @@ type ExprStatement struct {
 
 // ---
 
+func (x RecordStatement) stmt() {}
 func (x FnStatement) stmt() {}
 func (x ReturnStatement) stmt() {}
 func (x VarStatement) stmt()   {}

@@ -42,6 +42,17 @@ func (p *Parser) parseParameters() []ast.Parameter {
 	return params
 }
 
+func (p *Parser) parseFields() []ast.Field {
+	params := p.parseParameters()
+	fields := []ast.Field{}
+
+	for _, param := range params {
+		fields = append(fields, ast.Field(param))
+	}
+
+	return fields
+}
+
 func (p *Parser) expect(kind token.TokenKind) bool {
 	return !p.expectToken(kind).IsAbsent()
 }
@@ -64,7 +75,7 @@ func (p *Parser) expectTokenNoAdvance(kind token.TokenKind) token.Token {
 		if p.isAtEnd(0) {
 			p.error(fmt.Sprintf("Expected '%s', reached end.", kind))
 		} else {
-			p.error(fmt.Sprintf("Expected '%s', got '%s' instead", kind, p.peek(0).Kind))
+			p.error(fmt.Sprintf("Expected '%s', got '%s' instead.", kind, p.peek(0).Kind))
 		}
 		return token.AbsentToken()
 	}

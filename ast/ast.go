@@ -10,3 +10,7 @@ type AstBase struct {
 type Parameter struct {
 	Name token.Token
 }
+
+type Field struct {
+	Name token.Token
+}

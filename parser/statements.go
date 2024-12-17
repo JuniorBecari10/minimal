@@ -13,6 +13,7 @@ func (p *Parser) declaration(allowStatements bool) ast.Statement {
 	t := p.peek(0)
 	
 	switch t.Kind {
+		case token.TokenRecordKw: return p.recordStatement()
 		case token.TokenFnKw: return p.fnStatement()
 		case token.TokenVarKw: return p.varStatement()
 		
@@ -43,6 +44,22 @@ func (p *Parser) statement() ast.Statement {
 }
 
 // ---
+
+func (p *Parser) recordStatement() ast.Statement {
+	pos := p.advance().Pos // 'record' keyword
+	name := p.expectToken(token.TokenIdentifier)
+	fields := p.parseFields()
+
+	p.requireSemicolon()
+
+	return ast.RecordStatement{
+		AstBase: ast.AstBase{
+			Pos: pos,
+		},
+		Name: name,
+		Fields: fields,
+	}
+}
 
 func (p *Parser) fnStatement() ast.Statement {
 	pos := p.advance().Pos // 'fn' keyword

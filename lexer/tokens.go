@@ -49,6 +49,7 @@ func (l *Lexer) checkKeyword() token.TokenKind {
 		case "for": return token.TokenForKw
 		case "var": return token.TokenVarKw
 		case "fn": return token.TokenFnKw
+		case "record": return token.TokenRecordKw
 		case "return": return token.TokenReturnKw
 
 		case "and": return token.TokenAndKw
