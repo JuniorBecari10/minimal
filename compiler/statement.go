@@ -3,10 +3,21 @@ package compiler
 import (
 	"vm-go/ast"
 	"vm-go/util"
+	"vm-go/value"
 )
 
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.(type) {
+		case ast.RecordStatement: {
+			index := c.addConstant(value.ValueRecord{ Arity: len(s.Fields) })
+
+			c.writeBytePos(OP_PUSH_CONST, s.Pos)
+			c.writeBytes(util.IntToBytes(index))
+
+			c.addVariable(s.Name, s.Name.Pos)
+			c.addDeclarationInstruction(s.Pos)
+		}
+
 		case ast.FnStatement: {
 			c.compileFunction(s.Parameters, s.Body, &s.Name.Lexeme, s.Pos)
 

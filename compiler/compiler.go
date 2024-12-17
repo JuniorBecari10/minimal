@@ -161,6 +161,8 @@ func (c *Compiler) statements(stmts []ast.Statement){
 }
 
 // TODO: hoist the inner scopes too, to improve the error messages?
+// Global variables aren't declared, the hoisting process declares them,
+// and when the compiler reaches its declaration, it just marks it as initialized.
 func (c *Compiler) hoistTopLevel() {
 	for _, decl := range c.ast {
 		switch s := decl.(type) {
@@ -170,7 +172,15 @@ func (c *Compiler) hoistTopLevel() {
 					initialized: false,
 				})
 			}
+			
 			case ast.FnStatement: {
+				c.globals = append(c.globals, Global{
+					name: s.Name,
+					initialized: false,
+				})
+			}
+
+			case ast.RecordStatement: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
 					initialized: false,

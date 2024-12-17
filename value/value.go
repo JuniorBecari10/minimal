@@ -52,6 +52,10 @@ type ValueNativeFn struct {
 	Fn NativeFn
 }
 
+type ValueRecord struct {
+	Arity int
+}
+
 // ---
 
 func (x ValueNumber) String() string {
@@ -78,3 +82,4 @@ func (x ValueFunction) String() string {
 
 func (x ValueNativeFn) String() string { return "<native fn>" }
 func (x ValueClosure) String() string { return x.Fn.String() }
+func (x ValueRecord) String() string { return "<record>" }
