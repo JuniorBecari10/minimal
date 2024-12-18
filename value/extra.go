@@ -7,3 +7,8 @@ type Upvalue struct {
 	ClosedValue Value // filled when closed.
 	IsClosed    bool
 }
+
+type Field struct {
+	Name  string
+	Value Value
+}

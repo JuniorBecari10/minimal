@@ -182,12 +182,35 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.FnExpression:
 			c.compileFunction(e.Parameters, e.Body, nil, e.Pos)
 		
-		case ast.IfExpression:
+		case ast.IfExpression: {
 			elseFn := func() {
 				c.expression(e.Else)
 			}
 			
 			else_ := &elseFn
 			c.compileIf(e.Condition, func() { c.expression(e.Then) }, else_, e.Pos)
+		}
+
+		case ast.GetPropertyExpression: {
+			c.expression(e.Left)
+
+			// Store the name as a string in the constant table and retrieve it later.
+			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
+
+			c.writeBytePos(OP_GET_PROPERTY, e.Pos)
+			c.writeBytes(util.IntToBytes(index))
+		}
+
+		case ast.SetPropertyExpression: {
+			c.expression(e.Left)
+			c.expression(e.Value)
+
+			// Store the name as a string in the constant table and retrieve it later.
+			// The value to be assigned will be on top of the object we'll assign it to.
+			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
+
+			c.writeBytePos(OP_SET_PROPERTY, e.Pos)
+			c.writeBytes(util.IntToBytes(index))
+		}
 	}
 }

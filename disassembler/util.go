@@ -54,6 +54,11 @@ func getInstructionName(inst byte) string {
 		case compiler.OP_SET_GLOBAL:
 			return "OP_SET_GLOBAL"
 
+		case compiler.OP_GET_PROPERTY:
+			return "OP_GET_PROPERTY"
+		case compiler.OP_SET_PROPERTY:
+			return "OP_SET_PROPERTY"
+
 		case compiler.OP_POP:
 			return "OP_POP"
 		case compiler.OP_POP_LOCAL:

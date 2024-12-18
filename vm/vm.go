@@ -20,6 +20,7 @@ const (
 	STATUS_DIV_ZERO
 	STATUS_TYPE_ERROR
 	STATUS_INCORRECT_ARITY
+	STATUS_PROPERTY_DOESNT_EXIST
 )
 
 type VM struct {
@@ -169,6 +170,59 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_SET_GLOBAL:
 				v.globals[v.getInt()] = v.peek(0)
+
+			case compiler.OP_GET_PROPERTY: {
+				obj := v.pop()
+
+				index := v.getInt()
+				nameValue := v.currentChunk.Constants[index]
+				name := nameValue.(value.ValueString).Value
+				
+				switch instance := obj.(type) {
+					case value.ValueInstance: {
+						property, ok := instance.GetProperty(name)
+
+						if !ok {
+							v.error(fmt.Sprintf("Property '%s' doesn't exist.", name))
+							return STATUS_PROPERTY_DOESNT_EXIST
+						}
+
+						v.push(property)
+					}
+
+					default:
+						// TODO: add methods to another types, defined by a table at runtime.
+						v.error("This object has no properties, because it isn't an instance.")
+						return STATUS_PROPERTY_DOESNT_EXIST
+				}
+			}
+
+			case compiler.OP_SET_PROPERTY: {
+				val := v.pop()
+				obj := v.pop()
+
+				index := v.getInt()
+				nameValue := v.currentChunk.Constants[index]
+				name := nameValue.(value.ValueString).Value
+				
+				switch instance := obj.(type) {
+					case value.ValueInstance: {
+						ok := instance.SetProperty(name, val)
+
+						if !ok {
+							v.error(fmt.Sprintf("Property '%s' doesn't exist.", name))
+							return STATUS_PROPERTY_DOESNT_EXIST
+						}
+
+						v.push(val)
+					}
+
+					default:
+						// TODO: add methods to another types, defined by a table at runtime.
+						v.error("This object has no properties, because it isn't an instance.")
+						return STATUS_PROPERTY_DOESNT_EXIST
+				}
+			}
 
 			case compiler.OP_CLOSE_UPVALUE: {
 				v.closeUpvalue(len(v.callStack) - 1, len(v.callStack[len(v.callStack)-1].locals) - 1)
@@ -450,9 +504,19 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			util.Reverse(vars)
 			v.pop() // The record.
 
+			// Create the fields and assign the names to it.
+			fields := []value.Field{}
+
+			for i, name := range function.FieldNames {
+				fields = append(fields, value.Field{
+					Name: name,
+					Value: vars[i],
+				})
+			}
+
 			// Create the object.
 			instance := value.ValueInstance{
-				Fields: vars,
+				Fields: fields,
 				Record: &function,
 			}
 			

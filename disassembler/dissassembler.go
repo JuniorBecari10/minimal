@@ -142,7 +142,9 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		case compiler.OP_POPN_LOCAL,
 			compiler.OP_GET_LOCAL, compiler.OP_SET_LOCAL,
 			compiler.OP_GET_UPVALUE, compiler.OP_SET_UPVALUE,
-			compiler.OP_GET_GLOBAL, compiler.OP_SET_GLOBAL, compiler.OP_CALL: {
+			compiler.OP_GET_GLOBAL, compiler.OP_SET_GLOBAL,
+			compiler.OP_GET_PROPERTY, compiler.OP_SET_PROPERTY,
+			compiler.OP_CALL: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 

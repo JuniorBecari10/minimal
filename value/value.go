@@ -59,8 +59,29 @@ type ValueRecord struct {
 }
 
 type ValueInstance struct {
-	Fields []Value
+	Fields []Field
 	Record *ValueRecord
+}
+
+func (in *ValueInstance) GetProperty(name string) (Value, bool) {
+	for _, field := range in.Fields {
+		if field.Name == name {
+			return field.Value, true
+		}
+	}
+
+	return ValueNil{}, false
+}
+
+func (in *ValueInstance) SetProperty(name string, value Value) bool {
+	for i, field := range in.Fields {
+		if field.Name == name {
+			in.Fields[i].Value = value
+			return true
+		}
+	}
+
+	return false
 }
 
 // ---
@@ -102,7 +123,7 @@ func (x ValueInstance) String() string {
 
 	for i, field := range x.Fields {
 		// Get the name from the referenced record, so there's no need to store the name of the field twice.
-		res.WriteString(fmt.Sprintf("%s: %s", x.Record.FieldNames[i], field.String()))
+		res.WriteString(fmt.Sprintf("%s: %s", field.Name, field.Value.String()))
 
 		// Add a comma and space if it isn't the last field.
 		if i < len(x.Fields) - 1 {
