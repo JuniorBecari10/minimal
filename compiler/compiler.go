@@ -131,6 +131,7 @@ func newFnCompiler(ast []ast.Statement, enclosing *Compiler) *Compiler {
 
 		chunk: chunk.Chunk{},
 		scopeDepth: enclosing.scopeDepth + 1,
+		loopFlowPos: -1,
 
 		hadError: false,
 		panicMode: false,

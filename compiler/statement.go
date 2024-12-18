@@ -133,7 +133,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			// The same with continue, but we'll push 'true', because we want the loop to keep running.
 
 			if c.loopFlowPos == -1 {
-				c.error(s.Pos, len(s.Token.Lexeme), "Cannot use 'break' outside of a loop.")
+				c.error(s.Pos, len(s.Token.Lexeme), "Cannot use 'continue' outside of a loop.")
 				return
 			}
 
