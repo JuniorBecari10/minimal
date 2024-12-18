@@ -113,6 +113,29 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.endScope(s.Pos)
 		}
 
+		case ast.LoopStatement: {
+			loopPos := len(c.chunk.Code)
+			c.writeBytePos(OP_JUMP, s.Pos)
+			jumpJumpOffsetIndex := len(c.chunk.Code)
+			c.writeBytes(util.IntToBytes(0)) // dummy
+
+			c.loopFlowPos = len(c.chunk.Code)
+			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
+			jumpEndOffsetIndex := len(c.chunk.Code)
+			c.writeBytes(util.IntToBytes(0)) // dummy
+			c.writeBytePos(OP_POP, s.Pos)
+
+			c.backpatch(jumpJumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpJumpOffsetIndex - 4)) // index
+			c.block(s.Block.Stmts, s.Pos)
+
+			c.writeBytePos(OP_LOOP, s.Pos)
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - loopPos + 4)) // index
+
+			c.loopFlowPos = -1
+			c.backpatch(jumpEndOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpEndOffsetIndex - 4)) // index
+			c.writeBytePos(OP_POP, s.Pos)
+		}
+
 		case ast.BreakStatement: {
 			// We'll jump to OP_JUMP_IF_FALSE, which jumps to the end of the loop.
 			// So, to do that, we'll push 'false' onto the stack and jump there,

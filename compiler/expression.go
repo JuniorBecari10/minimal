@@ -197,7 +197,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			// Store the name as a string in the constant table and retrieve it later.
 			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
 
-			c.writeBytePos(OP_GET_PROPERTY, e.Pos)
+			c.writeBytePos(OP_GET_PROPERTY, e.Property.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 
@@ -209,7 +209,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			// The value to be assigned will be on top of the object we'll assign it to.
 			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
 
-			c.writeBytePos(OP_SET_PROPERTY, e.Pos)
+			c.writeBytePos(OP_SET_PROPERTY, e.Property.Pos)
 			c.writeBytes(util.IntToBytes(index))
 		}
 	}

@@ -40,6 +40,7 @@ const (
 	TokenElseKw     = "else keyword"
 	TokenWhileKw    = "while keyword"
 	TokenForKw      = "for keyword"
+	TokenLoopKw     = "loop keyword"
 	TokenVarKw      = "var keyword"
 	TokenFnKw       = "fn keyword"
 	TokenBreakKw    = "break keyword"
