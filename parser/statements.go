@@ -36,6 +36,8 @@ func (p *Parser) statement() ast.Statement {
 		case token.TokenIfKw: return p.ifStatement()
 		case token.TokenWhileKw: return p.whileStatement()
 		case token.TokenForKw: return p.forStatement()
+		case token.TokenBreakKw: return p.breakStatement()
+		case token.TokenContinueKw: return p.continueStatement()
 		case token.TokenReturnKw: return p.returnStatement()
 		case token.TokenLeftBrace: return p.blockStatement()
 		
@@ -174,6 +176,30 @@ func (p *Parser) whileStatement() ast.Statement {
 
 		Condition: condition,
 		Block: block,
+	}
+}
+
+func (p *Parser) breakStatement() ast.Statement {
+	token := p.advance() // 'break' keyword
+	p.requireSemicolon()
+
+	return ast.BreakStatement{
+		AstBase: ast.AstBase{
+			Pos: token.Pos,
+		},
+		Token: token,
+	}
+}
+
+func (p *Parser) continueStatement() ast.Statement {
+	token := p.advance() // 'continue' keyword
+	p.requireSemicolon()
+
+	return ast.ContinueStatement{
+		AstBase: ast.AstBase{
+			Pos: token.Pos,
+		},
+		Token: token,
 	}
 }
 

@@ -92,6 +92,7 @@ type Compiler struct {
 
 	chunk chunk.Chunk
 	scopeDepth int
+	loopFlowPos int
 
 	hadError bool
 	panicMode bool
@@ -110,6 +111,7 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 
 		chunk: chunk.Chunk{},
 		scopeDepth: 0,
+		loopFlowPos: -1,
 
 		hadError: false,
 		panicMode: false,

@@ -57,6 +57,16 @@ type ForVarStatement struct {
 	Block BlockStatement
 }
 
+type BreakStatement struct {
+	AstBase
+	Token token.Token
+}
+
+type ContinueStatement struct {
+	AstBase
+	Token token.Token
+}
+
 type ExprStatement struct {
 	AstBase
 	Expr Expression
@@ -73,3 +83,5 @@ func (x IfStatement) stmt()    {}
 func (x WhileStatement) stmt() {}
 func (x ForVarStatement) stmt() {}
 func (x ExprStatement) stmt()  {}
+func (x BreakStatement) stmt()  {}
+func (x ContinueStatement) stmt()  {}

@@ -63,6 +63,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			conditionPos := len(c.chunk.Code)
 			c.expression(s.Condition)
 
+			c.loopFlowPos = len(c.chunk.Code)
 			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
 			jumpOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
@@ -70,6 +71,8 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_POP, s.Pos)
 			c.block(s.Block.Stmts, s.Pos)
 
+			c.loopFlowPos = -1
+			
 			c.writeBytePos(OP_LOOP, s.Pos)
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionPos + 4)) // index
 
@@ -85,6 +88,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			conditionPos := len(c.chunk.Code)
 			c.expression(s.Condition)
 
+			c.loopFlowPos = len(c.chunk.Code)
 			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
 			jumpFalseOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
@@ -92,6 +96,8 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			// and the block inside another
 			c.writeBytePos(OP_POP, s.Pos)
 			c.block(s.Block.Stmts, s.Pos)
+
+			c.loopFlowPos = -1
 			
 			if s.Increment != nil {
 				c.expression(*s.Increment)
@@ -105,6 +111,36 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_POP, s.Pos)
 			
 			c.endScope(s.Pos)
+		}
+
+		case ast.BreakStatement: {
+			// We'll jump to OP_JUMP_IF_FALSE, which jumps to the end of the loop.
+			// So, to do that, we'll push 'false' onto the stack and jump there,
+			// which will cause teh instruction to break out of the loop.
+
+			if c.loopFlowPos == -1 {
+				c.error(s.Pos, len(s.Token.Lexeme), "Cannot use 'break' outside of a loop.")
+				return
+			}
+
+			c.writeBytePos(OP_FALSE, s.Pos)
+
+			c.writeBytePos(OP_LOOP, s.Pos)
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos + 4)) // index
+		}
+
+		case ast.ContinueStatement: {
+			// The same with continue, but we'll push 'true', because we want the loop to keep running.
+
+			if c.loopFlowPos == -1 {
+				c.error(s.Pos, len(s.Token.Lexeme), "Cannot use 'break' outside of a loop.")
+				return
+			}
+
+			c.writeBytePos(OP_TRUE, s.Pos)
+
+			c.writeBytePos(OP_LOOP, s.Pos)
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos + 4)) // index
 		}
 
 		case ast.ReturnStatement: {

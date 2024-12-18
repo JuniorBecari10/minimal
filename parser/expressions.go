@@ -274,6 +274,7 @@ func (p *Parser) parseCall(left ast.Expression, pos token.Position) ast.Expressi
 }
 
 func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Expression {
+	p.expectToken(token.TokenEqual)
 	right := p.expression(PrecLowest) // accept one level higher because assignment is right-associative
 
 	switch lValue := left.(type) {
