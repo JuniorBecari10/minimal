@@ -10,6 +10,25 @@ import (
 	"vm-go/value"
 )
 
+/*
+	If/Else
+	Control Flow:
+
+		[ condition ]
+
+	+--	OP_JUMP_FALSE
+	|	OP_POP
+	|
+	|	[ then branch ]
+	|
+	|	OP_JUMP --------+
+	+-> OP_POP			|
+						|
+		[ else branch ] |
+						|
+	continues... <------+
+*/
+
 // 'then' and 'else_' are functions because this function accepts both statements and expressions, and functions that
 // compile these things don't return and have side effects, so the caller creates a new function and inserts the
 // code inside it to generate the desired branch. 'else_' is a pointer because it's nullable. If it's not present,

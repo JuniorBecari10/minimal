@@ -45,6 +45,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.addDeclarationInstruction(s.Pos)
 		}
 
+		// Control flow graph in the compileIf function.
 		case ast.IfStatement: {
 			var else_ *func() = nil
 
@@ -107,7 +108,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			|	OP_POP			|
 			|					|
 			|	[ body ]		|
-			| | [ increment ]	|
+			| | [ increment ]	| (generated if increment is set)
 			| | OP_POP			|
 			|					|
 			|	OP_LOOP --------+
@@ -149,7 +150,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		}
 
 		/*
-			Loop (infinite) Loop
+			Loop (indefinite amount of iterations) Loop
 			Control Flow:
 
 			+-- OP_JUMP
@@ -190,7 +191,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		case ast.BreakStatement: {
 			// We'll jump to OP_JUMP_IF_FALSE, which jumps to the end of the loop.
 			// So, to do that, we'll push 'false' onto the stack and jump there,
-			// which will cause teh instruction to break out of the loop.
+			// which will cause the instruction to break out of the loop.
 
 			if c.loopFlowPos == -1 {
 				c.error(s.Pos, len(s.Token.Lexeme), "Cannot use 'break' outside of a loop.")
