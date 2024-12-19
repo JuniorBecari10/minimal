@@ -370,6 +370,7 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_RETURN: {
+				v.closeUpvalues(len(v.callStack) - 1)
 				frame := v.popFrame()
 				var chunk chunk.Chunk
 

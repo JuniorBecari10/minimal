@@ -59,6 +59,22 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.compileIf(s.Condition, func() { c.block(s.Then.Stmts, s.Pos) }, else_, s.Pos)
 		}
 
+		/*
+			While Loop
+			Control Flow:
+
+				[ condition ] <-+
+								|
+			+-- OP_JUMP_FALSE	| <- break/continue point
+			|	OP_POP			|
+			|					|
+			|	[ body ]		|
+			|					|
+			|	OP_LOOP --------+
+			+-> OP_POP
+
+			continues...
+		*/
 		case ast.WhileStatement: {
 			conditionPos := len(c.chunk.Code)
 			c.expression(s.Condition)
@@ -80,6 +96,25 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_POP, s.Pos)
 		}
 
+		/*
+			For Var Loop
+			Control Flow:
+
+				[ initializer ]
+				[ condition ] <-+
+								|
+			+-- OP_JUMP_FALSE	| <- break/continue point
+			|	OP_POP			|
+			|					|
+			|	[ body ]		|
+			| | [ increment ]	|
+			| | OP_POP			|
+			|					|
+			|	OP_LOOP --------+
+			+-> OP_POP
+
+			continues...
+		*/
 		case ast.ForVarStatement: {
 			// the declaration stays inside a new scope
 			c.beginScope()
@@ -113,8 +148,22 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.endScope(s.Pos)
 		}
 
+		/*
+			Loop (infinite) Loop
+			Control Flow:
+
+			+-- OP_JUMP
+			|	OP_JUMP_FALSE --+ <- break/continue point
+			|	OP_POP			|
+			|					|
+			+-> [ block ] <-+	|
+							|	|
+				OP_LOOP ----+	|
+				OP_POP <--------+
+
+			continues...
+		*/
 		case ast.LoopStatement: {
-			loopPos := len(c.chunk.Code)
 			c.writeBytePos(OP_JUMP, s.Pos)
 			jumpJumpOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
@@ -126,6 +175,8 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_POP, s.Pos)
 
 			c.backpatch(jumpJumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpJumpOffsetIndex - 4)) // index
+
+			loopPos := len(c.chunk.Code)
 			c.block(s.Block.Stmts, s.Pos)
 
 			c.writeBytePos(OP_LOOP, s.Pos)
@@ -173,7 +224,6 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				c.writeBytePos(OP_VOID, s.Pos)
 			}
 
-			c.endScope(s.Pos)
 			c.writeBytePos(OP_RETURN, s.Pos)
 		}
 

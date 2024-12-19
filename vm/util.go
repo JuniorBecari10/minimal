@@ -119,6 +119,12 @@ func (v *VM) closeUpvalue(localsIndex int, index int) {
 	}
 }
 
+func (v *VM) closeUpvalues(localsIndex int) {
+	for i := range v.callStack[localsIndex].locals {
+		v.closeUpvalue(localsIndex, i)
+	}
+}
+
 // ---
 
 func (v *VM) getUpvalueValue(upvalue *value.Upvalue) value.Value {
