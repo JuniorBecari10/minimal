@@ -13,7 +13,7 @@ func (p *Parser) expression(precedence int) ast.Expression {
 
 	if !ok {
 		p.error(fmt.Sprintf("Unexpected token: '%s'.", p.peek(0).Lexeme))
-		return nil
+		return ast.Expression{}
 	}
 
 	left := prefixFn()
@@ -37,68 +37,80 @@ func (p *Parser) parseNumber() ast.Expression {
 	tok := p.advance()
 	value, _ := strconv.ParseFloat(tok.Lexeme, 64)
 
-	return ast.NumberExpression{
-		AstBase: ast.AstBase{
+	return ast.Expression{
+		Base: ast.AstBase{
 			Pos: tok.Pos,
+			Length: len(tok.Lexeme),
 		},
-
-		Literal: value,
+		Data: ast.NumberExpression{
+			Literal: value,
+		},
 	}
 }
 
 func (p *Parser) parseString() ast.Expression {
 	tok := p.advance()
 
-	return ast.StringExpression{
-		AstBase: ast.AstBase{
+	return ast.Expression{
+		Base: ast.AstBase{
 			Pos: tok.Pos,
+			Length: len(tok.Lexeme) + 2, // the quotes
 		},
-
-		Literal: tok.Lexeme,
+		Data: ast.StringExpression{
+			Literal: tok.Lexeme,
+		},
 	}
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
 	ident := p.expectToken(token.TokenIdentifier)
 
-	return ast.IdentifierExpression{
-		AstBase: ast.AstBase{
+	return ast.Expression{
+		Base: ast.AstBase{
 			Pos: ident.Pos,
+			Length: len(ident.Lexeme),
 		},
-
-		Ident: ident,
+		Data: ast.IdentifierExpression{
+			Ident: ident,
+		},
 	}
 }
 
 func (p *Parser) parseBool() ast.Expression {
 	tok := p.advance()
 
-	return ast.BoolExpression{
-		AstBase: ast.AstBase{
+	return ast.Expression{
+		Base: ast.AstBase{
 			Pos: tok.Pos,
+			Length: len(tok.Lexeme),
 		},
-
-		Literal: tok.Kind == token.TokenTrueKw,
+		Data: ast.BoolExpression{
+			Literal: tok.Kind == token.TokenTrueKw,
+		},
 	}
 }
 
 func (p *Parser) parseNil() ast.Expression {
 	tok := p.advance()
 
-	return ast.NilExpression{
-		AstBase: ast.AstBase{
+	return ast.Expression{
+		Base: ast.AstBase{
 			Pos: tok.Pos,
+			Length: len(tok.Lexeme),
 		},
+		Data: ast.NilExpression{},
 	}
 }
 
 func (p *Parser) parseVoid() ast.Expression {
 	tok := p.advance()
 
-	return ast.VoidExpression{
-		AstBase: ast.AstBase{
+	return ast.Expression{
+		Base: ast.AstBase{
 			Pos: tok.Pos,
+			Length: len(tok.Lexeme),
 		},
+		Data: ast.VoidExpression{},
 	}
 }
 
@@ -123,36 +135,38 @@ func (p *Parser) parseLambda() ast.Expression {
 	if p.peek(0).Kind == token.TokenLeftBrace {
 		body = p.parseBlock()
 	} else {
-		pos := p.peek(0).Pos
+		peek := p.peek(0)
 		expr := p.expression(PrecLowest)
 
 		body = ast.BlockStatement{
-			AstBase: ast.AstBase{
-				Pos: pos,
-			},
 			Stmts: []ast.Statement{
-				ast.ReturnStatement{
-					AstBase: ast.AstBase{
-						Pos: pos,
+				{
+					Base: ast.AstBase{
+						Pos: peek.Pos,
+						Length: len(peek.Lexeme),
 					},
-					Expression: &expr,
+					Data: ast.ReturnStatement{
+						Expression: &expr,
+					},
 				},
 			},
 		}
 	}
 
-	return ast.FnExpression{
-		AstBase: ast.AstBase{
+	return ast.Expression{
+		Base: ast.AstBase{
 			Pos: pos,
+			Length: 1, // TODO: change
 		},
-
-		Parameters: parameters,
-		Body: body,
+		Data: ast.FnExpression{
+			Parameters: parameters,
+			Body: body,
+		},
 	}
 }
 
 func (p *Parser) parseIfExpr() ast.Expression {
-	pos := p.advance().Pos
+	if_ := p.advance()
 	cond := p.expression(PrecLowest)
 
 	p.expect(token.TokenColon)
@@ -169,14 +183,16 @@ func (p *Parser) parseIfExpr() ast.Expression {
 		else_ = p.expression(PrecLowest)
 	}
 
-	return ast.IfExpression{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos: if_.Pos,
+			Length: len(if_.Lexeme),
 		},
-
-		Condition: cond,
-		Then: then,
-		Else: else_,
+		Data: ast.IfExpression{
+			Condition: cond,
+			Then: then,
+			Else: else_,
+		},
 	}
 }
 
@@ -187,12 +203,14 @@ func (p *Parser) parseGroup() ast.Expression {
 	expr := p.expression(PrecLowest)
 	p.expect(token.TokenRightParen)
 
-	return ast.GroupExpression{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    pos,
+			Length: expr.Base.Length + 2, // The parentheses
 		},
-
-		Expr:    expr,
+		Data: ast.GroupExpression{
+			Expr: expr,
+		},
 	}
 }
 
@@ -202,36 +220,40 @@ func (p *Parser) parseUnary(op token.TokenKind) ast.Expression {
 	operator := p.expectToken(op)
 	operand := p.expression(PrecUnary)
 
-	return ast.UnaryExpression{
-		AstBase:  ast.AstBase{
-			Pos: pos,
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    pos,
+			Length: len(operator.Lexeme) + operand.Base.Length,
 		},
-
-		Operand:  operand,
-		Operator: operator,
+		Data: ast.UnaryExpression{
+			Operand:  operand,
+			Operator: operator,
+		},
 	}
 }
 
 // --- Infix ---
 
-func (p *Parser) parseBinary(left ast.Expression, pos token.Position, op token.TokenKind) ast.Expression {
+func (p *Parser) parseBinary(left ast.Expression, _ token.Position, op token.TokenKind) ast.Expression {
 	precedence := p.precedenceMap[op]
 
 	operator := p.expectToken(op)
 	right := p.expression(precedence)
 
-	return ast.BinaryExpression{
-		AstBase:  ast.AstBase{
-			Pos: pos,
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    operator.Pos,
+			Length: len(operator.Lexeme),
 		},
-
-		Left:     left,
-		Right:    right,
-		Operator: operator,
+		Data: ast.BinaryExpression{
+			Left:     left,
+			Right:    right,
+			Operator: operator,
+		},
 	}
 }
 
-func (p *Parser) parseLogical(left ast.Expression, pos token.Position, op token.TokenKind) ast.Expression {
+func (p *Parser) parseLogical(left ast.Expression, _ token.Position, op token.TokenKind) ast.Expression {
 	precedence := p.precedenceMap[op]
 
 	operator := p.expectToken(op)
@@ -239,15 +261,17 @@ func (p *Parser) parseLogical(left ast.Expression, pos token.Position, op token.
 
 	right := p.expression(precedence)
 
-	return ast.LogicalExpression{
-		AstBase:  ast.AstBase{
-			Pos: pos,
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    operator.Pos,
+			Length: len(operator.Lexeme),
 		},
-
-		Left:     left,
-		Right:    right,
-		Operator: operator,
-		ShortCircuit: shortCircuit,
+		Data: ast.LogicalExpression{
+			Left:         left,
+			Right:        right,
+			Operator:     operator,
+			ShortCircuit: shortCircuit,
+		},
 	}
 }
 
@@ -257,66 +281,72 @@ func (p *Parser) parseCall(left ast.Expression, pos token.Position) ast.Expressi
 
 	for !p.match(token.TokenRightParen) {
 		arguments = append(arguments, p.expression(PrecLowest))
-		
+
 		if !p.check(token.TokenRightParen) {
 			p.expect(token.TokenComma)
 		}
 	}
 
-	return ast.CallExpression{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    pos,
+			Length: left.Base.Length, // the callee
 		},
-
-		Callee: left,
-		Arguments: arguments,
+		Data: ast.CallExpression{
+			Callee:    left,
+			Arguments: arguments,
+		},
 	}
 }
 
 func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Expression {
-	p.expectToken(token.TokenEqual)
+	equal := p.expectToken(token.TokenEqual)
 	right := p.expression(PrecLowest) // accept one level higher because assignment is right-associative
 
-	switch lValue := left.(type) {
-		case ast.IdentifierExpression: {
-			return ast.IdentifierAssignmentExpression{
-				AstBase: ast.AstBase{
-					Pos: pos,
-				},
-		
+	switch lValue := left.Data.(type) {
+	case ast.IdentifierExpression:
+		return ast.Expression{
+			Base: ast.AstBase{
+				Pos:    equal.Pos,
+				Length: len(equal.Lexeme),
+			},
+			Data: ast.IdentifierAssignmentExpression{
 				Name: lValue.Ident,
 				Expr: right,
-			}
+			},
 		}
 
-		case ast.GetPropertyExpression: {
-			return ast.SetPropertyExpression{
-				AstBase: ast.AstBase{
-					Pos: pos,
-				},
-		
-				Left: lValue.Left,
+	case ast.GetPropertyExpression:
+		return ast.Expression{
+			Base: ast.AstBase{
+				Pos:  	lValue.Property.Pos,
+				Length: len(lValue.Property.Lexeme),
+			},
+			Data: ast.SetPropertyExpression{
+				Left:    lValue.Left,
 				Property: lValue.Property,
-				Value: right,
-			}
+				Value:   right,
+			},
 		}
 
-		default: {
-			p.error(fmt.Sprintf("Invalid assignment target: '%v'.", left))
-			return nil
-		}
+	default:
+		p.error(fmt.Sprintf("Invalid assignment target: '%v'.", left))
+		return ast.Expression{}
 	}
 }
 
 func (p *Parser) parseDot(left ast.Expression, pos token.Position) ast.Expression {
-	p.advance() // '.'
+	p.advance() // Skip over the '.'
 	property := p.expectToken(token.TokenIdentifier)
 
-	return ast.GetPropertyExpression{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    property.Pos,
+			Length: len(property.Lexeme),
 		},
-		Left: left,
-		Property: property,
+		Data: ast.GetPropertyExpression{
+			Left:    left,
+			Property: property,
+		},
 	}
 }

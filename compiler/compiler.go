@@ -2,9 +2,9 @@ package compiler
 
 import (
 	"vm-go/ast"
-	"vm-go/chunk"
 	"vm-go/token"
 	"vm-go/util"
+	"vm-go/value"
 )
 
 type Opcode int
@@ -59,6 +59,7 @@ const (
 	OP_NOT
 	OP_NEGATE
 
+	OP_CALL
 	OP_RETURN
 
 	OP_TRUE
@@ -67,7 +68,8 @@ const (
 	OP_NIL
 	OP_VOID
 
-	OP_CALL
+	// TODO: extend this to accept more types, if necessary
+	OP_ASSERT_BOOL
 )
 
 type Local struct {
@@ -93,9 +95,9 @@ type Compiler struct {
 	globals []Global
 	upvalues []Upvalue
 
-	chunk chunk.Chunk
+	chunk value.Chunk
 	scopeDepth int
-	loopFlowPos int
+	loopFlowPos []int
 
 	hadError bool
 	panicMode bool
@@ -112,9 +114,9 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 		globals: []Global{},
 		upvalues: []Upvalue{},
 
-		chunk: chunk.Chunk{},
+		chunk: value.Chunk{},
 		scopeDepth: 0,
-		loopFlowPos: -1,
+		loopFlowPos: []int{},
 
 		hadError: false,
 		panicMode: false,
@@ -132,9 +134,9 @@ func newFnCompiler(ast []ast.Statement, enclosing *Compiler) *Compiler {
 		globals: enclosing.globals,
 		upvalues: []Upvalue{}, // TODO: inherit?
 
-		chunk: chunk.Chunk{},
+		chunk: value.Chunk{},
 		scopeDepth: enclosing.scopeDepth + 1,
-		loopFlowPos: -1,
+		loopFlowPos: []int{},
 
 		hadError: false,
 		panicMode: false,
@@ -144,7 +146,7 @@ func newFnCompiler(ast []ast.Statement, enclosing *Compiler) *Compiler {
 	}
 }
 
-func (c *Compiler) Compile() (chunk.Chunk, bool) {
+func (c *Compiler) Compile() (value.Chunk, bool) {
 	c.addNativeFunctions()
 	c.hoistTopLevel()
 
@@ -171,7 +173,7 @@ func (c *Compiler) statements(stmts []ast.Statement){
 // and when the compiler reaches its declaration, it just marks it as initialized.
 func (c *Compiler) hoistTopLevel() {
 	for _, decl := range c.ast {
-		switch s := decl.(type) {
+		switch s := decl.Data.(type) {
 			case ast.VarStatement: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
@@ -242,10 +244,18 @@ func (c *Compiler) callMain() {
 			// check if it's a function
 			// in the meanwhile, this error will be caught at runtime
 
-			c.writeBytePos(OP_GET_GLOBAL, global.name.Pos)
+			c.writeBytePos(OP_GET_GLOBAL, value.ChunkMetadata{
+				Position: global.name.Pos,
+				Length: len(global.name.Lexeme),
+			})
+
 			c.writeBytes(util.IntToBytes(i))
 
-			c.writeBytePos(OP_CALL, global.name.Pos)
+			c.writeBytePos(OP_CALL, value.ChunkMetadata{
+				Position: global.name.Pos,
+				Length: len(global.name.Lexeme),
+			})
+			
 			c.writeBytes(util.IntToBytes(0))
 
 			return

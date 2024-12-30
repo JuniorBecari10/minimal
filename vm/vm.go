@@ -2,10 +2,6 @@ package vm
 
 import (
 	"fmt"
-	"math"
-	"strconv"
-	"strings"
-	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/util"
 	"vm-go/value"
@@ -24,8 +20,8 @@ const (
 )
 
 type VM struct {
-	currentChunk *chunk.Chunk
-	topLevel     chunk.Chunk
+	currentChunk *value.Chunk
+	topLevel     value.Chunk
 
 	stack     []value.Value
 	globals   []value.Value
@@ -39,7 +35,7 @@ type VM struct {
 	fileData *util.FileData
 }
 
-func NewVM(chunk chunk.Chunk, fileData *util.FileData) *VM {
+func NewVM(chunk value.Chunk, fileData *util.FileData) *VM {
 	vm := VM{
 		currentChunk: &chunk,
 		topLevel: chunk,
@@ -102,9 +98,12 @@ func (v *VM) Run() InterpretResult {
 				if !typesEqual(v.peek(0), v.peek(1)) {
 					v.error(
 						fmt.Sprintf(
-							"Operands types must be equal when adding/concatenating. (left: '%s', right: '%s')",
+							"Operands types must be equal when adding/concatenating. (left: '%s' (type '%s'), right: '%s' (type '%s'))",
 							v.peek(1).String(),
+							v.peek(1).Type(),
+
 							v.peek(0).String(),
+							v.peek(0).Type(),
 						),
 					)
 					return STATUS_TYPE_ERROR
@@ -126,9 +125,12 @@ func (v *VM) Run() InterpretResult {
 				} else {
 					v.error(
 						fmt.Sprintf(
-							"Operands must be numbers or strings when adding/concatenating. (left: '%s', right: '%s')",
+							"Operands must be numbers or strings when adding/concatenating. (left: '%s' (type '%s'), right: '%s' (type '%s'))",
 							v.peek(1).String(),
+							v.peek(1).Type(),
+
 							v.peek(0).String(),
+							v.peek(0).Type(),
 						),
 					)
 					return STATUS_TYPE_ERROR
@@ -192,7 +194,7 @@ func (v *VM) Run() InterpretResult {
 
 					default:
 						// TODO: add methods to another types, defined by a table at runtime.
-						v.error("This object has no properties, because it isn't an instance.")
+						v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
 						return STATUS_PROPERTY_DOESNT_EXIST
 				}
 			}
@@ -210,7 +212,7 @@ func (v *VM) Run() InterpretResult {
 						ok := instance.SetProperty(name, val)
 
 						if !ok {
-							v.error(fmt.Sprintf("Property '%s' doesn't exist.", name))
+							v.error(fmt.Sprintf("Property '%s' doesn't exist in the object '%s', of type '%s'.", name, obj.String(), obj.Type()))
 							return STATUS_PROPERTY_DOESNT_EXIST
 						}
 
@@ -219,7 +221,7 @@ func (v *VM) Run() InterpretResult {
 
 					default:
 						// TODO: add methods to another types, defined by a table at runtime.
-						v.error("This object has no properties, because it isn't an instance.")
+						v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
 						return STATUS_PROPERTY_DOESNT_EXIST
 				}
 			}
@@ -257,7 +259,7 @@ func (v *VM) Run() InterpretResult {
 						v.ip += amount
 					}
 				} else {
-					v.error(fmt.Sprintf("Expression is not a boolean. (value: '%s')", v.peek(0).String()))
+					v.error(fmt.Sprintf("Given expression ('%s') type is not 'bool'. Its type is '%s'.", v.peek(0).String(),  v.peek(0).Type()))
 					return STATUS_TYPE_ERROR
 				}
 			}
@@ -275,7 +277,7 @@ func (v *VM) Run() InterpretResult {
 						v.ip += amount
 					}
 				} else {
-					v.error(fmt.Sprintf("Expression is not a boolean. (value: '%s')", v.peek(0).String()))
+					v.error(fmt.Sprintf("Given expression ('%s') type is not 'bool'. Its type is '%s'.", v.peek(0).String(),  v.peek(0).Type()))
 					return STATUS_TYPE_ERROR
 				}
 			}
@@ -290,9 +292,12 @@ func (v *VM) Run() InterpretResult {
 				if !typesEqual(a, b) {
 					v.error(
 						fmt.Sprintf(
-							"Types must be the same when comparing. (left: '%s', right: '%s')",
+							"Types must be the same when comparing. (left: '%s' (type: '%s'), right: '%s', (type: '%s'))",
 							a.String(),
+							a.Type(),
+
 							b.String(),
+							b.Type(),
 						),
 					)
 					return STATUS_TYPE_ERROR
@@ -308,9 +313,12 @@ func (v *VM) Run() InterpretResult {
 				if !typesEqual(a, b) {
 					v.error(
 						fmt.Sprintf(
-							"Types must be the same when comparing. (left: '%s', right: '%s')",
+							"Types must be the same when comparing. (left: '%s' (type: '%s'), right: '%s', (type: '%s'))",
 							a.String(),
+							a.Type(),
+
 							b.String(),
+							b.Type(),
 						),
 					)
 					return STATUS_TYPE_ERROR
@@ -339,12 +347,7 @@ func (v *VM) Run() InterpretResult {
 				op := v.pop()
 
 				if !isBool(op) {
-					v.error(
-						fmt.Sprintf(
-							"Operand must be a boolean for performing a logical not. (value: '%s')",
-							op.String(),
-						),
-					)
+					v.error(fmt.Sprintf("Given expression ('%s') type is not 'bool' to perform a logical not. Its type is '%s'.", op.String(),  op.Type()))
 					return STATUS_TYPE_ERROR
 				}
 
@@ -356,12 +359,7 @@ func (v *VM) Run() InterpretResult {
 				op := v.pop()
 
 				if !isNumber(op) {
-					v.error(
-						fmt.Sprintf(
-							"Operand must be a boolean for performing a number negation. (value: '%s')",
-							op.String(),
-						),
-					)
+					v.error(fmt.Sprintf("Given expression ('%s') type is not 'num' to perform a number negation. Its type is '%s'.", op.String(),  op.Type()))
 					return STATUS_TYPE_ERROR
 				}
 
@@ -369,10 +367,19 @@ func (v *VM) Run() InterpretResult {
 				v.push(value.ValueNumber{ Value: -opNum.Value })
 			}
 
+			case compiler.OP_CALL: {
+				arity := v.getInt()
+				status := v.call(v.peek(arity), arity)
+
+				if status != STATUS_OK {
+					return status
+				}
+			}
+
 			case compiler.OP_RETURN: {
 				v.closeUpvalues(len(v.callStack) - 1)
 				frame := v.popFrame()
-				var chunk chunk.Chunk
+				var chunk value.Chunk
 
 				if len(v.callStack) == 0 {
 					chunk = v.topLevel
@@ -390,12 +397,9 @@ func (v *VM) Run() InterpretResult {
 			case compiler.OP_NIL: v.push(value.ValueNil{})
 			case compiler.OP_VOID: v.push(value.ValueVoid{})
 
-			case compiler.OP_CALL: {
-				arity := v.getInt()
-				status := v.call(v.peek(arity), arity)
-
-				if status != STATUS_OK {
-					return status
+			case compiler.OP_ASSERT_BOOL: {
+				if !isBool(v.peek(0)) {
+					v.error(fmt.Sprintf("Given expression ('%s') type is not 'bool'. Its type is '%s'.", v.peek(0).String(),  v.peek(0).Type()))
 				}
 			}
 
@@ -405,369 +409,4 @@ func (v *VM) Run() InterpretResult {
 	}
 
 	return STATUS_OK
-}
-
-// ---
-
-func (v *VM) concatenateStrs() InterpretResult {
-	right := v.pop()
-
-	if v.stackIsEmpty() {
-		v.error("Not enough stack items to perform a binary operation")
-		return STATUS_STACK_EMPTY
-	}
-
-	left := v.pop()
-
-	if !isString(left) || !isString(right) {
-		v.error(
-			fmt.Sprintf(
-				"Operands must be strings when performing concatenation. (left: '%s', right: '%s')",
-				left.String(),
-				right.String(),
-			),
-		)
-		return STATUS_TYPE_ERROR
-	}
-
-	leftStr := left.(value.ValueString)
-	rightStr := right.(value.ValueString)
-
-	v.push(value.ValueString{ Value: leftStr.Value + rightStr.Value })
-	return STATUS_OK
-}
-
-func (v *VM) call(callee value.Value, arity int) InterpretResult {
-	if !isClosure(callee) && !isNativeFunction(callee) && !isRecord(callee) {
-		v.error(fmt.Sprintf("Can only call functions. (Called '%s')", callee.String()))
-		return STATUS_TYPE_ERROR
-	}
-
-	switch function := callee.(type) {
-		case value.ValueClosure: {
-			if function.Fn.Arity != arity {
-				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Fn.Arity, arity))
-				return STATUS_INCORRECT_ARITY
-			}
-		
-			v.callStack = append(v.callStack, CallFrame{
-				function: &function,
-				oldIp: v.ip,
-			})
-		
-			vars := []value.Value{}
-		
-			for range arity {
-				vars = append(vars, v.pop())
-			}
-		
-			for i := len(vars) - 1; i >= 0; i-- {
-				v.callStack[len(v.callStack) - 1].locals = append(v.callStack[len(v.callStack) - 1].locals, vars[i])
-			}
-		
-			v.ip = 0
-			v.currentChunk = &function.Fn.Chunk
-		
-			v.pop() // The function.
-		}
-
-		case value.ValueNativeFn: {
-			if function.Arity != arity {
-				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Arity, arity))
-				return STATUS_INCORRECT_ARITY
-			}
-
-			vars := []value.Value{}
-		
-			for range arity {
-				vars = append(vars, v.pop())
-			}
-
-			util.Reverse(vars)
-			v.pop() // The function.
-
-			result := function.Fn(vars)
-			v.push(result)
-		}
-
-		case value.ValueRecord: {
-			if len(function.FieldNames) != arity {
-				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", len(function.FieldNames), arity))
-				return STATUS_INCORRECT_ARITY
-			}
-
-			vars := []value.Value{}
-		
-			for range arity {
-				vars = append(vars, v.pop())
-			}
-
-			util.Reverse(vars)
-			v.pop() // The record.
-
-			// Create the fields and assign the names to it.
-			fields := []value.Field{}
-
-			for i, name := range function.FieldNames {
-				fields = append(fields, value.Field{
-					Name: name,
-					Value: vars[i],
-				})
-			}
-
-			// Create the object.
-			instance := value.ValueInstance{
-				Fields: fields,
-				Record: &function,
-			}
-			
-			// Push it to the stack.
-			v.push(instance)
-		}
-
-		default:
-			panic(fmt.Sprintf("Unknown called value: '%v'", callee))
-	}
-
-	return STATUS_OK
-}
-
-func (v *VM) binaryNum(operator byte) InterpretResult {
-	right := v.pop()
-
-	if v.stackIsEmpty() {
-		v.error("Not enough stack items to perform a binary operation")
-		return STATUS_STACK_EMPTY
-	}
-
-	left := v.pop()
-
-	if !isNumber(left) || !isNumber(right) {
-		v.error(
-			fmt.Sprintf(
-				"Operands must be numbers when performing arithmetic. (left: '%s', right: '%s')",
-				left.String(),
-				right.String(),
-			),
-		)
-		return STATUS_TYPE_ERROR
-	}
-
-	leftNum := left.(value.ValueNumber)
-	rightNum := right.(value.ValueNumber)
-
-	switch operator {
-		case compiler.OP_ADD: v.push(value.ValueNumber{ Value: leftNum.Value + rightNum.Value })
-		case compiler.OP_SUB: v.push(value.ValueNumber{ Value: leftNum.Value - rightNum.Value })
-		case compiler.OP_MUL: v.push(value.ValueNumber{ Value: leftNum.Value * rightNum.Value })
-		case compiler.OP_DIV: {
-			if rightNum.Value == 0 {
-				v.error(
-					fmt.Sprintf(
-						"Cannot divide by zero. (left: '%s', right: '%s')",
-						left.String(),
-						right.String(),
-					),
-				)
-				return STATUS_DIV_ZERO
-			}
-
-			v.push(value.ValueNumber{ Value: leftNum.Value / rightNum.Value })
-		}
-		case compiler.OP_MODULO: {
-			if rightNum.Value == 0 {
-				v.error(
-					fmt.Sprintf(
-						"Cannot divide by zero. (left: '%s', right: '%s')",
-						left.String(),
-						right.String(),
-					),
-				)
-				return STATUS_DIV_ZERO
-			}
-
-			v.push(value.ValueNumber{ Value: math.Mod(leftNum.Value, rightNum.Value) })
-		}
-	}
-
-	return STATUS_OK
-}
-
-func (v *VM) binaryComparison(operator byte) InterpretResult {
-	right := v.pop()
-
-	if v.stackIsEmpty() {
-		v.error("Not enough stack items to perform a binary operation")
-		return STATUS_STACK_EMPTY
-	}
-
-	left := v.pop()
-
-	if !isNumber(left) || !isNumber(right) {
-		v.error(
-			fmt.Sprintf(
-				"Operands must be numbers when performing comparison. (left: '%s', right: '%s')",
-				left.String(),
-				right.String(),
-			),
-		)
-		return STATUS_TYPE_ERROR
-	}
-
-	leftNum := left.(value.ValueNumber)
-	rightNum := right.(value.ValueNumber)
-
-	switch operator {
-		case compiler.OP_GREATER:
-			v.push(value.ValueBool{ Value: leftNum.Value > rightNum.Value })
-		case compiler.OP_GREATER_EQUAL:
-			v.push(value.ValueBool{ Value: leftNum.Value >= rightNum.Value })
-		case compiler.OP_LESS:
-			v.push(value.ValueBool{ Value: leftNum.Value < rightNum.Value })
-		case compiler.OP_LESS_EQUAL:
-			v.push(value.ValueBool{ Value: leftNum.Value <= rightNum.Value })
-	}
-
-	return STATUS_OK
-}
-
-func (v *VM) binaryBool(operator byte) InterpretResult {
-	right := v.pop()
-
-	if v.stackIsEmpty() {
-		v.error("Not enough stack items to perform a binary operation")
-		return STATUS_STACK_EMPTY
-	}
-
-	left := v.pop()
-
-	if !isBool(left) || !isBool(right) {
-		v.error(
-			fmt.Sprintf(
-				"Operands must be booleans when performing boolean operations. (left: '%s', right: '%s')",
-				left.String(),
-				right.String(),
-			),
-		)
-		return STATUS_TYPE_ERROR
-	}
-
-	leftNum := left.(value.ValueBool)
-	rightNum := right.(value.ValueBool)
-
-	switch operator {
-		case compiler.OP_AND: v.push(value.ValueBool{ Value: leftNum.Value && rightNum.Value })
-		case compiler.OP_OR: v.push(value.ValueBool{ Value: leftNum.Value || rightNum.Value })
-	}
-
-	return STATUS_OK
-}
-
-// ---
-
-func (v *VM) nextByte() byte {
-	ip := v.ip
-	v.ip += 1
-
-	return v.currentChunk.Code[ip]
-}
-
-func (v *VM) stackIsEmpty() bool {
-	return len(v.stack) == 0
-}
-
-func (v *VM) isAtEnd() bool {
-	return v.ip >= len(v.currentChunk.Code)
-}
-
-// ---
-
-func (v *VM) push(f value.Value) {
-	v.stack = append(v.stack, f)
-}
-
-// can have errors
-func (v *VM) pop() value.Value {
-	if v.stackIsEmpty() {
-		v.error("Performed a pop operation on an empty stack")
-		return nil
-	}
-
-	lastIndex := len(v.stack) - 1
-	
-	topElement := v.stack[lastIndex]
-	v.stack = v.stack[:lastIndex]
-
-	return topElement
-}
-
-func (v *VM) popFrame() CallFrame {
-	if len(v.callStack) == 0 {
-		v.error("Performed a pop operation on an empty call stack")
-		return CallFrame{}
-	}
-
-	lastIndex := len(v.callStack) - 1
-
-	topElement := v.callStack[lastIndex]
-	v.callStack = v.callStack[:lastIndex]
-
-	return topElement
-}
-
-func (v *VM) peek(offset int) value.Value {
-	pos := len(v.stack) - 1 - offset
-	if pos < 0 || pos > len(v.stack) - 1 {
-		v.error("Peek position out of bounds")
-		return nil
-	}
-
-	return v.stack[pos]
-}
-
-func (v *VM) popVar() value.Value {
-	return v.popnVar(1)
-}
-
-func (v *VM) popnVar(amount int) value.Value {
-	lastIndex := len(v.callStack[len(v.callStack)-1].locals) - amount
-	topElement := v.callStack[len(v.callStack)-1].locals[lastIndex]
-
-	v.callStack[len(v.callStack)-1].locals = v.callStack[len(v.callStack)-1].locals[:lastIndex]
-	return topElement
-}
-
-func (v *VM) error(message string) {
-	pos := v.currentChunk.Positions[v.oldIp] // TODO: save the last ip to use here
-
-	fmt.Printf("[-] Runtime error at %s (%d, %d): %s\n", v.fileData.Name, pos.Line + 1, pos.Col + 1, message)
-	fmt.Printf(" |  %d | %s\n", pos.Line + 1, v.fileData.Lines[pos.Line])
-	fmt.Printf(" | %s    %s^\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))), strings.Repeat(" ", pos.Col))
-	fmt.Println("[-]")
-
-	if len(v.callStack) > 0 {
-		for i := len(v.callStack) - 1; i >= 0; i-- {
-			posChunk := v.topLevel
-			frame := v.callStack[i]
-
-			if i > 0 {
-				posChunk = v.callStack[i - 1].function.Fn.Chunk
-			}
-
-			pos := posChunk.Positions[frame.oldIp - 1]
-			name := frame.function.Fn.Name
-
-			if name == nil {
-				fmt.Printf(" | in <anonymous> (%d, %d)\n", pos.Line + 1, pos.Col + 1)
-			} else {
-				fmt.Printf(" | in %s (%d, %d)\n", *name, pos.Line + 1, pos.Col + 1)
-			}
-		}
-
-		fmt.Print("[-]\n\n")
-	} else {
-		fmt.Println()
-	}
-	
-	v.hadError = true
 }

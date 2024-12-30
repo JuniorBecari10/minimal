@@ -23,7 +23,7 @@ func (p *Parser) declaration(allowStatements bool) ast.Statement {
 			} else {
 				p.error("Statements are not allowed at top-level.")
 				p.advance()
-				return nil
+				return ast.Statement{}
 			}
 		}
 	}
@@ -49,40 +49,47 @@ func (p *Parser) statement() ast.Statement {
 // ---
 
 func (p *Parser) recordStatement() ast.Statement {
-	pos := p.advance().Pos // 'record' keyword
+	keyword := p.advance()
 	name := p.expectToken(token.TokenIdentifier)
 	fields := p.parseFields()
 
 	p.requireSemicolon()
 
-	return ast.RecordStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos:    keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-		Name: name,
-		Fields: fields,
+
+		Data: ast.RecordStatement{
+			Name:   name,
+			Fields: fields,
+		},
 	}
 }
 
 func (p *Parser) fnStatement() ast.Statement {
-	pos := p.advance().Pos // 'fn' keyword
+	keyword := p.advance()
 
 	name := p.expectToken(token.TokenIdentifier)
 	parameters := p.parseParameters()
 	body := p.parseBlock()
 
-	return ast.FnStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-		Name: name,
-		Parameters: parameters,
-		Body: body,
+		Data: ast.FnStatement{
+			Name: name,
+			Parameters: parameters,
+			Body: body,
+		},
 	}
 }
 
 func (p *Parser) returnStatement() ast.Statement {
-	pos := p.advance().Pos // 'return' keyword
+	keyword := p.advance()
 	var expr *ast.Expression = nil
 
 	if !p.check(token.TokenSemicolon) {
@@ -91,16 +98,19 @@ func (p *Parser) returnStatement() ast.Statement {
 	}
 
 	p.requireSemicolon()
-	return ast.ReturnStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-		Expression: expr,
+		Data: ast.ReturnStatement{
+			Expression: expr,
+		},
 	}
 }
 
 func (p *Parser) ifStatement() ast.Statement {
-	pos := p.advance().Pos // 'if' keyword
+	keyword := p.advance()
 
 	condition := p.expression(0)
 	then := p.parseBlock()
@@ -109,14 +119,18 @@ func (p *Parser) ifStatement() ast.Statement {
 
 	if p.match(token.TokenElseKw) {
 		if p.check(token.TokenIfKw) {
-			cond, _ := p.ifStatement().(ast.IfStatement) // this won't panic
+			elseIf := p.ifStatement()
+			cond, _ := elseIf.Data.(ast.IfStatement) // this won't panic
 
 			else_ = &ast.BlockStatement{
-				AstBase: ast.AstBase{
-					Pos: cond.Pos,
-				},
 				Stmts: []ast.Statement{
-					cond,
+					{
+						Base: ast.AstBase{
+							Pos: elseIf.Base.Pos,
+						},
+
+						Data: cond,
+					},
 				},
 			}
 		} else {
@@ -125,25 +139,30 @@ func (p *Parser) ifStatement() ast.Statement {
 		}
 	}
 
-	return ast.IfStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
 
-		Condition: condition,
-		Then: then,
-		Else: else_,
+		Data: ast.IfStatement{
+			Condition: condition,
+			Then: then,
+			Else: else_,
+		},
 	}
 }
 
 // TODO: use this function to disambiguate between for (each) and for (var) loops
 func (p *Parser) forStatement() ast.Statement {
-	pos := p.advance().Pos // 'for' keyword
+	keyword := p.advance()
 	p.expectTokenNoAdvance(token.TokenVarKw) // for now, it is mandatory
-
-	declaration := p.varStatement() // already requires a semicolon
+ 	
+	// already requires a semicolon
+	declaration := p.varStatement()
 	condition := p.expression(PrecLowest)
-	var increment *ast.Expression = nil
+
+	var increment *ast.Expression
 	
 	if p.match(token.TokenSemicolon) {
 		expr := p.expression(PrecLowest)
@@ -152,91 +171,112 @@ func (p *Parser) forStatement() ast.Statement {
 
 	block := p.parseBlock()
 
-	return ast.ForVarStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-
-		Declaration: declaration,
-		Condition: condition,
-		Increment: increment,
-		
-		Block: block,
+		Data: ast.ForVarStatement{
+			Declaration: declaration, // won't panic
+			Condition: condition,
+			Increment: increment,
+			Block: block,
+		},
 	}
 }
 
 func (p *Parser) whileStatement() ast.Statement {
-	pos := p.advance().Pos // 'while' keyword
+	keyword := p.advance()
 	condition := p.expression(PrecLowest)
 	block := p.parseBlock()
 
-	return ast.WhileStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-
-		Condition: condition,
-		Block: block,
+		Data: ast.WhileStatement{
+			Condition: condition,
+			Block: block,
+		},
 	}
 }
 
 func (p *Parser) loopStatement() ast.Statement {
-	pos := p.advance().Pos // 'loop' keyword
+	keyword := p.advance()
 	block := p.parseBlock()
 
-	return ast.LoopStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-
-		Block: block,
+		Data: ast.LoopStatement{
+			Block: block,
+		},
 	}
 }
 
 func (p *Parser) breakStatement() ast.Statement {
-	token := p.advance() // 'break' keyword
+	keyword := p.advance()
 	p.requireSemicolon()
 
-	return ast.BreakStatement{
-		AstBase: ast.AstBase{
-			Pos: token.Pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-		Token: token,
+		Data: ast.BreakStatement{
+			Token: keyword,
+		},
 	}
 }
 
 func (p *Parser) continueStatement() ast.Statement {
-	token := p.advance() // 'continue' keyword
+	keyword := p.advance()
 	p.requireSemicolon()
 
-	return ast.ContinueStatement{
-		AstBase: ast.AstBase{
-			Pos: token.Pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-		Token: token,
+		Data: ast.ContinueStatement{
+			Token: keyword,
+		},
 	}
 }
 
-func (p *Parser) varStatement() ast.VarStatement {
-	pos := p.advance().Pos // 'var' keyword
+func (p *Parser) varStatement() ast.Statement {
+	keyword := p.advance()
 	name := p.expectToken(token.TokenIdentifier)
 	p.expect(token.TokenEqual)
 
 	expr := p.expression(0)
 	p.requireSemicolon()
 
-	return ast.VarStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
 		},
-
-		Name: name,
-		Init: expr,
+		Data: ast.VarStatement{
+			Name: name,
+			Init: expr,
+		},
 	}
 }
 
-func (p *Parser) blockStatement() ast.BlockStatement {
-	return p.parseBlock()
+func (p *Parser) blockStatement() ast.Statement {
+	pos := p.peek(0).Pos
+
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: pos,
+			Length: 1,
+		},
+		Data: p.parseBlock(),
+	}
 }
 
 func (p *Parser) exprStatement() ast.Statement {
@@ -245,10 +285,13 @@ func (p *Parser) exprStatement() ast.Statement {
 
 	p.requireSemicolon()
 
-	return ast.ExprStatement{
-		AstBase: ast.AstBase{
+	return ast.Statement{
+		Base: ast.AstBase{
 			Pos: pos,
+			Length: expr.Base.Length,
 		},
-		Expr: expr,
+		Data: ast.ExprStatement{
+			Expr: expr,
+		},
 	}
 }

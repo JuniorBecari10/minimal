@@ -4,100 +4,84 @@ import (
 	"vm-go/token"
 )
 
-type Expression interface {
+type Expression struct {
+	Base AstBase
+	Data ExprData
+}
+
+type ExprData interface {
 	expr()
 }
 
 type NumberExpression struct {
-	AstBase
 	Literal float64
 }
 
 type StringExpression struct {
-	AstBase
 	Literal string
 }
 
 type BoolExpression struct {
-	AstBase
 	Literal bool
 }
 
-type NilExpression struct {
-	AstBase
-}
-
-type VoidExpression struct {
-	AstBase
-}
+type NilExpression struct {}
+type VoidExpression struct {}
 
 type UnaryExpression struct {
-	AstBase
-
 	Operand  Expression
 	Operator token.Token
 }
 
 type LogicalExpression struct {
-	AstBase
-
 	Left     Expression
 	Right    Expression
+	
 	Operator token.Token
 	ShortCircuit bool
 }
 
 type BinaryExpression struct {
-	AstBase
-
 	Left     Expression
 	Right    Expression
 	Operator token.Token
 }
 
 type CallExpression struct {
-	AstBase
 	Callee Expression
 	Arguments []Expression
 }
 
 type GroupExpression struct {
-	AstBase
 	Expr Expression
 }
 
 type IdentifierExpression struct {
-	AstBase
 	Ident token.Token
 }
 
 type IdentifierAssignmentExpression struct {
-	AstBase
 	Name token.Token
 	Expr Expression
 }
 
 type FnExpression struct {
-	AstBase
 	Parameters []Parameter
 	Body BlockStatement
 }
 
 type IfExpression struct {
-	AstBase
 	Condition Expression
 	Then Expression
 	Else Expression
 }
 
 type GetPropertyExpression struct {
-	AstBase
 	Left Expression
 	Property token.Token
 }
 
 type SetPropertyExpression struct {
-	AstBase
 	Left Expression
 	Property token.Token
 	Value Expression

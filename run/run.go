@@ -3,12 +3,12 @@ package run
 import (
 	"fmt"
 	"strings"
-	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/disassembler"
 	"vm-go/lexer"
 	"vm-go/parser"
 	"vm-go/util"
+	"vm-go/value"
 	"vm-go/vm"
 )
 
@@ -48,26 +48,26 @@ func Run(source, fileName string, mode RunMode) {
 	}
 }
 
-func compile(source string, fileData *util.FileData) (chunk.Chunk, bool) {
+func compile(source string, fileData *util.FileData) (value.Chunk, bool) {
 	lexer := lexer.NewLexer(source, fileData)
 	tokens, hadError := lexer.Lex()
 
 	if hadError {
-		return chunk.Chunk{}, true
+		return value.Chunk{}, true
 	}
 
 	parser := parser.NewParser(tokens, fileData)
 	ast, hadError := parser.Parse()
 
 	if hadError {
-		return chunk.Chunk{}, true
+		return value.Chunk{}, true
 	}
 
 	compiler := compiler.NewCompiler(ast, fileData)
 	chunk_, hadError := compiler.Compile()
 
 	if hadError {
-		return chunk.Chunk{}, true
+		return value.Chunk{}, true
 	}
 
 	return chunk_, false

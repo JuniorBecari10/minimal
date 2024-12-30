@@ -2,78 +2,71 @@ package ast
 
 import "vm-go/token"
 
-type Statement interface {
+type Statement struct {
+	Base AstBase
+	Data StmtData
+}
+
+type StmtData interface {
 	stmt()
 }
 
 type FnStatement struct {
-	AstBase
 	Name token.Token
 	Parameters []Parameter
 	Body BlockStatement
 }
 
 type RecordStatement struct {
-	AstBase
 	Name token.Token
 	Fields []Field
 	// TODO: methods
 }
 
 type ReturnStatement struct {
-	AstBase
 	Expression *Expression // optional
 }
 
 type VarStatement struct {
-	AstBase
 	Name token.Token
 	Init Expression
 }
 
 type BlockStatement struct {
-	AstBase
 	Stmts []Statement
 }
 
 type IfStatement struct {
-	AstBase
 	Condition Expression
 	Then      BlockStatement
 	Else      *BlockStatement // optional
 }
 
 type WhileStatement struct {
-	AstBase
 	Condition Expression
 	Block     BlockStatement
 }
 
 type ForVarStatement struct {
-	AstBase
-	Declaration VarStatement
+	Declaration Statement
 	Condition Expression
 	Increment *Expression // optional
 	Block BlockStatement
 }
 
 type LoopStatement struct {
-	AstBase
 	Block BlockStatement
 }
 
 type BreakStatement struct {
-	AstBase
 	Token token.Token
 }
 
 type ContinueStatement struct {
-	AstBase
 	Token token.Token
 }
 
 type ExprStatement struct {
-	AstBase
 	Expr Expression
 }
 

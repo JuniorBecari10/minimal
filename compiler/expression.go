@@ -13,35 +13,50 @@ func (c *Compiler) expression(expr ast.Expression) {
 		return
 	}
 
-	switch e := expr.(type) {
+	switch e := expr.Data.(type) {
 		case ast.NumberExpression: {
 			index := c.addConstant(value.ValueNumber{ Value: e.Literal })
 
-			c.writeBytePos(OP_PUSH_CONST, e.Pos)
+			c.writeBytePos(OP_PUSH_CONST, value.ChunkMetadata{
+				Position: expr.Base.Pos,
+				Length: expr.Base.Length,
+			})
 			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.StringExpression: {
 			index := c.addConstant(value.ValueString{ Value: e.Literal })
 
-			c.writeBytePos(OP_PUSH_CONST, e.Pos)
+			c.writeBytePos(OP_PUSH_CONST, value.NewMetaLen1(expr.Base.Pos))
 			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.BoolExpression: {
 			if e.Literal {
-				c.writeBytePos(OP_TRUE, e.Pos)
+				c.writeBytePos(OP_TRUE, value.ChunkMetadata{
+					Position: expr.Base.Pos,
+					Length: expr.Base.Length,
+				})
 			} else {
-				c.writeBytePos(OP_FALSE, e.Pos)
+				c.writeBytePos(OP_FALSE, value.ChunkMetadata{
+					Position: expr.Base.Pos,
+					Length: expr.Base.Length,
+				})
 			}
 		}
 
 		case ast.NilExpression: {
-			c.writeBytePos(OP_NIL, e.Pos)
+			c.writeBytePos(OP_NIL, value.ChunkMetadata{
+				Position: expr.Base.Pos,
+				Length: expr.Base.Length,
+			})
 		}
 
 		case ast.VoidExpression: {
-			c.writeBytePos(OP_VOID, e.Pos)
+			c.writeBytePos(OP_VOID, value.ChunkMetadata{
+				Position: expr.Base.Pos,
+				Length: expr.Base.Length,
+			})
 		}
 
 		case ast.IdentifierExpression: {
@@ -51,10 +66,27 @@ func (c *Compiler) expression(expr ast.Expression) {
 				return
 			}
 
-			c.writeBytePos(byte(opcode), e.Pos)
+			c.writeBytePos(byte(opcode), value.ChunkMetadata{
+				Position: expr.Base.Pos,
+				Length: expr.Base.Length,
+			})
 			c.writeBytes(util.IntToBytes(index))
 		}
 
+		/*
+			Logical Operators (short-circuit behavior)
+			Control Flow
+
+				[ left operand ]
+
+			+--	OP_JUMP_FALSE (and) / OP_JUMP_TRUE (or)
+			|	OP_POP
+			|
+			|	[ right operand ]
+			|	OP_ASSERT_BOOL
+			|
+			+-> continues...
+		*/
 		case ast.LogicalExpression: {
 			if e.ShortCircuit {
 				var operation byte
@@ -69,19 +101,34 @@ func (c *Compiler) expression(expr ast.Expression) {
 				}
 
 				c.expression(e.Left)
-				c.writeBytePos(operation, e.Pos)
+				c.writeBytePos(operation, value.ChunkMetadata{
+					Position: expr.Base.Pos,
+					Length: expr.Base.Length,
+				})
 
-				jumpFalseOffsetIndex := len(c.chunk.Code)
+				jumpOffsetIndex := len(c.chunk.Code)
 				c.writeBytes(util.IntToBytes(0)) // dummy
-				c.writeBytePos(OP_POP, e.Pos)
+				c.writeBytePos(OP_POP, value.ChunkMetadata{
+					Position: expr.Base.Pos,
+					Length: expr.Base.Length,
+				})
 
 				c.expression(e.Right)
-				c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
+				c.writeBytePos(OP_ASSERT_BOOL, value.ChunkMetadata{
+					Position: expr.Base.Pos,
+					Length: expr.Base.Length,
+				})
+
+				c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
 			} else {
 				c.expression(e.Left)
 				c.expression(e.Right)
 
-				c.chunk.Positions = append(c.chunk.Positions, e.Operator.Pos)
+				c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
+					Position: e.Operator.Pos,
+					Length: len(e.Operator.Lexeme),
+				})
+
 				switch e.Operator.Kind {
 					case token.TokenAndKw:
 						c.writeByte(OP_AND)
@@ -98,7 +145,11 @@ func (c *Compiler) expression(expr ast.Expression) {
 			c.expression(e.Left)
 			c.expression(e.Right)
 
-			c.chunk.Positions = append(c.chunk.Positions, e.Operator.Pos)
+			c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
+				Position: e.Operator.Pos,
+				Length: len(e.Operator.Lexeme),
+			})
+
 			switch e.Operator.Kind {
 				case token.TokenPlus:
 					c.writeByte(OP_ADD)
@@ -140,7 +191,11 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.UnaryExpression: {
 			c.expression(e.Operand)
 
-			c.chunk.Positions = append(c.chunk.Positions, e.Operator.Pos)
+			c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
+				Position: e.Operator.Pos,
+				Length: len(e.Operator.Lexeme),
+			})
+
 			switch e.Operator.Kind {
 				case token.TokenNotKw:
 					c.writeByte(OP_NOT)
@@ -159,7 +214,10 @@ func (c *Compiler) expression(expr ast.Expression) {
 				c.expression(arg)
 			}
 
-			c.writeBytePos(OP_CALL, e.Pos)
+			c.writeBytePos(OP_CALL, value.ChunkMetadata{
+				Position: expr.Base.Pos,
+				Length: expr.Base.Length,
+			})
 			c.writeBytes(util.IntToBytes(len(e.Arguments)))
 		}
 
@@ -175,12 +233,15 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.expression(e.Expr)
 
-			c.writeBytePos(byte(opcode), e.Pos)
+			c.writeBytePos(byte(opcode), value.ChunkMetadata{
+				Position: expr.Base.Pos,
+				Length: expr.Base.Length,
+			})
 			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.FnExpression:
-			c.compileFunction(e.Parameters, e.Body, nil, e.Pos)
+			c.compileFunction(e.Parameters, e.Body, nil, expr.Base.Pos)
 		
 		case ast.IfExpression: {
 			elseFn := func() {
@@ -188,7 +249,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			}
 			
 			else_ := &elseFn
-			c.compileIf(e.Condition, func() { c.expression(e.Then) }, else_, e.Pos)
+			c.compileIf(e.Condition, func() { c.expression(e.Then) }, else_, expr.Base.Pos)
 		}
 
 		case ast.GetPropertyExpression: {
@@ -197,7 +258,10 @@ func (c *Compiler) expression(expr ast.Expression) {
 			// Store the name as a string in the constant table and retrieve it later.
 			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
 
-			c.writeBytePos(OP_GET_PROPERTY, e.Property.Pos)
+			c.writeBytePos(OP_GET_PROPERTY, value.ChunkMetadata{
+				Position: e.Property.Pos,
+				Length: len(e.Property.Lexeme),
+			})
 			c.writeBytes(util.IntToBytes(index))
 		}
 
@@ -209,7 +273,10 @@ func (c *Compiler) expression(expr ast.Expression) {
 			// The value to be assigned will be on top of the object we'll assign it to.
 			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
 
-			c.writeBytePos(OP_SET_PROPERTY, e.Property.Pos)
+			c.writeBytePos(OP_SET_PROPERTY, value.ChunkMetadata{
+				Position: e.Property.Pos,
+				Length: len(e.Property.Lexeme),
+			})
 			c.writeBytes(util.IntToBytes(index))
 		}
 	}

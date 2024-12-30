@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "debug",
             "program": ".",
-            "args": ["file.txt"]
+            "args": ["tests/and_not_bool.vm"]
         }
 
     ]

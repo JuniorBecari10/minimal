@@ -7,7 +7,7 @@ import (
 )
 
 func (c *Compiler) statement(stmt ast.Statement) {
-	switch s := stmt.(type) {
+	switch s := stmt.Data.(type) {
 		case ast.RecordStatement: {
 			fieldNames := []string{}
 
@@ -20,18 +20,18 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				Name: s.Name.Lexeme,
 			})
 
-			c.writeBytePos(OP_PUSH_CONST, s.Pos)
+			c.writeBytePos(OP_PUSH_CONST, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(index))
 
 			c.addVariable(s.Name, s.Name.Pos)
-			c.addDeclarationInstruction(s.Pos)
+			c.addDeclarationInstruction(stmt.Base.Pos)
 		}
 
 		case ast.FnStatement: {
-			c.compileFunction(s.Parameters, s.Body, &s.Name.Lexeme, s.Pos)
+			c.compileFunction(s.Parameters, s.Body, &s.Name.Lexeme, stmt.Base.Pos)
 
 			c.addVariable(s.Name, s.Name.Pos)
-			c.addDeclarationInstruction(s.Pos)
+			c.addDeclarationInstruction(stmt.Base.Pos)
 		}
 
 		case ast.VarStatement: {
@@ -42,7 +42,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			}
 
 			c.addVariable(s.Name, s.Name.Pos)
-			c.addDeclarationInstruction(s.Pos)
+			c.addDeclarationInstruction(stmt.Base.Pos)
 		}
 
 		// Control flow graph in the compileIf function.
@@ -51,13 +51,13 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 			if s.Else != nil {
 				elseFn := func() {
-					c.block(s.Else.Stmts, s.Pos)
+					c.block(s.Else.Stmts, stmt.Base.Pos)
 				}
 
 				else_ = &elseFn
 			}
 
-			c.compileIf(s.Condition, func() { c.block(s.Then.Stmts, s.Pos) }, else_, s.Pos)
+			c.compileIf(s.Condition, func() { c.block(s.Then.Stmts, stmt.Base.Pos) }, else_, stmt.Base.Pos)
 		}
 
 		/*
@@ -65,7 +65,8 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			Control Flow:
 
 				[ condition ] <-+
-								|
+								
+				|
 			+-- OP_JUMP_FALSE	| <- break/continue point
 			|	OP_POP			|
 			|					|
@@ -80,21 +81,21 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			conditionPos := len(c.chunk.Code)
 			c.expression(s.Condition)
 
-			c.loopFlowPos = len(c.chunk.Code)
-			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
+			c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
+			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 			jumpOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
-			c.writeBytePos(OP_POP, s.Pos)
-			c.block(s.Block.Stmts, s.Pos)
+			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.block(s.Block.Stmts, stmt.Base.Pos)
 
-			c.loopFlowPos = -1
+			util.PopList(&c.loopFlowPos)
 			
-			c.writeBytePos(OP_LOOP, s.Pos)
+			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionPos + 4)) // index
 
 			c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
-			c.writeBytePos(OP_POP, s.Pos)
+			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 		}
 
 		/*
@@ -124,29 +125,29 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			conditionPos := len(c.chunk.Code)
 			c.expression(s.Condition)
 
-			c.loopFlowPos = len(c.chunk.Code)
-			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
+			c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
+			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 			jumpFalseOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
 			// and the block inside another
-			c.writeBytePos(OP_POP, s.Pos)
-			c.block(s.Block.Stmts, s.Pos)
+			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.block(s.Block.Stmts, stmt.Base.Pos)
 
-			c.loopFlowPos = -1
+			util.PopList(&c.loopFlowPos)
 			
 			if s.Increment != nil {
 				c.expression(*s.Increment)
-				c.writeBytePos(OP_POP, s.Pos)
+				c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 			}
 
-			c.writeBytePos(OP_LOOP, s.Pos)
+			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionPos + 4)) // index
 
 			c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
-			c.writeBytePos(OP_POP, s.Pos)
+			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 			
-			c.endScope(s.Pos)
+			c.endScope(stmt.Base.Pos)
 		}
 
 		/*
@@ -165,75 +166,76 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			continues...
 		*/
 		case ast.LoopStatement: {
-			c.writeBytePos(OP_JUMP, s.Pos)
+			c.writeBytePos(OP_JUMP, value.NewMetaLen1(stmt.Base.Pos))
 			jumpJumpOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
-			c.loopFlowPos = len(c.chunk.Code)
-			c.writeBytePos(OP_JUMP_FALSE, s.Pos)
+			c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
+			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 			jumpEndOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
-			c.writeBytePos(OP_POP, s.Pos)
+			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 
 			c.backpatch(jumpJumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpJumpOffsetIndex - 4)) // index
 
 			loopPos := len(c.chunk.Code)
-			c.block(s.Block.Stmts, s.Pos)
+			c.block(s.Block.Stmts, stmt.Base.Pos)
 
-			c.writeBytePos(OP_LOOP, s.Pos)
+			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - loopPos + 4)) // index
 
-			c.loopFlowPos = -1
+			util.PopList(&c.loopFlowPos)
 			c.backpatch(jumpEndOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpEndOffsetIndex - 4)) // index
-			c.writeBytePos(OP_POP, s.Pos)
+			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 		}
 
 		case ast.BreakStatement: {
-			// We'll jump to OP_JUMP_IF_FALSE, which jumps to the end of the loop.
+			// We'll jump to OP_JUMP_FALSE, which jumps to the end of the loop.
 			// So, to do that, we'll push 'false' onto the stack and jump there,
 			// which will cause the instruction to break out of the loop.
 
-			if c.loopFlowPos == -1 {
-				c.error(s.Pos, len(s.Token.Lexeme), "Cannot use 'break' outside of a loop.")
+			if len(c.loopFlowPos) == 0 {
+				c.error(stmt.Base.Pos, len(s.Token.Lexeme), "Cannot use 'break' outside of a loop.")
 				return
 			}
 
-			c.writeBytePos(OP_FALSE, s.Pos)
+			c.writeBytePos(OP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 
-			c.writeBytePos(OP_LOOP, s.Pos)
-			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos + 4)) // index
+			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos[len(c.loopFlowPos)-1] + 4)) // index
 		}
 
 		case ast.ContinueStatement: {
 			// The same with continue, but we'll push 'true', because we want the loop to keep running.
 
-			if c.loopFlowPos == -1 {
-				c.error(s.Pos, len(s.Token.Lexeme), "Cannot use 'continue' outside of a loop.")
+			// this might be broken if multiple loops are nested
+			if len(c.loopFlowPos) == 0 {
+				c.error(stmt.Base.Pos, len(s.Token.Lexeme), "Cannot use 'continue' outside of a loop.")
 				return
 			}
 
-			c.writeBytePos(OP_TRUE, s.Pos)
+			c.writeBytePos(OP_TRUE, value.NewMetaLen1(stmt.Base.Pos))
 
-			c.writeBytePos(OP_LOOP, s.Pos)
-			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos + 4)) // index
+			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos[len(c.loopFlowPos)-1] + 4)) // index
 		}
 
 		case ast.ReturnStatement: {
 			if s.Expression != nil {
 				c.expression(*s.Expression)
 			} else {
-				c.writeBytePos(OP_VOID, s.Pos)
+				c.writeBytePos(OP_VOID, value.NewMetaLen1(stmt.Base.Pos))
 			}
 
-			c.writeBytePos(OP_RETURN, s.Pos)
+			c.writeBytePos(OP_RETURN, value.NewMetaLen1(stmt.Base.Pos))
 		}
 
 		case ast.BlockStatement:
-			c.block(s.Stmts, s.Pos)
+			c.block(s.Stmts, stmt.Base.Pos)
 
 		case ast.ExprStatement: {
 			c.expression(s.Expr)
-			c.writeBytePos(OP_POP, s.Pos)
+			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 		}
 	}
 }

@@ -3,21 +3,13 @@ package value
 import (
 	"bytes"
 	"fmt"
-	"vm-go/token"
 )
 
 type NativeFn = func(args []Value) Value
 
-// Another alias for Chunk, because of import cycle
-type Chunk = struct {
-	Code      []byte
-	Constants []Value
-
-	Positions []token.Position
-}
-
 type Value interface {
 	String() string
+	Type() string
 }
 
 // ---
@@ -59,14 +51,14 @@ type ValueRecord struct {
 }
 
 type ValueInstance struct {
-	Fields []Field
+	Fields []Value
 	Record *ValueRecord
 }
 
 func (in *ValueInstance) GetProperty(name string) (Value, bool) {
-	for _, field := range in.Fields {
-		if field.Name == name {
-			return field.Value, true
+	for i, value := range in.Fields {
+		if in.Record.FieldNames[i] == name {
+			return value, true
 		}
 	}
 
@@ -74,9 +66,9 @@ func (in *ValueInstance) GetProperty(name string) (Value, bool) {
 }
 
 func (in *ValueInstance) SetProperty(name string, value Value) bool {
-	for i, field := range in.Fields {
-		if field.Name == name {
-			in.Fields[i].Value = value
+	for i := range in.Fields {
+		if in.Record.FieldNames[i] == name {
+			in.Fields[i] = value
 			return true
 		}
 	}
@@ -122,8 +114,7 @@ func (x ValueInstance) String() string {
 	res.WriteString(fmt.Sprintf("%s(", x.Record.Name))
 
 	for i, field := range x.Fields {
-		// Get the name from the referenced record, so there's no need to store the name of the field twice.
-		res.WriteString(fmt.Sprintf("%s: %s", field.Name, field.Value.String()))
+		res.WriteString(fmt.Sprintf("%s: %s", x.Record.FieldNames[i], field.String()))
 
 		// Add a comma and space if it isn't the last field.
 		if i < len(x.Fields) - 1 {
@@ -134,3 +125,19 @@ func (x ValueInstance) String() string {
 	res.WriteString(")")
 	return res.String()
 }
+
+// ---
+
+func (x ValueNumber) Type() string { return "num" }
+func (x ValueString) Type() string { return "str" }
+func (x ValueBool) Type() string { return "bool" }
+
+func (x ValueNil) Type() string { return "nil" }
+func (x ValueVoid) Type() string { return "void" }
+
+func (x ValueFunction) Type() string { return "fn" }
+func (x ValueNativeFn) Type() string { return "native fn" }
+func (x ValueClosure) Type() string { return "fn" }
+
+func (x ValueRecord) Type() string { return "record" }
+func (x ValueInstance) Type() string { return x.Record.Name }

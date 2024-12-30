@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"vm-go/ast"
-	"vm-go/chunk"
 	"vm-go/token"
 	"vm-go/util"
 	"vm-go/value"
@@ -30,28 +29,28 @@ import (
 */
 
 // 'then' and 'else_' are functions because this function accepts both statements and expressions, and functions that
-// compile these things don't return and have side effects, so the caller creates a new function and inserts the
+// compile these things don't return and have side effects, so the caller should create a new function and insert the
 // code inside it to generate the desired branch. 'else_' is a pointer because it's nullable. If it's not present,
 // please pass in 'nil' for it.
 func (c *Compiler) compileIf(condition ast.Expression, then func(), else_ *func(), pos token.Position) {
 	c.expression(condition)
-	c.writeBytePos(OP_JUMP_FALSE, pos)
+	c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(pos))
 
 	jumpFalseOffsetIndex := len(c.chunk.Code)
 	c.writeBytes(util.IntToBytes(0)) // dummy
-	c.writeBytePos(OP_POP, pos)
+	c.writeBytePos(OP_POP, value.NewMetaLen1(pos))
 
 	then()
 
 	if else_ != nil {
-		c.writeBytePos(OP_JUMP, pos)
+		c.writeBytePos(OP_JUMP, value.NewMetaLen1(pos))
 		jumpOffsetIndex := len(c.chunk.Code)
 		c.writeBytes(util.IntToBytes(0)) // dummy
 
 		// insert the real offset into the instruction, right before OP_POP
 		c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 
-		c.writeBytePos(OP_POP, pos)
+		c.writeBytePos(OP_POP, value.NewMetaLen1(pos))
 		(*else_)()
 
 		c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
@@ -82,7 +81,7 @@ func (c *Compiler) compileFunction(parameters []ast.Parameter, body ast.BlockSta
 	}
 
 	index := c.addConstant(function)
-	c.writeBytePos(OP_PUSH_CLOSURE, pos)
+	c.writeBytePos(OP_PUSH_CLOSURE, value.NewMetaLen1(pos))
 	c.writeBytes(util.IntToBytes(index))
 
 	c.writeBytes(util.IntToBytes(len(fnCompiler.upvalues)))
@@ -91,23 +90,23 @@ func (c *Compiler) compileFunction(parameters []ast.Parameter, body ast.BlockSta
 	// structure: 0/1 | index
 	for i := range len(fnCompiler.upvalues) {
 		if fnCompiler.upvalues[i].isLocal {
-			c.writeBytePos(1, pos)
+			c.writeBytePos(1, value.NewMetaLen1(pos))
 		} else {
-			c.writeBytePos(0, pos)
+			c.writeBytePos(0, value.NewMetaLen1(pos))
 		}
 
 		c.writeBytes(util.IntToBytes(fnCompiler.upvalues[i].index))
 	}
 }
 
-func (c *Compiler) compileFnBody(pos token.Position) (chunk.Chunk, bool) {
+func (c *Compiler) compileFnBody(pos token.Position) (value.Chunk, bool) {
 	c.statements(c.ast)
 
 	if len(c.chunk.Code) > 0 && c.chunk.Code[len(c.chunk.Code) - 1] != OP_RETURN {
 		c.endScope(pos)
 
-		c.writeBytePos(OP_VOID, pos)
-		c.writeBytePos(OP_RETURN, pos)
+		c.writeBytePos(OP_VOID, value.NewMetaLen1(pos))
+		c.writeBytePos(OP_RETURN, value.NewMetaLen1(pos))
 	}
 
 	return c.chunk, c.hadError
@@ -117,30 +116,30 @@ func (c *Compiler) writeByte(b byte) {
 	c.chunk.Code = append(c.chunk.Code, b)
 }
 
-func (c *Compiler) writeBytePos(b byte, pos token.Position) {
-	c.chunk.Positions = append(c.chunk.Positions, pos)
+func (c *Compiler) writeBytePos(b byte, meta value.ChunkMetadata) {
+	c.chunk.Metadata = append(c.chunk.Metadata, meta)
 	c.chunk.Code = append(c.chunk.Code, b)
 }
 
 func (c *Compiler) writeBytes(bytes []byte) {
 	c.chunk.Code = append(c.chunk.Code, bytes...)
 
-	// append dummy positions in the positions array
+	// append dummy value.NewMetaLen1(pos)itions in the value.NewMetaLen1(pos)itions array
 	for range len(bytes) {
-		c.chunk.Positions = append(c.chunk.Positions, token.Position{})
+		c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{})
 	}
 }
 
 func (c *Compiler) backpatch(index int, bytes []byte) {
-	// Ensure the position is valid
+	// Ensure the value.NewMetaLen1(pos)ition is valid
 	if index < 0 || index + len(bytes) > len(c.chunk.Code) {
 		// TODO: separate this into a function
-		fmt.Printf("internal: invalid position: %d\n", index)
+		fmt.Printf("internal: invalid value.NewMetaLen1(pos)ition: %d\n", index)
 		c.hadError = true
 		return
 	}
 
-	// Overwrite the bytes at the specified position
+	// Overwrite the bytes at the specified value.NewMetaLen1(pos)ition
 	for i, b := range bytes {
 		c.chunk.Code[index + i] = b
 	}
@@ -148,9 +147,9 @@ func (c *Compiler) backpatch(index int, bytes []byte) {
 
 func (c *Compiler) addDeclarationInstruction(pos token.Position) {
 	if c.scopeDepth == 0 {
-		c.writeBytePos(OP_DEF_GLOBAL, pos)
+		c.writeBytePos(OP_DEF_GLOBAL, value.NewMetaLen1(pos))
 	} else {
-		c.writeBytePos(OP_DEF_LOCAL, pos)
+		c.writeBytePos(OP_DEF_LOCAL, value.NewMetaLen1(pos))
 	}
 }
 
@@ -379,7 +378,7 @@ func (c *Compiler) endScope(pos token.Position) {
 				c.emitPop(count, pos)
 
 				// Pop the captured variable and reset the count for further counting.
-				c.writeBytePos(OP_CLOSE_UPVALUE, pos)
+				c.writeBytePos(OP_CLOSE_UPVALUE, value.NewMetaLen1(pos))
 				count = 0
 				realCount++
 			} else {
@@ -401,10 +400,10 @@ func (c *Compiler) emitPop(count int, pos token.Position) {
 	// If count <= 0 this function does nothing.
 
 	if count > 1 {
-		c.writeBytePos(OP_POPN_LOCAL, pos)
+		c.writeBytePos(OP_POPN_LOCAL, value.NewMetaLen1(pos))
 		c.writeBytes(util.IntToBytes(count))
 	} else if count == 1 {
-		c.writeBytePos(OP_POP_LOCAL, pos)
+		c.writeBytePos(OP_POP_LOCAL, value.NewMetaLen1(pos))
 	}
 }
 

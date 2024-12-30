@@ -8,7 +8,7 @@ import (
 )
 
 func (p *Parser) parseBlock() ast.BlockStatement {
-	pos := p.expectToken(token.TokenLeftBrace).Pos
+	p.expect(token.TokenLeftBrace)
 	stmts := []ast.Statement{}
 
 	for !p.isAtEnd(0) && !p.check(token.TokenRightBrace) {
@@ -17,9 +17,6 @@ func (p *Parser) parseBlock() ast.BlockStatement {
 
 	p.expect(token.TokenRightBrace)
 	return ast.BlockStatement{
-		AstBase: ast.AstBase{
-			Pos: pos,
-		},
 		Stmts: stmts,
 	}
 }

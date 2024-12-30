@@ -4,20 +4,19 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"vm-go/chunk"
 	"vm-go/compiler"
 	"vm-go/util"
 	"vm-go/value"
 )
 
 type Disassembler struct {
-	chunk chunk.Chunk
+	chunk value.Chunk
 	ip int
 
 	fileData *util.FileData
 }
 
-func NewDisassembler(chunk chunk.Chunk, fileData *util.FileData) *Disassembler {
+func NewDisassembler(chunk value.Chunk, fileData *util.FileData) *Disassembler {
 	return &Disassembler{
 		chunk: chunk,
 		ip: 0,
@@ -33,15 +32,16 @@ func (d *Disassembler) Disassemble() {
 }
 
 func (d *Disassembler) disassemble(name string) {
-	fmt.Printf("chunk: %s\n", name)
+	fmt.Println(util.Center(fmt.Sprintf("- %s -", name), 66, " ")) // 66 = len("--------|-----------|--------|------------------|--------|--------")
 
 	if len(d.chunk.Code) == 0 {
-		fmt.Println("chunk is empty.")
+		fmt.Println(util.Center("function is empty.", 66, " "))
 		return
 	}
 
-	fmt.Println(" offset | position  | instruction      | index  | result")
-	fmt.Println("--------|-----------|------------------|--------|--------")
+	fmt.Println("--------|-----------|--------|------------------|--------|--------")
+	fmt.Println(" offset | position  | length | instruction      | index  | result")
+	fmt.Println("--------|-----------|--------|------------------|--------|--------")
 
 	for i := 0; !d.isAtEnd(); i++ {
 		ip := d.ip
@@ -67,14 +67,15 @@ func (d *Disassembler) disassemble(name string) {
 		}
 	}
 }
-
 func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 	fmt.Printf(
-		" %s | %s %s | %s | ",
+		" %s | %s %s | %s | %s | ",
 		util.PadLeft(strconv.Itoa(ip), 6, " "),
 
-		util.PadRight(strconv.Itoa(d.chunk.Positions[ip].Line + 1), 4, " "),
-		util.PadRight(strconv.Itoa(d.chunk.Positions[ip].Col + 1), 4, " "),
+		util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Position.Line + 1), 4, " "),
+		util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Position.Col + 1), 4, " "),
+
+		util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Length), 6, " "),
 
 		util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
 	)
@@ -87,9 +88,10 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 			// TODO: print the type as well
 			fmt.Printf(
-				"%s | '%s'\n",
+				"%s | '%s': %s\n",
 				util.PadRight(strconv.Itoa(index), 6, " "),
 				d.chunk.Constants[index].String(),
+				d.chunk.Constants[index].Type(),
 			)
 		}
 
@@ -103,7 +105,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 			// TODO: print the type as well
 			fmt.Printf(
-				"%s | '%s'\n",
+				"%s | %s\n",
 				util.PadRight(strconv.Itoa(index), 6, " "),
 				d.chunk.Constants[index].String(),
 			)
@@ -124,11 +126,13 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 				}
 
 				fmt.Printf(
-					" %s | %s %s | |%s | %s | %s\n",
+					" %s | %s %s | %s | |%s | %s | %s\n",
 					util.PadLeft(strconv.Itoa(ip + 5 * (i + 1)), 6, " "),
 			
-					util.PadRight(strconv.Itoa(d.chunk.Positions[ip].Line + 1), 4, " "),
-					util.PadRight(strconv.Itoa(d.chunk.Positions[ip].Col + 1), 4, " "),
+					util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Position.Line + 1), 4, " "),
+					util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Position.Col + 1), 4, " "),
+
+					util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Length), 6, " "),
 			
 					strings.Repeat(" ", MAX_INSTRUCTION_LENGTH - 1),
 
