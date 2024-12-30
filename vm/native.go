@@ -40,6 +40,11 @@ func (v *VM) includeNativeFns() {
 		Arity: 1,
 		Fn: nativeNum,
 	})
+
+	v.globals = append(v.globals, value.ValueNativeFn{
+		Arity: 1,
+		Fn: nativeType,
+	})
 }
 
 // ---
@@ -96,4 +101,8 @@ func nativeNum(args []value.Value) value.Value {
 	}
 
 	return value.ValueNumber{ Value: asNum }
+}
+
+func nativeType(args []value.Value) value.Value {
+	return value.ValueString{Value: args[0].Type()}
 }

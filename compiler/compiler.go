@@ -236,6 +236,12 @@ func (c *Compiler) addNativeFunctions() {
 		name: token.Token{ Lexeme: "num" },
 		initialized: true,
 	})
+
+	// fn type(value: any) -> str
+	c.globals = append(c.globals, Global{
+		name: token.Token{ Lexeme: "type" },
+		initialized: true,
+	})
 }
 
 func (c *Compiler) callMain() {
