@@ -102,6 +102,7 @@ func (c *Compiler) compileFunction(parameters []ast.Parameter, body ast.BlockSta
 func (c *Compiler) compileFnBody(pos token.Position) (value.Chunk, bool) {
 	c.statements(c.ast)
 
+	// Check if the last instrution is a OP_RETURN and emit another returning void if not.
 	if len(c.chunk.Code) > 0 && c.chunk.Code[len(c.chunk.Code) - 1] != OP_RETURN {
 		c.endScope(pos)
 
@@ -124,22 +125,22 @@ func (c *Compiler) writeBytePos(b byte, meta value.ChunkMetadata) {
 func (c *Compiler) writeBytes(bytes []byte) {
 	c.chunk.Code = append(c.chunk.Code, bytes...)
 
-	// append dummy value.NewMetaLen1(pos)itions in the value.NewMetaLen1(pos)itions array
+	// append dummy positions in the positions array
 	for range len(bytes) {
 		c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{})
 	}
 }
 
 func (c *Compiler) backpatch(index int, bytes []byte) {
-	// Ensure the value.NewMetaLen1(pos)ition is valid
+	// Ensure the position is valid
 	if index < 0 || index + len(bytes) > len(c.chunk.Code) {
 		// TODO: separate this into a function
-		fmt.Printf("internal: invalid value.NewMetaLen1(pos)ition: %d\n", index)
+		fmt.Printf("internal: invalid position: %d\n", index)
 		c.hadError = true
 		return
 	}
 
-	// Overwrite the bytes at the specified value.NewMetaLen1(pos)ition
+	// Overwrite the bytes at the specified position
 	for i, b := range bytes {
 		c.chunk.Code[index + i] = b
 	}
