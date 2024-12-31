@@ -61,21 +61,21 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		}
 
 		/*
-			While Loop
-			Control Flow:
+            While Loop
+            Control Flow:
 
-				[ condition ] <-+
-								
-				|
-			+-- OP_JUMP_FALSE	| <- break/continue point
-			|	OP_POP			|
-			|					|
-			|	[ body ]		|
-			|					|
-			|	OP_LOOP --------+
-			+-> OP_POP
+                [ condition ] <-+
+                                |
+                                |
+            +-- OP_JUMP_FALSE   | <- break/continue point
+            |   OP_POP          |
+            |                   |
+            |   [ body ]        |
+            |                   |
+            |   OP_LOOP --------+
+            +-> OP_POP
 
-			continues...
+            continues...
 		*/
 		case ast.WhileStatement: {
 			conditionPos := len(c.chunk.Code)
@@ -99,23 +99,23 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		}
 
 		/*
-			For Var Loop
-			Control Flow:
+            For Var Loop
+            Control Flow:
 
-				[ initializer ]
-				[ condition ] <-+
-								|
-			+-- OP_JUMP_FALSE	| <- break/continue point
-			|	OP_POP			|
-			|					|
-			|	[ body ]		|
-			| | [ increment ]	| (generated if increment is set)
-			| | OP_POP			|
-			|					|
-			|	OP_LOOP --------+
-			+-> OP_POP
+                [ initializer ]
+                [ condition ] <-+
+                                |
+            +-- OP_JUMP_FALSE   | <- break/continue point
+            |   OP_POP          |
+            |                   |
+            |   [ body ]        |
+            | + [ increment ]   | (generated if increment is set)
+            | + OP_POP          |
+            |                   |
+            |   OP_LOOP --------+
+            +-> OP_POP
 
-			continues...
+            continues...
 		*/
 		case ast.ForVarStatement: {
 			// the declaration stays inside a new scope
@@ -151,19 +151,19 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		}
 
 		/*
-			Loop (indefinite amount of iterations) Loop
-			Control Flow:
+            Indefinite Loop
+            Control Flow:
 
-			+-- OP_JUMP
-			|	OP_JUMP_FALSE --+ <- break/continue point
-			|	OP_POP			|
-			|					|
-			+-> [ block ] <-+	|
-							|	|
-				OP_LOOP ----+	|
-				OP_POP <--------+
+            +-- OP_JUMP
+            |   OP_JUMP_FALSE --+ <- break/continue point
+            |   OP_POP          |
+            |                   |
+            +-> [ block ] <-+   |
+                            |   |
+                OP_LOOP ----+   |
+                OP_POP <--------+
 
-			continues...
+            continues...
 		*/
 		case ast.LoopStatement: {
 			c.writeBytePos(OP_JUMP, value.NewMetaLen1(stmt.Base.Pos))

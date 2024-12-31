@@ -74,18 +74,18 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		/*
-			Logical Operators (short-circuit behavior)
-			Control Flow
+            Logical Operators (short-circuit behavior)
+            Control Flow
 
-				[ left operand ]
+                [ left operand ]
 
-			+--	OP_JUMP_FALSE (and) / OP_JUMP_TRUE (or)
-			|	OP_POP
-			|
-			|	[ right operand ]
-			|	OP_ASSERT_BOOL
-			|
-			+-> continues...
+            +-- OP_JUMP_FALSE (and) / OP_JUMP_TRUE (or)
+            |   OP_POP
+            |
+            |   [ right operand ]
+            |   OP_ASSERT_BOOL
+            |
+            +-> continues...
 		*/
 		case ast.LogicalExpression: {
 			if e.ShortCircuit {

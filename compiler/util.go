@@ -15,17 +15,17 @@ import (
 
 		[ condition ]
 
-	+--	OP_JUMP_FALSE
-	|	OP_POP
+	+-- OP_JUMP_FALSE
+	|   OP_POP
 	|
-	|	[ then branch ]
+	|   [ then branch ]
 	|
-	|	OP_JUMP --------+
-	+-> OP_POP			|
-						|
-		[ else branch ] |
-						|
-	continues... <------+
+	|   OP_JUMP ---------+
+	+-> OP_POP           |
+	                     |
+		[ else branch ]  |
+	                     |
+	continues... <-------+
 */
 
 // 'then' and 'else_' are functions because this function accepts both statements and expressions, and functions that

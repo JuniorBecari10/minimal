@@ -10,7 +10,6 @@ const (
 	PrecLowest = iota
 	PrecAssignment          // =
 	PrecOr                  // or
-	PrecXor                 // xor
 	PrecAnd                 // and
 	PrecEqual               // == !=
 	PrecComparison          // < > <= >=
@@ -27,9 +26,9 @@ type Parser struct {
 	tokens []token.Token
 	current int
 
-	prefixMap map[token.TokenKind] func() ast.Expression
-	infixMap map[token.TokenKind] func(ast.Expression, token.Position) ast.Expression
-	precedenceMap map[token.TokenKind] int // add another map if necessary
+	prefixMap map[token.TokenKind]func() ast.Expression
+	infixMap map[token.TokenKind]func(ast.Expression, token.Position) ast.Expression
+	precedenceMap map[token.TokenKind]int // add another map if necessary
 
 	hadError bool
 	panicMode bool
