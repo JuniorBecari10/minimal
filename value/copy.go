@@ -72,6 +72,13 @@ func CopyValue(value Value) Value {
 				Record: v.Record, // don't copy
 			}
 		}
+		
+		case ValueBoundMethod: {
+			return ValueBoundMethod{
+				Receiver: v.Receiver, // don't copy
+				Method: CopyValue(v.Method).(ValueClosure),
+			}
+		}
 
 		default:
 			panic(fmt.Sprintf("Unknown value: '%v': %s", v, reflect.TypeOf(v)))

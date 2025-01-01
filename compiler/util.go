@@ -62,48 +62,17 @@ func (c *Compiler) compileIf(condition ast.Expression, then func(), else_ *func(
 
 func (c *Compiler) compileFunction(parameters []ast.Parameter, body ast.BlockStatement, name *string, pos token.Position) {
 	fnCompiler := newFnCompiler(body.Stmts, c)
-
-	for _, param := range parameters {
-		fnCompiler.addVariable(param.Name, param.Name.Pos)
-	}
-
-	fnChunk, hadError := fnCompiler.compileFnBody(pos)
-
-	if hadError {
-		c.hadError = true
-		return
-	}
-
-	function := value.ValueFunction{
-		Arity: len(parameters),
-		Chunk: fnChunk,
-		Name: name,
-	}
-
-	index := c.addConstant(function)
-	c.writeBytePos(OP_PUSH_CLOSURE, value.NewMetaLen1(pos))
-	c.writeBytes(util.IntToBytes(index))
-
-	c.writeBytes(util.IntToBytes(len(fnCompiler.upvalues)))
-
-	// emit upvalue data
-	// structure: 0/1 | index
-	for i := range len(fnCompiler.upvalues) {
-		if fnCompiler.upvalues[i].isLocal {
-			c.writeBytePos(1, value.NewMetaLen1(pos))
-		} else {
-			c.writeBytePos(0, value.NewMetaLen1(pos))
-		}
-
-		c.writeBytes(util.IntToBytes(fnCompiler.upvalues[i].index))
-	}
+	c.compileFunctionCompiler(fnCompiler, parameters, name, pos)
 }
 
-// TODO: remove the copy
 func (c *Compiler) compileMethod(parameters []ast.Parameter, body ast.BlockStatement, name *string, pos token.Position) {
 	fnCompiler := newFnCompiler(body.Stmts, c)
 	fnCompiler.addVariable(token.Token{ Lexeme: "self" }, token.Position{})
 
+	c.compileFunctionCompiler(fnCompiler, parameters, name, pos)
+}
+
+func (c *Compiler) compileFunctionCompiler(fnCompiler *Compiler, parameters []ast.Parameter, name *string, pos token.Position) {
 	for _, param := range parameters {
 		fnCompiler.addVariable(param.Name, param.Name.Pos)
 	}

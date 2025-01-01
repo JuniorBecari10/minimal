@@ -71,7 +71,7 @@ func (in *ValueInstance) GetProperty(name string) (Value, bool) {
 	for _, method := range in.Record.Methods {
 		if *method.Fn.Name == name {
 			return ValueBoundMethod{
-				Receiver: *in, // TODO: if it goes wrong, maybe put '*in' here?
+				Receiver: *in,
 				Method: method,
 			}, true
 		}
