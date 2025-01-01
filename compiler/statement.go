@@ -29,8 +29,10 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				c.compileMethod(method.Parameters, method.Body, &method.Name.Lexeme, stmt.Base.Pos) // TODO: add correct position
 			}
 
-			c.writeBytePos(OP_APPEND_METHODS, value.NewMetaLen1(stmt.Base.Pos))
-			c.writeBytes(util.IntToBytes(len(s.Methods)))
+			if len(s.Methods) > 0 {
+				c.writeBytePos(OP_APPEND_METHODS, value.NewMetaLen1(stmt.Base.Pos))
+				c.writeBytes(util.IntToBytes(len(s.Methods)))
+			}
 
 			c.addVariable(s.Name, s.Name.Pos)
 			c.addDeclarationInstruction(stmt.Base.Pos)
