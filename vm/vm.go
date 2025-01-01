@@ -192,54 +192,24 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_GET_PROPERTY: {
 				obj := v.pop()
-
 				index := v.getInt()
-				nameValue := v.currentChunk.Constants[index]
-				name := nameValue.(value.ValueString).Value
 				
-				switch instance := obj.(type) {
-					case value.ValueInstance: {
-						property, ok := instance.GetProperty(name)
+				res := v.getProperty(obj, index)
 
-						if !ok {
-							v.error(fmt.Sprintf("Property '%s' doesn't exist.", name))
-							return STATUS_PROPERTY_DOESNT_EXIST
-						}
-
-						v.push(property)
-					}
-
-					default:
-						// TODO: add methods to another types, defined by a table at runtime.
-						v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
-						return STATUS_PROPERTY_DOESNT_EXIST
+				if res != STATUS_OK {
+					return res
 				}
 			}
 
 			case compiler.OP_SET_PROPERTY: {
 				val := v.pop()
 				obj := v.pop()
-
 				index := v.getInt()
-				nameValue := v.currentChunk.Constants[index]
-				name := nameValue.(value.ValueString).Value
 				
-				switch instance := obj.(type) {
-					case value.ValueInstance: {
-						ok := instance.SetProperty(name, val)
+				res := v.setProperty(obj, index, val)
 
-						if !ok {
-							v.error(fmt.Sprintf("Property '%s' doesn't exist in the object '%s', of type '%s'.", name, obj.String(), obj.Type()))
-							return STATUS_PROPERTY_DOESNT_EXIST
-						}
-
-						v.push(val)
-					}
-
-					default:
-						// TODO: add methods to another types, defined by a table at runtime.
-						v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
-						return STATUS_PROPERTY_DOESNT_EXIST
+				if res != STATUS_OK {
+					return res
 				}
 			}
 

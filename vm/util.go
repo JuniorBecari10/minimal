@@ -83,6 +83,11 @@ func isRecord(v value.Value) bool {
 	return ok
 }
 
+func isBoundMethod(v value.Value) bool {
+	_, ok := v.(value.ValueBoundMethod)
+	return ok
+}
+
 // ---
 
 func (v *VM) captureUpvalue(localsIndex int, index int) *value.Upvalue {
@@ -192,7 +197,7 @@ func (v *VM) getArguments(arity int) []value.Value {
 }
 
 func (v *VM) call(callee value.Value, arity int) InterpretResult {
-	if !isClosure(callee) && !isNativeFunction(callee) && !isRecord(callee) {
+	if !isClosure(callee) && !isNativeFunction(callee) && !isRecord(callee) && !isBoundMethod(callee) {
 		v.error(fmt.Sprintf("Can only call functions or records. (called '%s', of type '%s')", callee.String(), callee.Type()))
 		return STATUS_TYPE_ERROR
 	}
@@ -258,11 +263,64 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			v.push(instance)
 		}
 
+		case value.ValueBoundMethod:
+			return v.call(function.Method, arity)
+
 		default:
 			panic(fmt.Sprintf("Unknown called value: '%v'", callee))
 	}
 
 	return STATUS_OK
+}
+
+func (v *VM) getProperty(obj value.Value, index int) InterpretResult {
+	nameValue := v.currentChunk.Constants[index]
+	name := nameValue.(value.ValueString).Value
+	
+	switch instance := obj.(type) {
+		case value.ValueInstance: {
+			property, ok := instance.GetProperty(name)
+
+			if !ok {
+				v.error(fmt.Sprintf("Property '%s' doesn't exist.", name))
+				return STATUS_PROPERTY_DOESNT_EXIST
+			}
+
+			v.push(property)
+			return STATUS_OK
+		}
+
+		default: {
+			// TODO: add methods to another types, defined by a table at runtime.
+			v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
+			return STATUS_PROPERTY_DOESNT_EXIST
+		}
+	}
+}
+
+func (v *VM) setProperty(obj value.Value, index int, val value.Value) InterpretResult {
+	nameValue := v.currentChunk.Constants[index]
+	name := nameValue.(value.ValueString).Value
+	
+	switch instance := obj.(type) {
+		case value.ValueInstance: {
+			ok := instance.SetProperty(name, val)
+
+			if !ok {
+				v.error(fmt.Sprintf("Property '%s' doesn't exist in the object '%s', of type '%s'.", name, obj.String(), obj.Type()))
+				return STATUS_PROPERTY_DOESNT_EXIST
+			}
+
+			v.push(val)
+			return STATUS_OK
+		}
+
+		default: {
+			// TODO: add methods to another types, defined by a table at runtime.
+			v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
+			return STATUS_PROPERTY_DOESNT_EXIST
+		}
+	}
 }
 
 func (v *VM) binaryNum(operator byte) InterpretResult {

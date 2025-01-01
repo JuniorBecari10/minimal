@@ -56,10 +56,26 @@ type ValueInstance struct {
 	Record *ValueRecord
 }
 
+type ValueBoundMethod struct {
+	Receiver Value
+	Method ValueClosure
+}
+
 func (in *ValueInstance) GetProperty(name string) (Value, bool) {
+	// Search for fields first
 	for i, value := range in.Fields {
 		if in.Record.FieldNames[i] == name {
 			return value, true
+		}
+	}
+
+	// Search for methods
+	for _, method := range in.Record.Methods {
+		if *method.Fn.Name == name {
+			return ValueBoundMethod{
+				Receiver: in, // TODO: if it goes wrong, maybe put '*in' here?
+				Method: method,
+			}, true
 		}
 	}
 
@@ -127,6 +143,14 @@ func (x ValueInstance) String() string {
 	return res.String()
 }
 
+func (x ValueBoundMethod) String() string {
+	if x.Method.Fn.Name == nil {
+		return "<bound fn>"
+	} else {
+		return fmt.Sprintf("<bound fn %s>", *x.Method.Fn.Name)
+	}
+}
+
 // ---
 
 func (x ValueNumber) Type() string { return "num" }
@@ -142,3 +166,5 @@ func (x ValueClosure) Type() string { return "fn" }
 
 func (x ValueRecord) Type() string { return "record" }
 func (x ValueInstance) Type() string { return x.Record.Name }
+
+func (x ValueBoundMethod) Type() string { return "bound fn" }
