@@ -99,6 +99,47 @@ func (c *Compiler) compileFunction(parameters []ast.Parameter, body ast.BlockSta
 	}
 }
 
+// TODO: remove the copy
+func (c *Compiler) compileMethod(parameters []ast.Parameter, body ast.BlockStatement, name *string, pos token.Position) {
+	fnCompiler := newFnCompiler(body.Stmts, c)
+	fnCompiler.addVariable(token.Token{ Lexeme: "self" }, token.Position{})
+
+	for _, param := range parameters {
+		fnCompiler.addVariable(param.Name, param.Name.Pos)
+	}
+
+	fnChunk, hadError := fnCompiler.compileFnBody(pos)
+
+	if hadError {
+		c.hadError = true
+		return
+	}
+
+	function := value.ValueFunction{
+		Arity: len(parameters),
+		Chunk: fnChunk,
+		Name: name,
+	}
+
+	index := c.addConstant(function)
+	c.writeBytePos(OP_PUSH_CLOSURE, value.NewMetaLen1(pos))
+	c.writeBytes(util.IntToBytes(index))
+
+	c.writeBytes(util.IntToBytes(len(fnCompiler.upvalues)))
+
+	// emit upvalue data
+	// structure: 0/1 | index
+	for i := range len(fnCompiler.upvalues) {
+		if fnCompiler.upvalues[i].isLocal {
+			c.writeBytePos(1, value.NewMetaLen1(pos))
+		} else {
+			c.writeBytePos(0, value.NewMetaLen1(pos))
+		}
+
+		c.writeBytes(util.IntToBytes(fnCompiler.upvalues[i].index))
+	}
+}
+
 func (c *Compiler) compileFnBody(pos token.Position) (value.Chunk, bool) {
 	c.statements(c.ast)
 
@@ -111,6 +152,20 @@ func (c *Compiler) compileFnBody(pos token.Position) (value.Chunk, bool) {
 	}
 
 	return c.chunk, c.hadError
+}
+
+func (c *Compiler) identifier(token token.Token, expr ast.Expression) {
+	index, opcode := c.resolveVariable(token, false)
+
+	if index < 0 {
+		return
+	}
+
+	c.writeBytePos(byte(opcode), value.ChunkMetadata{
+		Position: expr.Base.Pos,
+		Length: expr.Base.Length,
+	})
+	c.writeBytes(util.IntToBytes(index))
 }
 
 func (c *Compiler) writeByte(b byte) {
@@ -180,7 +235,13 @@ func (c *Compiler) resolveVariable(token token.Token, set bool) (int, Opcode) {
 	}
 
 	// the variable doesn't exist.
-	c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist in this or in a parent scope.", token.Lexeme))
+	// If it's the 'self' keyword, show a better message.
+	if token.Lexeme == "self" {
+		c.error(token.Pos, len(token.Lexeme), "Cannot use 'self' outside a method.")
+	} else {
+		c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist in this or in a parent scope.", token.Lexeme))
+	}
+
 	return -1, OP_GET_LOCAL
 }
 

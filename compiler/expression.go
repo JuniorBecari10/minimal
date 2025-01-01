@@ -59,19 +59,11 @@ func (c *Compiler) expression(expr ast.Expression) {
 			})
 		}
 
-		case ast.IdentifierExpression: {
-			index, opcode := c.resolveVariable(e.Token, false)
+		case ast.IdentifierExpression:
+			c.identifier(e.Token, expr)
 
-			if index < 0 {
-				return
-			}
-
-			c.writeBytePos(byte(opcode), value.ChunkMetadata{
-				Position: expr.Base.Pos,
-				Length: expr.Base.Length,
-			})
-			c.writeBytes(util.IntToBytes(index))
-		}
+		case ast.SelfExpression:
+			c.identifier(e.Token, expr)
 
 		/*
             Logical Operators (short-circuit behavior)

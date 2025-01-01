@@ -62,18 +62,16 @@ type ValueBoundMethod struct {
 }
 
 func (in *ValueInstance) GetProperty(name string) (Value, bool) {
-	// Search for fields first
 	for i, value := range in.Fields {
 		if in.Record.FieldNames[i] == name {
 			return value, true
 		}
 	}
 
-	// Search for methods
 	for _, method := range in.Record.Methods {
 		if *method.Fn.Name == name {
 			return ValueBoundMethod{
-				Receiver: in, // TODO: if it goes wrong, maybe put '*in' here?
+				Receiver: *in, // TODO: if it goes wrong, maybe put '*in' here?
 				Method: method,
 			}, true
 		}

@@ -24,9 +24,9 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.writeBytePos(OP_PUSH_CONST, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(index))
 
-			// stack the methods and add an APPEND_METHODS instruction to puth them into the record
+			// stack the methods and add an APPEND_METHODS instruction to put them into the record
 			for _, method := range s.Methods {
-				c.compileFunction(method.Parameters, method.Body, &method.Name.Lexeme, stmt.Base.Pos) // TODO: add correct position
+				c.compileMethod(method.Parameters, method.Body, &method.Name.Lexeme, stmt.Base.Pos) // TODO: add correct position
 			}
 
 			c.writeBytePos(OP_APPEND_METHODS, value.NewMetaLen1(stmt.Base.Pos))

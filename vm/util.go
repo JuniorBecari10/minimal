@@ -263,8 +263,30 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 			v.push(instance)
 		}
 
-		case value.ValueBoundMethod:
-			return v.call(function.Method, arity)
+		case value.ValueBoundMethod: {
+			if function.Method.Fn.Arity != arity {
+				v.error(fmt.Sprintf("Expected %d arguments, but got %d instead.", function.Method.Fn.Arity, arity))
+				return STATUS_INCORRECT_ARITY
+			}
+		
+			v.callStack = append(v.callStack, CallFrame{
+				function: &function.Method,
+				oldIp: v.ip,
+			})
+		
+			args := v.getArguments(arity)
+			v.callStack[len(v.callStack) - 1].locals = append(v.callStack[len(v.callStack) - 1].locals, function.Receiver)
+
+			// insert the arguments into the locals array
+			for i := len(args) - 1; i >= 0; i-- {
+				v.callStack[len(v.callStack) - 1].locals = append(v.callStack[len(v.callStack) - 1].locals, args[i])
+			}
+		
+			v.ip = 0
+			v.currentChunk = &function.Method.Fn.Chunk
+		
+			v.pop() // The function.
+		}
 
 		default:
 			panic(fmt.Sprintf("Unknown called value: '%v'", callee))
