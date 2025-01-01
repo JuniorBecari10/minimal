@@ -9,19 +9,27 @@ import (
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.Data.(type) {
 		case ast.RecordStatement: {
-			fieldNames := []string{}
+			fieldNames := make([]string, 0, len(s.Fields))
 
 			for _, field := range s.Fields {
 				fieldNames = append(fieldNames, field.Name.Lexeme)
 			}
 
 			index := c.addConstant(value.ValueRecord{
-				FieldNames: fieldNames,
 				Name: s.Name.Lexeme,
+				FieldNames: fieldNames,
+				Methods: []value.ValueClosure{}, // empty for now
 			})
 
 			c.writeBytePos(OP_PUSH_CONST, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(index))
+
+			for _, method := range s.Methods {
+				c.compileFunction(method.Parameters, method.Body, &method.Name.Lexeme, stmt.Base.Pos) // TODO: add position
+			}
+
+			c.writeBytePos(OP_APPEND_METHODS, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytes(util.IntToBytes(len(s.Methods)))
 
 			c.addVariable(s.Name, s.Name.Pos)
 			c.addDeclarationInstruction(stmt.Base.Pos)

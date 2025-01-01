@@ -53,7 +53,13 @@ func (p *Parser) recordStatement() ast.Statement {
 	name := p.expectToken(token.TokenIdentifier)
 	fields := p.parseFields()
 
-	p.requireSemicolon()
+	methods := []ast.FnStatement{}
+
+	if p.check(token.TokenLeftBrace) {
+		methods = p.parseMethods()
+	} else {
+		p.requireSemicolon()
+	}
 
 	return ast.Statement{
 		Base: ast.AstBase{
@@ -64,6 +70,7 @@ func (p *Parser) recordStatement() ast.Statement {
 		Data: ast.RecordStatement{
 			Name:   name,
 			Fields: fields,
+			Methods: methods,
 		},
 	}
 }

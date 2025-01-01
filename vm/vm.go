@@ -65,7 +65,7 @@ func (v *VM) Run() InterpretResult {
 			case compiler.OP_PUSH_CONST:
 				v.push(v.currentChunk.Constants[v.getInt()])
 
-			case compiler.OP_PUSH_CLOSURE:
+			case compiler.OP_PUSH_CLOSURE: {
 				// This won't panic, because the compiler only emits this instruction
 				// if the constant is a function.
 				fn := v.currentChunk.Constants[v.getInt()].(value.ValueFunction)
@@ -92,6 +92,23 @@ func (v *VM) Run() InterpretResult {
 					Fn: &fn,
 					Upvalues: upvalues,
 				})
+			}
+
+			case compiler.OP_APPEND_METHODS: {
+				count := v.getInt()
+				methodsValues := v.getArguments(count) // actually it's collecting the methods
+				methods := make([]value.ValueClosure, 0, len(methodsValues))
+
+				for _, method := range methodsValues {
+					methods = append(methods, method.(value.ValueClosure))
+				}
+
+				// the record is at the top of the stack now.
+				record := v.pop().(value.ValueRecord)
+				record.Methods = methods
+
+				v.push(record)
+			}
 
 			// TODO: add a separated opcode for concatenating strings when typechecking is added
 			case compiler.OP_ADD: {

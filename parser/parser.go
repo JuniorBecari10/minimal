@@ -51,6 +51,7 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 		token.TokenNumber: p.parseNumber,
 		token.TokenString: p.parseString,
 		token.TokenIdentifier: p.parseIdentifier,
+		token.TokenSelfKw: p.parseSelf,
 
 		token.TokenTrueKw: p.parseBool,
 		token.TokenFalseKw: p.parseBool,

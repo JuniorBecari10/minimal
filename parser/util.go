@@ -21,6 +21,18 @@ func (p *Parser) parseBlock() ast.BlockStatement {
 	}
 }
 
+func (p *Parser) parseMethods() []ast.FnStatement {
+	p.expect(token.TokenLeftBrace)
+	methods := []ast.FnStatement{}
+
+	for !p.isAtEnd(0) && !p.check(token.TokenRightBrace) {
+		methods = append(methods, p.fnStatement().Data.(ast.FnStatement))
+	}
+
+	p.expect(token.TokenRightBrace)
+	return methods
+}
+
 func (p *Parser) parseParameters() []ast.Parameter {
 	p.expect(token.TokenLeftParen)
 	params := []ast.Parameter{}

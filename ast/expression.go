@@ -57,7 +57,11 @@ type GroupExpression struct {
 }
 
 type IdentifierExpression struct {
-	Ident token.Token
+	Token token.Token
+}
+
+type SelfExpression struct {
+	Token token.Token
 }
 
 type IdentifierAssignmentExpression struct {
@@ -100,6 +104,7 @@ func (x BinaryExpression) expr()     {}
 func (x GroupExpression) expr()      {}
 func (x CallExpression) expr()      {}
 func (x IdentifierExpression) expr() {}
+func (x SelfExpression) expr() {}
 func (x IdentifierAssignmentExpression) expr() {}
 func (x FnExpression) expr() {}
 func (x IfExpression) expr() {}

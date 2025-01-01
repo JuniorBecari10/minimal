@@ -60,7 +60,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.IdentifierExpression: {
-			index, opcode := c.resolveVariable(e.Ident, false)
+			index, opcode := c.resolveVariable(e.Token, false)
 
 			if index < 0 {
 				return

@@ -20,7 +20,7 @@ type FnStatement struct {
 type RecordStatement struct {
 	Name token.Token
 	Fields []Field
-	// TODO: methods
+	Methods []FnStatement
 }
 
 type ReturnStatement struct {

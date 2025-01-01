@@ -46,8 +46,9 @@ type ValueNativeFn struct {
 }
 
 type ValueRecord struct {
-	FieldNames []string
 	Name string
+	FieldNames []string
+	Methods []ValueClosure
 }
 
 type ValueInstance struct {

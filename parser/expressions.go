@@ -71,7 +71,21 @@ func (p *Parser) parseIdentifier() ast.Expression {
 			Length: len(ident.Lexeme),
 		},
 		Data: ast.IdentifierExpression{
-			Ident: ident,
+			Token: ident,
+		},
+	}
+}
+
+func (p *Parser) parseSelf() ast.Expression {
+	self := p.expectToken(token.TokenSelfKw)
+
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos: self.Pos,
+			Length: len(self.Lexeme),
+		},
+		Data: ast.SelfExpression{
+			Token: self,
 		},
 	}
 }
@@ -311,7 +325,7 @@ func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Ex
 				Length: len(equal.Lexeme),
 			},
 			Data: ast.IdentifierAssignmentExpression{
-				Name: lValue.Ident,
+				Name: lValue.Token,
 				Expr: right,
 			},
 		}

@@ -25,7 +25,7 @@ func NewDisassembler(chunk value.Chunk, fileData *util.FileData) *Disassembler {
 	}
 }
 
-const MAX_INSTRUCTION_LENGTH = 16
+const MAX_INSTRUCTION_LENGTH = 14
 
 func (d *Disassembler) Disassemble() {
 	d.disassemble("top-level")
@@ -39,9 +39,9 @@ func (d *Disassembler) disassemble(name string) {
 		return
 	}
 
-	fmt.Println("--------|-----------|--------|------------------|--------|--------")
-	fmt.Println(" offset | position  | length | instruction      | index  | result")
-	fmt.Println("--------|-----------|--------|------------------|--------|--------")
+	fmt.Println("--------|-----------|--------|----------------|--------|--------")
+	fmt.Println(" offset | position  | length | instruction    | index  | result")
+	fmt.Println("--------|-----------|--------|----------------|--------|--------")
 
 	for i := 0; !d.isAtEnd(); i++ {
 		ip := d.ip
@@ -148,7 +148,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			compiler.OP_GET_UPVALUE, compiler.OP_SET_UPVALUE,
 			compiler.OP_GET_GLOBAL, compiler.OP_SET_GLOBAL,
 			compiler.OP_GET_PROPERTY, compiler.OP_SET_PROPERTY,
-			compiler.OP_CALL: {
+			compiler.OP_CALL, compiler.OP_APPEND_METHODS: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 

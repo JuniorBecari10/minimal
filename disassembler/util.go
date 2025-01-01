@@ -18,109 +18,112 @@ func (d *Disassembler) isAtEnd() bool {
 func getInstructionName(inst byte) string {
 	switch inst {
 		case compiler.OP_PUSH_CONST:
-			return "OP_PUSH_CONST"
+			return "PUSH_CONST"
 
 		case compiler.OP_PUSH_CLOSURE:
-			return "OP_PUSH_CLOSURE"
+			return "PUSH_CLOSURE"
+
+		case compiler.OP_APPEND_METHODS:
+			return "APPEND_METHODS"
 
 		case compiler.OP_ADD:
-			return "OP_ADD"
+			return "ADD"
 		case compiler.OP_SUB:
-			return "OP_SUB"
+			return "SUB"
 		case compiler.OP_MUL:
-			return "OP_MUL"
+			return "MUL"
 		case compiler.OP_DIV:
-			return "OP_DIV"
+			return "DIV"
 		
 		case compiler.OP_MODULO:
-			return "OP_MODULO"
+			return "MODULO"
 
 		case compiler.OP_DEF_LOCAL:
-			return "OP_DEF_LOCAL"
+			return "DEF_LOCAL"
 		case compiler.OP_GET_LOCAL:
-			return "OP_GET_LOCAL"
+			return "GET_LOCAL"
 		case compiler.OP_SET_LOCAL:
-			return "OP_SET_LOCAL"
+			return "SET_LOCAL"
 
 		case compiler.OP_GET_UPVALUE:
-			return "OP_GET_UPVALUE"
+			return "GET_UPVALUE"
 		case compiler.OP_SET_UPVALUE:
-			return "OP_SET_UPVALUE"
+			return "SET_UPVALUE"
 
 		case compiler.OP_DEF_GLOBAL:
-			return "OP_DEF_GLOBAL"
+			return "DEF_GLOBAL"
 		case compiler.OP_GET_GLOBAL:
-			return "OP_GET_GLOBAL"
+			return "GET_GLOBAL"
 		case compiler.OP_SET_GLOBAL:
-			return "OP_SET_GLOBAL"
+			return "SET_GLOBAL"
 
 		case compiler.OP_GET_PROPERTY:
-			return "OP_GET_PROPERTY"
+			return "GET_PROPERTY"
 		case compiler.OP_SET_PROPERTY:
-			return "OP_SET_PROPERTY"
+			return "SET_PROPERTY"
 
 		case compiler.OP_POP:
-			return "OP_POP"
+			return "POP"
 		case compiler.OP_POP_LOCAL:
-			return "OP_POP_LOCAL"
+			return "POP_LOCAL"
 		case compiler.OP_POPN_LOCAL:
-			return "OP_POPN_LOCAL"
+			return "POPN_LOCAL"
 
 		case compiler.OP_CLOSE_UPVALUE:
-			return "OP_CLOSE_UPVALUE"
+			return "CLOSE_UPVALUE"
 
 		case compiler.OP_JUMP:
-			return "OP_JUMP"
+			return "JUMP"
 		case compiler.OP_JUMP_TRUE:
-			return "OP_JUMP_TRUE"
+			return "JUMP_TRUE"
 		case compiler.OP_JUMP_FALSE:
-			return "OP_JUMP_FALSE"
+			return "JUMP_FALSE"
 		case compiler.OP_LOOP:
-			return "OP_LOOP"
+			return "LOOP"
 
 		case compiler.OP_EQUAL:
-			return "OP_EQUAL"
+			return "EQUAL"
 		case compiler.OP_NOT_EQUAL:
-			return "OP_NOT_EQUAL"
+			return "NOT_EQUAL"
 
 		case compiler.OP_GREATER:
-			return "OP_GREATER"
+			return "GREATER"
 		case compiler.OP_GREATER_EQUAL:
-			return "OP_GREATER_EQUAL"
+			return "GREATER_EQUAL"
 
 		case compiler.OP_LESS:
-			return "OP_LESS"
+			return "LESS"
 		case compiler.OP_LESS_EQUAL:
-			return "OP_LESS_EQUAL"
+			return "LESS_EQUAL"
 
 		case compiler.OP_AND:
-			return "OP_AND"
+			return "AND"
 		case compiler.OP_OR:
-			return "OP_OR"
+			return "OR"
 		
 		case compiler.OP_NOT:
-			return "OP_NOT"
+			return "NOT"
 		
 		case compiler.OP_NEGATE:
-			return "OP_NEGATE"
+			return "NEGATE"
 
 		case compiler.OP_CALL:
-			return "OP_CALL"
+			return "CALL"
 		case compiler.OP_RETURN:
-			return "OP_RETURN"
+			return "RETURN"
 
 		case compiler.OP_TRUE:
-			return "OP_TRUE"
+			return "TRUE"
 		case compiler.OP_FALSE:
-			return "OP_FALSE"
+			return "FALSE"
 
 		case compiler.OP_NIL:
-			return "OP_NIL"
+			return "NIL"
 		case compiler.OP_VOID:
-			return "OP_VOID"
+			return "VOID"
 
 		case compiler.OP_ASSERT_BOOL:
-			return "OP_ASSERT_BOOL"
+			return "ASSERT_BOOL"
 
 		default:
 			return "Unknown"
