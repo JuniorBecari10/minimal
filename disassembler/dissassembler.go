@@ -165,6 +165,21 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			)
 		}
 
+		// inst [int] [int]
+		case compiler.OP_CALL_PROPERTY: {
+			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			d.ip += 4
+
+			arity, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			d.ip += 4
+
+			fmt.Printf(
+				"%s | %s\n",
+				util.PadRight(strconv.Itoa(index), 6, " "),
+				util.PadRight(strconv.Itoa(arity), 6, " "),
+			)
+		}
+
 		// inst amount result (add)
 		case compiler.OP_JUMP_TRUE, compiler.OP_JUMP_FALSE, compiler.OP_JUMP: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])

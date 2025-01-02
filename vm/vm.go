@@ -363,6 +363,24 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
+			case compiler.OP_CALL_PROPERTY: {
+				index := v.getInt()
+				arity := v.getInt()
+
+				obj := v.peek(arity)
+				property, res := v.getPropertyValue(obj, index)
+
+				if res != STATUS_OK {
+					return res
+				}
+				
+				res = v.call(property, arity)
+
+				if res != STATUS_OK {
+					return res
+				}
+			}
+
 			case compiler.OP_RETURN: {
 				v.closeUpvalues(len(v.callStack) - 1)
 				frame := v.popFrame()

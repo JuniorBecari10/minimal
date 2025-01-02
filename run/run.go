@@ -1,7 +1,6 @@
 package run
 
 import (
-	"fmt"
 	"strings"
 	"vm-go/compiler"
 	"vm-go/disassembler"
@@ -34,11 +33,7 @@ func Run(source, fileName string, mode RunMode) {
 	switch mode {
 		case ModeRun: {
 			vm_ := vm.NewVM(chunk, &fileData)
-			result := vm_.Run()
-
-			if result != vm.STATUS_OK {
-				fmt.Printf("Exited with status %d.\n", result)
-			}
+			vm_.Run()
 		}
 
 		case ModeDisassemble: {

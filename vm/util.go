@@ -295,7 +295,7 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 	return STATUS_OK
 }
 
-func (v *VM) getProperty(obj value.Value, index int) InterpretResult {
+func (v *VM) getPropertyValue(obj value.Value, index int) (value.Value, InterpretResult) {
 	nameValue := v.currentChunk.Constants[index]
 	name := nameValue.(value.ValueString).Value
 	
@@ -305,19 +305,29 @@ func (v *VM) getProperty(obj value.Value, index int) InterpretResult {
 
 			if !ok {
 				v.error(fmt.Sprintf("Property '%s' doesn't exist.", name))
-				return STATUS_PROPERTY_DOESNT_EXIST
+				return nil, STATUS_PROPERTY_DOESNT_EXIST
 			}
 
-			v.push(property)
-			return STATUS_OK
+			return property, STATUS_OK
 		}
 
 		default: {
 			// TODO: add methods to another types, defined by a table at runtime.
 			v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
-			return STATUS_PROPERTY_DOESNT_EXIST
+			return nil, STATUS_PROPERTY_DOESNT_EXIST
 		}
 	}
+}
+
+func (v *VM) getProperty(obj value.Value, index int) InterpretResult {
+	property, status := v.getPropertyValue(obj, index)
+
+	if status != STATUS_OK {
+		return status
+	}
+
+	v.push(property)
+	return STATUS_OK
 }
 
 func (v *VM) setProperty(obj value.Value, index int, val value.Value) InterpretResult {

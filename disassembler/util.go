@@ -109,6 +109,8 @@ func getInstructionName(inst byte) string {
 
 		case compiler.OP_CALL:
 			return "CALL"
+		case compiler.OP_CALL_PROPERTY:
+			return "CALL_PROPERTY"
 		case compiler.OP_RETURN:
 			return "RETURN"
 

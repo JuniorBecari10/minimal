@@ -200,17 +200,41 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.CallExpression: {
-			c.expression(e.Callee)
+			// Generate an optimized call to properties.
+			switch e.Callee.Data.(type) {
+				case ast.GetPropertyExpression: {
+					callee := e.Callee.Data.(ast.GetPropertyExpression)
+					c.expression(callee.Left)
 
-			for _, arg := range e.Arguments {
-				c.expression(arg)
+					for _, arg := range e.Arguments {
+						c.expression(arg)
+					}
+
+					// Store the name as a string in the constant table and retrieve it later.
+					index := c.addConstant(value.ValueString{ Value: callee.Property.Lexeme })
+
+					c.writeBytePos(OP_CALL_PROPERTY, value.ChunkMetadata{
+						Position: callee.Property.Pos,
+						Length: len(callee.Property.Lexeme),
+					})
+					c.writeBytes(util.IntToBytes(index))
+					c.writeBytes(util.IntToBytes(len(e.Arguments)))
+				}
+
+				default: {
+					c.expression(e.Callee)
+
+					for _, arg := range e.Arguments {
+						c.expression(arg)
+					}
+
+					c.writeBytePos(OP_CALL, value.ChunkMetadata{
+						Position: expr.Base.Pos,
+						Length: expr.Base.Length,
+					})
+					c.writeBytes(util.IntToBytes(len(e.Arguments)))
+				}
 			}
-
-			c.writeBytePos(OP_CALL, value.ChunkMetadata{
-				Position: expr.Base.Pos,
-				Length: expr.Base.Length,
-			})
-			c.writeBytes(util.IntToBytes(len(e.Arguments)))
 		}
 
 		case ast.GroupExpression:
