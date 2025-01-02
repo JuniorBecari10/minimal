@@ -20,7 +20,7 @@ const (
 
 func Run(source, fileName string, mode RunMode) {
 	fileData := util.FileData{
-		Name: fileName,
+		Name: util.GetFileName(fileName),
 		Lines: strings.Split(source, "\n"),
 	}
 

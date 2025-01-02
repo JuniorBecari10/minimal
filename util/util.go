@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"vm-go/token"
@@ -56,6 +57,12 @@ func PopList[T any](list *[]T) T {
 	return topElement
 }
 
+func GetFileName(path string) string {
+	// Use filepath to normalize and extract the file name
+	normalizedPath := filepath.FromSlash(path) // Converts / to \ or vice versa based on OS
+	return filepath.Base(normalizedPath)
+}
+
 func PadLeft(s string, length int, padChar string) string {
 	if len(s) >= length {
 		return s
@@ -90,8 +97,10 @@ func Center(str string, width int, padChar string) string {
 }
 
 func Error(pos token.Position, length int, message string, fileData *FileData) {
-	fmt.Printf("[-] Error at %s (%d, %d): %s\n", fileData.Name, pos.Line+1, pos.Col+1, message)
+	fmt.Printf("[-] Error: %s\n", message)
+	fmt.Printf(" | %s [-] %s (%d, %d)\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))), fileData.Name, pos.Line + 1, pos.Col + 1)
 	fmt.Printf(" |  %d | %s\n", pos.Line+1, fileData.Lines[pos.Line])
-	fmt.Printf(" | %s    %s%s\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line+1))), strings.Repeat(" ", pos.Col), strings.Repeat("^", length))
+	fmt.Printf(" | %s  | %s%s\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line+1))), strings.Repeat(" ", pos.Col), strings.Repeat("^", length))
+	fmt.Printf(" | %s [-]\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))))
 	fmt.Printf("[-]\n\n")
 }

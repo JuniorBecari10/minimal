@@ -304,7 +304,7 @@ func (v *VM) getPropertyValue(obj value.Value, index int) (value.Value, Interpre
 			property, ok := instance.GetProperty(name)
 
 			if !ok {
-				v.error(fmt.Sprintf("Property '%s' doesn't exist.", name))
+				v.error(fmt.Sprintf("Property '%s' doesn't exist in the object '%s', of type '%s'.", name, obj.String(), obj.Type()))
 				return nil, STATUS_PROPERTY_DOESNT_EXIST
 			}
 
@@ -313,7 +313,7 @@ func (v *VM) getPropertyValue(obj value.Value, index int) (value.Value, Interpre
 
 		default: {
 			// TODO: add methods to another types, defined by a table at runtime.
-			v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
+			v.error(fmt.Sprintf("The object '%s' has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
 			return nil, STATUS_PROPERTY_DOESNT_EXIST
 		}
 	}
@@ -564,9 +564,11 @@ func (v *VM) popnVar(amount int) value.Value {
 func (v *VM) error(message string) {
 	metadata := v.currentChunk.Metadata[v.oldIp]
 
-	fmt.Printf("[-] Runtime error at %s (%d, %d): %s\n", v.fileData.Name, metadata.Position.Line + 1, metadata.Position.Col + 1, message)
+	fmt.Printf("[-] Runtime error: %s\n", message)
+	fmt.Printf(" | %s [-] %s (%d, %d)\n", strings.Repeat(" ", len(strconv.Itoa(metadata.Position.Line + 1))), v.fileData.Name, metadata.Position.Line + 1, metadata.Position.Col + 1)
 	fmt.Printf(" |  %d | %s\n", metadata.Position.Line + 1, v.fileData.Lines[metadata.Position.Line])
-	fmt.Printf(" | %s    %s%s\n", strings.Repeat(" ", len(strconv.Itoa(metadata.Position.Line + 1))), strings.Repeat(" ", metadata.Position.Col), strings.Repeat("^", metadata.Length))
+	fmt.Printf(" | %s  | %s%s\n", strings.Repeat(" ", len(strconv.Itoa(metadata.Position.Line + 1))), strings.Repeat(" ", metadata.Position.Col), strings.Repeat("^", metadata.Length))
+	fmt.Printf(" | %s [-]\n", strings.Repeat(" ", len(strconv.Itoa(metadata.Position.Line + 1))))
 	fmt.Println("[-]")
 
 	if len(v.callStack) > 0 {
