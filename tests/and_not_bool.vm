@@ -1,0 +1,7 @@
+fn main() {
+    println(false and 20); // false, because the right operand won't get executed
+    println(true and 30); // error, because it will get executed and it's not a boolean
+    
+    println(false or 20); // error, because the right operand will get executed and it's not a boolean
+    println(true or 30); // true, because it won't get executed
+}

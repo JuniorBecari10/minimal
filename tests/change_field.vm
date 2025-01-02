@@ -1,0 +1,12 @@
+record AA(a);
+record Contains(aa);
+
+fn main() {
+    var aa = AA(10);
+    var contains = Contains(aa);
+
+    // changing a field whose value is a variable should not change it.
+    contains.aa.a = 20;
+    println(contains.aa.a); // 20
+    println(aa.a); // 10
+}

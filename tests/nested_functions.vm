@@ -1,0 +1,33 @@
+fn main() {
+    var x = 0;
+    fn a() {
+        x = x + 1;
+        fn b() {
+            x = x + 1;
+            fn c() {
+                x = x + 1;
+                fn d() {
+                    x = x + 1;
+                    fn e() {
+                        x = x + 1;
+                        fn f() {
+                            x = x + 1;
+                            fn g() {
+                                x = x + 1;
+                            }
+                            return g;
+                        }
+                        return f;
+                    }
+                    return e;
+                }
+                return d;
+            }
+            return c;
+        }
+        return b;
+    }
+    
+    a()()()()()()();
+    println(x);
+}

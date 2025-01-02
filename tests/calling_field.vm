@@ -1,0 +1,14 @@
+record Oops(field);
+
+fn new_oops() {
+    fn f() {
+        println("not a method");
+    }
+
+    return Oops(f);
+}
+
+fn main() {
+    var oops = new_oops();
+    oops.field(); // not a method
+}

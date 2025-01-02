@@ -1,0 +1,19 @@
+fn main() {
+    for var i = 0; i < 10; i = i + 1 {
+        println(i);
+
+        for var j = 0; j < 10; j = j + 1 {
+            println(j);
+            
+            if j == 5 {
+                break;
+            }
+        }
+
+        if i == 5 {
+            break;
+        }
+    }
+
+    println("ok"); // ok
+}

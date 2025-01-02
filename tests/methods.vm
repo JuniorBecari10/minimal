@@ -1,0 +1,14 @@
+record Person(name, age) {
+    fn greet(message) {
+        println(self.age); // 20
+        self.age = 30;
+        println(self.age); // 30
+    }
+}
+
+fn main() {
+    var john = Person("John", 20);
+    john.greet("Hi");
+
+    println(john.age); // 30
+}

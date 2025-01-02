@@ -1,0 +1,1 @@
+var main = 10; // Runtime error: Can only call functions.
