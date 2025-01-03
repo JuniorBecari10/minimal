@@ -1,0 +1,14 @@
+record Record(a);
+
+fn main() {
+    var reecord = Record(10);
+
+    // Get Property - Left operand should be included if it has side effects.
+    reecord.a;      // no
+    new_record().a; // yes - new record
+}
+
+fn new_record() {
+    println("new record");
+    return Record(10);
+}

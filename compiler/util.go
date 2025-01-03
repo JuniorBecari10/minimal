@@ -449,6 +449,90 @@ func (c *Compiler) addConstant(v value.Value) int {
 	return len(c.chunk.Constants) - 1
 }
 
+// Reduces an Expression to the nearest node that may contain side effects.
+// Returns 'nil' if the supplied Expression doesn't contain side effects.
+func reduceToSideEffect(expr ast.Expression) *ast.Expression {
+	switch e := expr.Data.(type) {
+		// These are terminal expressions and have no side effects.
+		case ast.NumberExpression, ast.StringExpression, ast.BoolExpression, ast.FnExpression,
+			ast.NilExpression, ast.VoidExpression, ast.SelfExpression, ast.IdentifierExpression:
+			return nil
+		
+		// Let's return it untouched.
+		case ast.UnaryExpression:
+			return reduceToSideEffect(e.Operand)
+		
+		case ast.BinaryExpression: {
+			left := reduceToSideEffect(e.Left)
+			right := reduceToSideEffect(e.Right)
+
+			if left != nil {
+				if right != nil {
+					// Both have side effects, so we return the expression unchanged.
+					// TODO: add an operator that just removes the top stack slot
+					return &expr
+				} else {
+					// Left has side effects, and right doesn't, we return left.
+					return left
+				}
+			} else {
+				// Left has no side effects.
+				// Right may or may not have side effects, so we return it.
+
+				// If it does, we return it.
+				// If it doesn't, we also return it, because it will be the same as 'return nil'.
+				return right
+			}
+		}
+
+		case ast.LogicalExpression: {
+			left := reduceToSideEffect(e.Left)
+			right := reduceToSideEffect(e.Right)
+
+			if left != nil {
+				if right != nil {
+					// Both have side effects, so we return the expression unchanged.
+					return &expr
+				} else {
+					// Left has side effects, and right doesn't, we return left.
+					return left
+				}
+			} else {
+				// Left has no side effects.
+				// Right may or may not have side effects, so we return it.
+
+				// If it does, we return it.
+				// If it doesn't, we also return it, because it will be the same as 'return nil'.
+				return right
+			}
+		}
+
+		// Get property should be included if the expression it contains has side effects.
+		case ast.GetPropertyExpression: {
+			left := reduceToSideEffect(e.Left)
+
+			// 'left' has side effects, so we return it.
+			if left != nil {
+				return left
+			} else {
+				return nil
+			}
+		}
+
+		case ast.GroupExpression:
+			return reduceToSideEffect(e.Expr)
+
+		// These nodes may have side effects.
+		case ast.CallExpression, ast.IdentifierAssignmentExpression,
+			ast.SetPropertyExpression, ast.IfExpression:
+			return &expr
+		
+		// In the default case, we return the expression untouched.
+		default:
+			return &expr
+	}
+}
+
 func (c *Compiler) error(pos token.Position, length int, message string) {
 	if c.hadError {
 		return

@@ -1,0 +1,15 @@
+fn main() {
+    // Binary - should be included the operand that has side effects, or both, with the operator.
+    // Performing the operation won't be useful,
+    // but reduces the stack items from 2 down to 1, which OP_POP will remove later
+
+    30 + 30;                                   // no
+    side_effect(10 + 2) - 30;                  // left - 12
+    10 * side_effect(10 - 3);                  // right - 7
+    side_effect(10 * 4) / side_effect(10 / 2); // both, and the operator - 40, 5
+}
+
+fn side_effect(n) {
+    println(n);
+    return n;
+}

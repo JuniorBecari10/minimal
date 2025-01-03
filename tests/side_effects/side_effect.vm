@@ -1,0 +1,91 @@
+record Record(a);
+
+fn main() {
+    var x = 10;
+    var reecord = Record(10);
+
+    // These expressions should not be included in the final bytecode.
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+    x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; x; 
+
+    // Primitives - should not be included.
+    10; "hi"; true; nil; void; x;
+
+    // Unary - should be included if the operand has side effects.
+    -10;            // no
+    not false;      // no
+    -side_effect(); // yes - hi! (but not the operator)
+
+    // Binary - should be included the operand that has side effects, or both.
+    10 + 10;                       // no
+    side_effect() - 10;            // left
+    10 * side_effect();            // right
+    side_effect() / side_effect(); // both, and the operator
+                                   // (performing the operation won't be useful, but reduces the stack items from 2 down to 1, which OP_POP will remove later)
+    
+    // Logical - should be included the operand that has side effects, or both.
+    // It doesn't matter whether it will short-circuit, if one side has side effects, it should be included.
+    true and false;                                  // no
+    logical_side_effect() or true;                   // left
+    false or logical_side_effect();                  // right
+    logical_side_effect() and logical_side_effect(); // both, and the operator
+
+    // Calls and assignments - should be included.
+    side_effect();
+    x = 20;
+    reecord.a = 20;
+    new_record().a = 30;
+
+    // Function definitions - should not be included.
+    // They won't be executed unless called.
+    (x) -> x + 1;
+    () -> side_effect();
+    (x) -> reecord.a + x + side_effect();
+
+    // If expression - should be included if it has side effects.
+    // 'if' statements shadow 'if' expressions, so the syntax doesn't let us make an ExprStatement with them.
+
+    // Get Property - should be included if it has side effects.
+    reecord.a;       // no
+    new_record().a;  // yes
+
+    println(x);        // 20
+    println(reecord.a); // 20
+
+}
+
+fn side_effect() {
+    println("hi!");
+    return 10;
+}
+
+fn logical_side_effect() {
+    println("logical hi!");
+    return true;
+}
+
+fn new_record() {
+    println("Record");
+    return Record(20);
+}

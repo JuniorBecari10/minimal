@@ -1,0 +1,26 @@
+record Record(a);
+
+fn main() {
+    var x = 10;
+    var reecord = Record(10);
+
+    // Calls and assignments - should be included.
+    side_effect();       // hi!
+    x = 20;
+    reecord.a = 20;
+    new_record().a = 30; // new record
+
+    println(x);                   // 20
+    println(reecord.a);           // 20
+    println(new_record().a = 30); // new record, 30
+}
+
+fn side_effect() {
+    println("hi!");
+    return 10;
+}
+
+fn new_record() {
+    println("new record");
+    return Record(10);
+}

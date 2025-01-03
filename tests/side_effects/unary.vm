@@ -1,0 +1,11 @@
+fn main() {
+    // Unary - should be included if the operand has side effects.
+    -10;               // no
+    not false;         // no
+    -side_effect(-20); // yes - hi! (but not the operator) - -20
+}
+
+fn side_effect(n) {
+    println(n);
+    return -n;
+}

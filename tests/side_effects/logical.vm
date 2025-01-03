@@ -1,0 +1,20 @@
+fn main() {
+    // Logical - should be included the operand that has side effects, or both.
+    // It doesn't matter whether it will short-circuit, if one side has side effects, it should be included.
+
+    true and false;                        // no
+    side_effect() or true;                 // left - hi!
+    false or side_effect();                // right - hi!
+    side_effect() and side_effect();       // both, and the operator - hi!, hi!
+    false_side_effect() or side_effect();  // both, and the operator - hi!, hi!
+}
+
+fn side_effect() {
+    println("hi!");
+    return true;
+}
+
+fn false_side_effect() {
+    println("hi!");
+    return false;
+}

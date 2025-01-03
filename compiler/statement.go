@@ -245,8 +245,13 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.block(s.Stmts, stmt.Base.Pos)
 
 		case ast.ExprStatement: {
-			c.expression(s.Expr)
-			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			// Optimization to remove nodes that don't have side effects.
+			reduced := reduceToSideEffect(s.Expr)
+
+			if reduced != nil {
+				c.expression(*reduced)
+				c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			}
 		}
 	}
 }

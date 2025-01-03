@@ -36,6 +36,7 @@ func (d *Disassembler) disassemble(name string) {
 
 	if len(d.chunk.Code) == 0 {
 		fmt.Println(util.Center("function is empty.", 66, " "))
+		fmt.Println()
 		return
 	}
 
