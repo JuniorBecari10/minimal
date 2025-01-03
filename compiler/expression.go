@@ -33,12 +33,12 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 		case ast.BoolExpression: {
 			if e.Literal {
-				c.writeBytePos(OP_TRUE, value.ChunkMetadata{
+				c.writeBytePos(OP_PUSH_TRUE, value.ChunkMetadata{
 					Position: expr.Base.Pos,
 					Length: expr.Base.Length,
 				})
 			} else {
-				c.writeBytePos(OP_FALSE, value.ChunkMetadata{
+				c.writeBytePos(OP_PUSH_FALSE, value.ChunkMetadata{
 					Position: expr.Base.Pos,
 					Length: expr.Base.Length,
 				})
@@ -46,14 +46,14 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.NilExpression: {
-			c.writeBytePos(OP_NIL, value.ChunkMetadata{
+			c.writeBytePos(OP_PUSH_NIL, value.ChunkMetadata{
 				Position: expr.Base.Pos,
 				Length: expr.Base.Length,
 			})
 		}
 
 		case ast.VoidExpression: {
-			c.writeBytePos(OP_VOID, value.ChunkMetadata{
+			c.writeBytePos(OP_PUSH_VOID, value.ChunkMetadata{
 				Position: expr.Base.Pos,
 				Length: expr.Base.Length,
 			})

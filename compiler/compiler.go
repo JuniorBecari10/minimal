@@ -64,11 +64,11 @@ const (
 	OP_CALL_PROPERTY
 	OP_RETURN
 
-	OP_TRUE
-	OP_FALSE
+	OP_PUSH_TRUE
+	OP_PUSH_FALSE
 	
-	OP_NIL
-	OP_VOID
+	OP_PUSH_NIL
+	OP_PUSH_VOID
 
 	// TODO: extend this to accept more types, if necessary
 	OP_ASSERT_BOOL

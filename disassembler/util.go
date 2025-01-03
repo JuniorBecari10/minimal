@@ -114,15 +114,15 @@ func getInstructionName(inst byte) string {
 		case compiler.OP_RETURN:
 			return "RETURN"
 
-		case compiler.OP_TRUE:
-			return "TRUE"
-		case compiler.OP_FALSE:
-			return "FALSE"
+		case compiler.OP_PUSH_TRUE:
+			return "PUSH_TRUE"
+		case compiler.OP_PUSH_FALSE:
+			return "PUSH_FALSE"
 
-		case compiler.OP_NIL:
-			return "NIL"
-		case compiler.OP_VOID:
-			return "VOID"
+		case compiler.OP_PUSH_NIL:
+			return "PUSH_NIL"
+		case compiler.OP_PUSH_VOID:
+			return "PUSH_VOID"
 
 		case compiler.OP_ASSERT_BOOL:
 			return "ASSERT_BOOL"

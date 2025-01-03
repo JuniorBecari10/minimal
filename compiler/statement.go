@@ -113,23 +113,32 @@ func (c *Compiler) statement(stmt ast.Statement) {
             For Var Loop
             Control Flow:
 
+				- begin scope -
+
                 [ initializer ]
-                [ condition ] <-+
-                                |
-            +-- OP_JUMP_FALSE   | <- break/continue point
-            |   OP_POP          |
-            |                   |
-            |   [ body ]        |
-            | + [ increment ]   | (generated if increment is set)
-            | + OP_POP          |
-            |                   |
-            |   OP_LOOP --------+
+                [ condition ] <------+
+                                     |
+            +-- OP_JUMP_FALSE        | <- break/continue point
+            |   OP_POP               |
+            |                        |
+            |   [ body ]             |
+            |                        |
+            |   OP_GET_LOCAL <index> |
+            |   - end scope -        |
+            |   - begin scope -      |
+            |                        |
+            | + [ increment ]        | (generated if increment is set)
+            | + OP_POP               |
+            |                        |
+            |   OP_LOOP -------------+
             +-> OP_POP
+
+				- end scope -
 
             continues...
 		*/
 		case ast.ForVarStatement: {
-			// the declaration stays inside a new scope
+			// The declaration stays inside a new scope.
 			c.beginScope()
 			c.statement(s.Declaration)
 
@@ -137,15 +146,27 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.expression(s.Condition)
 
 			c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
+
 			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 			jumpFalseOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
-			// and the block inside another
+			// And the block inside another.
 			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 			c.block(s.Block.Stmts, stmt.Base.Pos)
 
 			util.PopList(&c.loopFlowPos)
+
+			// Push the old value to the stack to save it for the next iteration.
+			c.identifier(s.Declaration.Data.(ast.VarStatement).Name, s.Declaration.Data.(ast.VarStatement).Init)
+
+			// End the scope to discard the loop variable and close it in an upvalue if it's been captured.
+			c.endScope(stmt.Base.Pos)
+			c.beginScope()
+
+			// Create a new variable for the mutation to occur.
+			c.addVariable(s.Declaration.Data.(ast.VarStatement).Name, s.Declaration.Data.(ast.VarStatement).Name.Pos)
+			c.addDeclarationInstruction(s.Declaration.Base.Pos)
 			
 			if s.Increment != nil {
 				c.expression(*s.Increment)
@@ -210,7 +231,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				return
 			}
 
-			c.writeBytePos(OP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(OP_PUSH_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 
 			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos[len(c.loopFlowPos)-1] + 4)) // index
@@ -225,7 +246,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				return
 			}
 
-			c.writeBytePos(OP_TRUE, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(OP_PUSH_TRUE, value.NewMetaLen1(stmt.Base.Pos))
 
 			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos[len(c.loopFlowPos)-1] + 4)) // index
@@ -235,7 +256,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			if s.Expression != nil {
 				c.expression(*s.Expression)
 			} else {
-				c.writeBytePos(OP_VOID, value.NewMetaLen1(stmt.Base.Pos))
+				c.writeBytePos(OP_PUSH_VOID, value.NewMetaLen1(stmt.Base.Pos))
 			}
 
 			c.writeBytePos(OP_RETURN, value.NewMetaLen1(stmt.Base.Pos))

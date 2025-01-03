@@ -116,7 +116,7 @@ func (c *Compiler) compileFnBody(pos token.Position) (value.Chunk, bool) {
 	if len(c.chunk.Code) > 0 && c.chunk.Code[len(c.chunk.Code) - 1] != OP_RETURN {
 		c.endScope(pos)
 
-		c.writeBytePos(OP_VOID, value.NewMetaLen1(pos))
+		c.writeBytePos(OP_PUSH_VOID, value.NewMetaLen1(pos))
 		c.writeBytePos(OP_RETURN, value.NewMetaLen1(pos))
 	}
 
@@ -458,7 +458,7 @@ func reduceToSideEffect(expr ast.Expression) *ast.Expression {
 			ast.NilExpression, ast.VoidExpression, ast.SelfExpression, ast.IdentifierExpression:
 			return nil
 		
-		// Let's return it untouched.
+		// Remove the operator.
 		case ast.UnaryExpression:
 			return reduceToSideEffect(e.Operand)
 		

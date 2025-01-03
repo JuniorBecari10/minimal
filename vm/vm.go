@@ -396,11 +396,11 @@ func (v *VM) Run() InterpretResult {
 				v.currentChunk = &chunk
 			}
 
-			case compiler.OP_TRUE: v.push(value.ValueBool{ Value: true })
-			case compiler.OP_FALSE: v.push(value.ValueBool{ Value: false })
+			case compiler.OP_PUSH_TRUE: v.push(value.ValueBool{ Value: true })
+			case compiler.OP_PUSH_FALSE: v.push(value.ValueBool{ Value: false })
 
-			case compiler.OP_NIL: v.push(value.ValueNil{})
-			case compiler.OP_VOID: v.push(value.ValueVoid{})
+			case compiler.OP_PUSH_NIL: v.push(value.ValueNil{})
+			case compiler.OP_PUSH_VOID: v.push(value.ValueVoid{})
 
 			case compiler.OP_ASSERT_BOOL: {
 				if !isBool(v.peek(0)) {

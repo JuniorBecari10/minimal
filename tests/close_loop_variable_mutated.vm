@@ -1,0 +1,20 @@
+fn main() {
+    var one = nil;
+    var two = nil;
+
+    for var i = 1; i <= 2 {
+        var closure = () -> println(i);
+
+        if one == nil {
+            one = closure;
+        }
+        else {
+            two = closure;
+        }
+
+        i = i + 1;
+    }
+
+    one(); // 2
+    two(); // 3
+}
