@@ -1,0 +1,21 @@
+record Object(field) {
+    fn method() {
+        println(self.field); // 20
+        self.field = 30;
+        println(self.field); // 30
+
+        return self; // should return a reference to the object, which extends its lifetime.
+    }
+}
+
+fn main() {
+    var method = nil;
+
+    {
+        var obj = Object(20);
+        method = obj.method;
+    }
+
+    var obj = method(); // 'self' is a reference, so changes to it should reflect in the original instance.
+    println(obj.field); // 30
+}

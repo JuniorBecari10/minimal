@@ -4,7 +4,7 @@ fn main() {
 
     (x) -> x + 1;
     () -> side_effect();
-    (x) -> reecord.a + x + side_effect();
+    (x) -> reecord.a + x + side_effect(); // this should be a compile error, but it's elided and therefore not checked.
 
     // No output is expected.
 }

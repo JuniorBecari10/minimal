@@ -1,14 +1,14 @@
-record Person(name, age) {
-    fn greet(message) {
-        println(self.age); // 20
-        self.age = 30;
-        println(self.age); // 30
+record Object(field) {
+    fn method() {
+        println(self.field); // 20
+        self.field = 30;
+        println(self.field); // 30
     }
 }
 
 fn main() {
-    var john = Person("John", 20);
-    john.greet("Hi");
+    var obj = Object(20);
+    obj.method(); // 'self' is a reference, so changes to it should reflect in the original instance.
 
-    println(john.age); // 30
+    println(obj.field); // 30
 }
