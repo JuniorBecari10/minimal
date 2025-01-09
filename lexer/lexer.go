@@ -129,7 +129,15 @@ func (l *Lexer) scanToken() {
 		case '"': l.string()
 		case ',': l.addToken(token.TokenComma)
 		case ':': l.addToken(token.TokenColon)
-		case '.': l.addToken(token.TokenDot)
+
+		case '.':  {
+			if l.match('.') {
+				l.addToken(token.TokenDoubleDot)
+			} else {
+				l.addToken(token.TokenDot)
+			}
+		}
+		
 		case '%': l.addToken(token.TokenPercent)
 
 		default: {

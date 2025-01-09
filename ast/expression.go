@@ -25,6 +25,12 @@ type BoolExpression struct {
 	Literal bool
 }
 
+type RangeExpression struct {
+	Start Expression
+	End Expression
+	Step *Expression // optional
+}
+
 type NilExpression struct {}
 type VoidExpression struct {}
 
@@ -98,6 +104,7 @@ func (x StringExpression) expr()     {}
 func (x BoolExpression) expr()       {}
 func (x NilExpression) expr()        {}
 func (x VoidExpression) expr()        {}
+func (x RangeExpression) expr() {}
 func (x UnaryExpression) expr()      {}
 func (x LogicalExpression) expr()     {}
 func (x BinaryExpression) expr()     {}

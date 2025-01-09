@@ -26,6 +26,7 @@ const (
 	TokenComma     = ","
 	TokenColon     = ":"
 	TokenDot       = "."
+	TokenDoubleDot = ".."
 	TokenPercent   = "%"
 
 	TokenArrow = "->"

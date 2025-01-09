@@ -1,0 +1,4 @@
+fn main() {
+    var name = input("What's your name? ");
+    println("Nice to meet you, " + name + "!");
+}

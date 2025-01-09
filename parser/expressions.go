@@ -350,7 +350,7 @@ func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Ex
 }
 
 func (p *Parser) parseDot(left ast.Expression, pos token.Position) ast.Expression {
-	p.advance() // Skip over the '.'
+	p.expect(token.TokenDot)
 	property := p.expectToken(token.TokenIdentifier)
 
 	return ast.Expression{
@@ -361,6 +361,30 @@ func (p *Parser) parseDot(left ast.Expression, pos token.Position) ast.Expressio
 		Data: ast.GetPropertyExpression{
 			Left:    left,
 			Property: property,
+		},
+	}
+}
+
+func (p *Parser) parseRange(left ast.Expression, pos token.Position) ast.Expression {
+	operator := p.expectToken(token.TokenDoubleDot)
+	right := p.expression(PrecRange)
+
+	var step *ast.Expression = nil
+
+	if p.match(token.TokenColon) {
+		expr := p.expression(PrecRange)
+		step = &expr
+	}
+
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    operator.Pos,
+			Length: len(operator.Lexeme),
+		},
+		Data: ast.RangeExpression{
+			Start: left,
+			End: right,
+			Step: step,
 		},
 	}
 }

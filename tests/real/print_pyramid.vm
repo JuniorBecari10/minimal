@@ -1,0 +1,25 @@
+fn main() {
+    var rows = input_int("Rows: ");
+
+    for var i = 1; i < rows + 1; i = i + 1 {
+        for var a = 0; a < rows - i; a = a + 1 {
+            print(" ");
+        }
+
+        for var j = 0; j < 2 * i - 1; j = j + 1 {
+            print("*");
+        }
+
+        println("");
+    }
+}
+
+fn input_int(prompt) {
+    loop {
+        var i = num(input(prompt));
+
+        if i != nil and i % 1 == 0 {
+            return i;
+        }
+    }
+}

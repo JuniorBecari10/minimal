@@ -1,0 +1,47 @@
+fn main() {
+    var a = input_num("a: ");
+    var b = input_num("b: ");
+    var op = input_operator();
+
+    print(str(a) + " " + op + " " + str(b) + " = ");
+    if op == "+" {
+        println(a + b);
+    }
+    else if op == "-" {
+        println(a - b);
+    }
+    else if op == "*" {
+        println(a * b);
+    }
+    else if op == "/" {
+        if b == 0 {
+            println("Error - cannot divide by zero");
+        }
+        else {
+            println(a / b);
+        }
+    }
+    else {
+        println("Unknown operator");
+    }
+}
+
+fn input_num(prompt) {
+    loop {
+        var i = num(input(prompt));
+
+        if i != nil {
+            return i;
+        }
+    }
+}
+
+fn input_operator() {
+    loop {
+        var op = input("Operation (+ - * /): ");
+
+        if op == "+" or op == "-" or op == "*" or op == "/" {
+            return op;
+        }
+    }
+}

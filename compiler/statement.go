@@ -126,6 +126,8 @@ func (c *Compiler) statement(stmt ast.Statement) {
             |   OP_GET_LOCAL <index> |
             |   - end scope -        |
             |   - begin scope -      |
+			|                        |
+			|   [ initializer* ]     | (this version of the initializer uses the saved value on the stack)
             |                        |
             | + [ increment ]        | (generated if increment is set)
             | + OP_POP               |
