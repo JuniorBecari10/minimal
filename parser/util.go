@@ -69,9 +69,9 @@ func (p *Parser) expect(kind token.TokenKind) bool {
 func (p *Parser) expectToken(kind token.TokenKind) token.Token {
 	if !p.check(kind) {
 		if p.isAtEnd(0) {
-			p.error(fmt.Sprintf("Expected '%s', reached end.", kind))
+			p.error(fmt.Sprintf("Expected '%s', but reached end.", kind))
 		} else {
-			p.error(fmt.Sprintf("Expected '%s', got '%s' instead.", kind, p.peek(0).Kind))
+			p.error(fmt.Sprintf("Expected '%s', but got '%s' instead.", kind, p.peek(0).Kind))
 		}
 		return token.AbsentToken()
 	}
@@ -93,7 +93,22 @@ func (p *Parser) expectTokenNoAdvance(kind token.TokenKind) token.Token {
 }
 
 func (p *Parser) requireSemicolon() {
-	p.expect(token.TokenSemicolon)
+	if !p.check(token.TokenSemicolon) {
+		if p.isAtEnd(0) {
+			p.rawError("Expected ';' after statement, but reached end.", 1, token.Position{
+				Line: p.peek(-1).Pos.Line,
+				Col: p.peek(-1).Pos.Col + len(p.peek(-1).Lexeme),
+			})
+		} else {
+			p.rawError(fmt.Sprintf("Expected ';' after statement, but got '%s' instead.", p.peek(0).Kind), 1, token.Position{
+				Line: p.peek(-1).Pos.Line,
+				Col: p.peek(-1).Pos.Col + len(p.peek(-1).Lexeme),
+			})
+		}
+		return
+	}
+
+	p.advance()
 }
 
 func (p *Parser) check(kind token.TokenKind) bool {
@@ -138,9 +153,9 @@ func (p *Parser) synchronize() {
         // Return if a synchronization point is found
         switch kind {
 			case token.TokenVarKw, token.TokenLeftBrace, token.TokenRightBrace,
-				token.TokenIfKw, token.TokenElseKw, token.TokenWhileKw,
-				token.TokenForKw, token.TokenFnKw, token.TokenReturnKw,
-				token.TokenSemicolon:  
+				token.TokenIfKw, token.TokenElseKw, token.TokenWhileKw, token.TokenBreakKw, token.TokenContinueKw,
+				token.TokenForKw, token.TokenFnKw, token.TokenReturnKw, token.TokenRecordKw,
+				token.TokenSemicolon:
 				return
         }
 
@@ -151,14 +166,23 @@ func (p *Parser) synchronize() {
 
 
 func (p *Parser) error(message string) {
+	last := p.peek(0)
+
+	if last.IsAbsent() {
+		last = p.tokens[len(p.tokens)-1]
+	}
+
+	pos := last.Pos
+
+	p.rawError(message, len(last.Lexeme), pos)
+}
+
+func (p *Parser) rawError(message string, len int, pos token.Position) {
 	if p.panicMode {
 		return
 	}
-
-	last := p.peek(0)
-	pos := last.Pos
 	
-	util.Error(pos, len(last.Lexeme), message, p.fileData)
+	util.Error(pos, len, message, p.fileData)
 
 	p.hadError = true
 	p.panicMode = true
