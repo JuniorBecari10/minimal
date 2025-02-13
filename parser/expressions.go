@@ -150,7 +150,7 @@ func (p *Parser) parseLambda() ast.Expression {
 		body = p.parseBlock()
 	} else {
 		peek := p.peek(0)
-		expr := p.expression(PrecLowest)
+		expr := p.parseExpression()
 
 		body = ast.BlockStatement{
 			Stmts: []ast.Statement{
@@ -181,20 +181,20 @@ func (p *Parser) parseLambda() ast.Expression {
 
 func (p *Parser) parseIfExpr() ast.Expression {
 	if_ := p.advance()
-	cond := p.expression(PrecLowest)
+	cond := p.parseExpression()
 
 	p.expect(token.TokenColon)
-	then := p.expression(PrecLowest)
+	then := p.parseExpression()
 
 	p.expect(token.TokenElseKw)
 	var else_ ast.Expression
 
 	// Check 'else if' chain and not require the colon if so.
 	if p.check(token.TokenIfKw) {
-		else_ = p.expression(PrecLowest)
+		else_ = p.parseExpression()
 	} else {
 		p.expect(token.TokenColon)
-		else_ = p.expression(PrecLowest)
+		else_ = p.parseExpression()
 	}
 
 	return ast.Expression{
@@ -214,7 +214,7 @@ func (p *Parser) parseGroup() ast.Expression {
 	pos := p.peek(0).Pos
 	p.expect(token.TokenLeftParen)
 
-	expr := p.expression(PrecLowest)
+	expr := p.parseExpression()
 	p.expect(token.TokenRightParen)
 
 	return ast.Expression{
@@ -294,7 +294,7 @@ func (p *Parser) parseCall(left ast.Expression, pos token.Position) ast.Expressi
 	arguments := []ast.Expression{}
 
 	for !p.match(token.TokenRightParen) {
-		arguments = append(arguments, p.expression(PrecLowest))
+		arguments = append(arguments, p.parseExpression())
 
 		if !p.check(token.TokenRightParen) {
 			p.expect(token.TokenComma)
@@ -315,7 +315,7 @@ func (p *Parser) parseCall(left ast.Expression, pos token.Position) ast.Expressi
 
 func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Expression {
 	equal := p.expectToken(token.TokenEqual)
-	right := p.expression(PrecLowest) // accept one level higher because assignment is right-associative
+	right := p.parseExpression() // accept one level higher because assignment is right-associative
 
 	switch lValue := left.Data.(type) {
 	case ast.IdentifierExpression:

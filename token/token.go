@@ -46,6 +46,7 @@ const (
 	TokenFnKw       = "fn keyword"
 	TokenBreakKw    = "break keyword"
 	TokenContinueKw = "continue keyword"
+	TokenInKw       = "in keyword"
 	TokenSelfKw     = "self keyword"
 	TokenRecordKw   = "record keyword"
 	TokenReturnKw   = "return keyword"

@@ -1,0 +1,4 @@
+fn main() {
+    var range = 1..10;
+    // var inclusive = 1..=10; // not supported yet
+}

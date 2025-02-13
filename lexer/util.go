@@ -32,15 +32,23 @@ func (l *Lexer) advance() byte {
 }
 
 func (l *Lexer) peek() byte {
-	if l.isAtEnd() {
-		return 0
-	}
-
-	return l.source[l.current]
+	return l.peekN(0)
 }
 
 func (l *Lexer) isAtEnd() bool {
-	return l.current >= len(l.source)
+	return l.isAtEndN(0)
+}
+
+func (l *Lexer) peekN(offset int) byte {
+	if l.isAtEndN(offset) {
+		return 0
+	}
+
+	return l.source[l.current + offset]
+}
+
+func (l *Lexer) isAtEndN(offset int) bool {
+	return l.current + offset >= len(l.source)
 }
 
 func (l *Lexer) increaseLine() {

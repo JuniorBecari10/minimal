@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "debug",
             "program": ".",
-            "args": ["tests/methods.vm"]
+            "args": ["tests/iterator.vm"]
         }
 
     ]

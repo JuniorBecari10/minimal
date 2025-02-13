@@ -35,7 +35,7 @@ func (p *Parser) statement() ast.Statement {
 	switch t.Kind {
 		case token.TokenIfKw: return p.ifStatement()
 		case token.TokenWhileKw: return p.whileStatement()
-		case token.TokenForKw: return p.forStatement()
+		case token.TokenForKw: return p.forStatCheck()
 		case token.TokenLoopKw: return p.loopStatement()
 		case token.TokenBreakKw: return p.breakStatement()
 		case token.TokenContinueKw: return p.continueStatement()
@@ -100,7 +100,7 @@ func (p *Parser) returnStatement() ast.Statement {
 	var expr *ast.Expression = nil
 
 	if !p.check(token.TokenSemicolon) {
-		expr_ := p.expression(PrecLowest)
+		expr_ := p.parseExpression()
 		expr = &expr_
 	}
 
@@ -160,19 +160,25 @@ func (p *Parser) ifStatement() ast.Statement {
 	}
 }
 
-// TODO: use this function to disambiguate between for (each) and for (var) loops
-func (p *Parser) forStatement() ast.Statement {
+func (p *Parser) forStatCheck() ast.Statement {
 	keyword := p.advance()
-	p.expectTokenNoAdvance(token.TokenVarKw) // for now, it is mandatory
- 	
+
+	if p.check(token.TokenVarKw) {
+		return p.forVarStatement(keyword)
+	} else {
+		return p.forStatement(keyword)
+	}
+}
+
+func (p *Parser) forVarStatement(keyword token.Token) ast.Statement {
 	// already requires a semicolon
 	declaration := p.varStatement()
-	condition := p.expression(PrecLowest)
+	condition := p.parseExpression()
 
 	var increment *ast.Expression
 	
 	if p.match(token.TokenSemicolon) {
-		expr := p.expression(PrecLowest)
+		expr := p.parseExpression()
 		increment = &expr // it can escape the scope - the GC collects it later
 	}
 
@@ -192,9 +198,29 @@ func (p *Parser) forStatement() ast.Statement {
 	}
 }
 
+func (p *Parser) forStatement(keyword token.Token) ast.Statement {
+	variable := p.expectToken(token.TokenIdentifier)
+	p.expect(token.TokenInKw)
+
+	iterable := p.parseExpression()
+	block := p.parseBlock()
+
+	return ast.Statement{
+		Base: ast.AstBase{
+			Pos: keyword.Pos,
+			Length: len(keyword.Lexeme),
+		},
+		Data: ast.ForStatement{
+			Variable: variable,
+			Iterable: iterable,
+			Block: block,
+		},
+	}
+}
+
 func (p *Parser) whileStatement() ast.Statement {
 	keyword := p.advance()
-	condition := p.expression(PrecLowest)
+	condition := p.parseExpression()
 	block := p.parseBlock()
 
 	return ast.Statement{
@@ -288,7 +314,7 @@ func (p *Parser) blockStatement() ast.Statement {
 
 func (p *Parser) exprStatement() ast.Statement {
 	pos := p.peek(0).Pos
-	expr := p.expression(PrecLowest)
+	expr := p.parseExpression()
 
 	p.requireSemicolon()
 

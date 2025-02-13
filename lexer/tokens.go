@@ -10,7 +10,9 @@ func (l *Lexer) number() {
 		l.advance()
 	}
 
-	if l.match('.') && unicode.IsDigit(rune(l.peek())) {
+	if l.peek() == '.' && unicode.IsDigit(rune(l.peekN(1))) {
+		l.advance()
+
 		for unicode.IsDigit(rune(l.peek())) {
 			l.advance()
 		}
@@ -52,6 +54,7 @@ func (l *Lexer) checkKeyword() token.TokenKind {
 		case "fn": return token.TokenFnKw
 		case "break": return token.TokenBreakKw
 		case "continue": return token.TokenContinueKw
+		case "in": return token.TokenInKw
 		case "self": return token.TokenSelfKw
 		case "record": return token.TokenRecordKw
 		case "return": return token.TokenReturnKw

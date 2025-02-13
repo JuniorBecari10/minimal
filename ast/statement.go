@@ -47,6 +47,12 @@ type WhileStatement struct {
 	Block     BlockStatement
 }
 
+type ForStatement struct {
+	Variable token.Token // identifier
+	Iterable Expression
+	Block BlockStatement
+}
+
 type ForVarStatement struct {
 	Declaration Statement
 	Condition Expression
@@ -80,6 +86,7 @@ func (x BlockStatement) stmt() {}
 func (x IfStatement) stmt()    {}
 func (x WhileStatement) stmt() {}
 func (x ForVarStatement) stmt() {}
+func (x ForStatement) stmt() {}
 func (x LoopStatement) stmt() {}
 func (x ExprStatement) stmt()  {}
 func (x BreakStatement) stmt()  {}

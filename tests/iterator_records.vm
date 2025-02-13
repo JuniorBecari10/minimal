@@ -1,0 +1,20 @@
+record RangeIterator(start, end, step) {
+    fn has_next() {
+        return self.start < self.end;
+    }
+
+    fn next() {
+        self.start = self.start + self.step;
+    }
+
+    fn peek() {
+        return self.start;
+    }
+}
+
+fn main() {
+    for var it = RangeIterator(0, 10, 1); it.has_next(); it.next() {
+        var i = it.peek();
+        println(i);
+    }
+}
