@@ -1,0 +1,7 @@
+fn main() {
+    var a = if true: 10 else: 20;
+    var b = if false: 10 else if false: 20 else: 30;
+
+    println(a);
+    println(b);
+}

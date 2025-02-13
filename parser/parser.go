@@ -73,6 +73,13 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 		token.TokenStar:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenStar) },
 		token.TokenSlash:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenSlash) },
 		token.TokenPercent:      func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenPercent) },
+
+		token.TokenPlusEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenPlus) },
+		token.TokenMinusEqual:   func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenMinus) },
+		
+		token.TokenStarEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenStar) },
+		token.TokenSlashEqual:   func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenSlash) },
+		token.TokenPercentEqual: func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenPercent) },
 		
 		token.TokenOrKw:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseLogical(left, pos, token.TokenOrKw) },
 		token.TokenAndKw:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseLogical(left, pos, token.TokenAndKw) },
@@ -100,6 +107,13 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 		token.TokenStar: PrecFactor,
 		token.TokenSlash: PrecFactor,
 		token.TokenPercent: PrecFactor,
+
+		token.TokenPlusEqual: PrecAssignment,
+		token.TokenMinusEqual: PrecAssignment,
+
+		token.TokenStarEqual: PrecAssignment,
+		token.TokenSlashEqual: PrecAssignment,
+		token.TokenPercentEqual: PrecAssignment,
 
 		token.TokenAndKw: PrecAnd,
 		token.TokenOrKw: PrecOr,

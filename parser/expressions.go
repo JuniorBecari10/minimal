@@ -191,7 +191,7 @@ func (p *Parser) parseIfExpr() ast.Expression {
 
 	// Check 'else if' chain and not require the colon if so.
 	if p.check(token.TokenIfKw) {
-		else_ = p.parseExpression()
+		else_ = p.parseIfExpr()
 	} else {
 		p.expect(token.TokenColon)
 		else_ = p.parseExpression()
@@ -314,39 +314,34 @@ func (p *Parser) parseCall(left ast.Expression, pos token.Position) ast.Expressi
 }
 
 func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Expression {
-	equal := p.expectToken(token.TokenEqual)
+	operator := p.expectToken(token.TokenEqual)
 	right := p.parseExpression() // accept one level higher because assignment is right-associative
 
-	switch lValue := left.Data.(type) {
-	case ast.IdentifierExpression:
-		return ast.Expression{
-			Base: ast.AstBase{
-				Pos:    equal.Pos,
-				Length: len(equal.Lexeme),
-			},
-			Data: ast.IdentifierAssignmentExpression{
-				Name: lValue.Token,
-				Expr: right,
-			},
-		}
+	return p.makeAssignment(left, right, operator)
+}
 
-	case ast.GetPropertyExpression:
-		return ast.Expression{
-			Base: ast.AstBase{
-				Pos:  	lValue.Property.Pos,
-				Length: len(lValue.Property.Lexeme),
-			},
-			Data: ast.SetPropertyExpression{
-				Left:    lValue.Left,
-				Property: lValue.Property,
-				Value:   right,
-			},
-		}
+func (p *Parser) parseOperatorAssignment(left ast.Expression, _ token.Position, finalOp token.TokenKind) ast.Expression {
+	operator := p.advance()
 
-	default:
-		p.error(fmt.Sprintf("Invalid assignment target: '%v'.", left))
-		return ast.Expression{}
+	// this will convert the assignment operator into the correspondent binary operator.
+	// '+=' -> '+'
+	// '-=' -> '-'
+	// ...
+	operatorAsFinal := operator
+	operatorAsFinal.Kind = finalOp
+	operatorAsFinal.Lexeme = string(finalOp)
+
+	// this will convert the right-hand expression into a binary expression that contains the left-hand side
+	// of the assignment into the left-hand of the binary expression.
+	// x += 20 -> x = x + 20
+	right := p.parseExpression()
+	right.Data = ast.BinaryExpression{
+		Left: left,
+		Right: right,
+		Operator: operatorAsFinal,
 	}
+
+	return p.makeAssignment(left, right, operator)
 }
 
 func (p *Parser) parseDot(left ast.Expression, pos token.Position) ast.Expression {

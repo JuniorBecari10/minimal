@@ -7,10 +7,17 @@ const (
 	TokenString     = "string"
 	TokenIdentifier = "identifier"
 
-	TokenPlus  = "+"
-	TokenMinus = "-"
-	TokenStar  = "*"
-	TokenSlash = "/"
+	TokenPlus    = "+"
+	TokenMinus   = "-"
+	TokenStar  	 = "*"
+	TokenSlash   = "/"
+	TokenPercent = "%"
+
+	TokenPlusEqual    = "+="
+	TokenMinusEqual   = "-="
+	TokenStarEqual    = "*="
+	TokenSlashEqual   = "/="
+	TokenPercentEqual = "%="
 
 	TokenLeftParen  = "("
 	TokenRightParen = ")"
@@ -20,14 +27,13 @@ const (
 
 	TokenEqual       = "="
 	TokenDoubleEqual = "=="
+	TokenBangEqual   = "!="
 
-	TokenBangEqual = "!="
 	TokenSemicolon = ";"
 	TokenComma     = ","
 	TokenColon     = ":"
 	TokenDot       = "."
 	TokenDoubleDot = ".."
-	TokenPercent   = "%"
 
 	TokenArrow = "->"
 

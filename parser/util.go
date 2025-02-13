@@ -123,6 +123,39 @@ func (p *Parser) advance() token.Token {
 	return peek
 }
 
+func (p *Parser) makeAssignment(left ast.Expression, right ast.Expression, operator token.Token) ast.Expression {
+	switch lValue := left.Data.(type) {
+	case ast.IdentifierExpression:
+		return ast.Expression{
+			Base: ast.AstBase{
+				Pos:    operator.Pos,
+				Length: len(operator.Lexeme),
+			},
+			Data: ast.IdentifierAssignmentExpression{
+				Name: lValue.Token,
+				Expr: right,
+			},
+		}
+
+	case ast.GetPropertyExpression:
+		return ast.Expression{
+			Base: ast.AstBase{
+				Pos:  	lValue.Property.Pos,
+				Length: len(lValue.Property.Lexeme),
+			},
+			Data: ast.SetPropertyExpression{
+				Left:    lValue.Left,
+				Property: lValue.Property,
+				Value:   right,
+			},
+		}
+
+	default:
+		p.error(fmt.Sprintf("Invalid assignment target: '%v'.", left))
+		return ast.Expression{}
+	}
+}
+
 func (p *Parser) peek(offset int) token.Token {
 	if p.isAtEnd(offset) {
 		return token.AbsentToken()

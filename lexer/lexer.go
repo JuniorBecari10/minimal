@@ -65,28 +65,53 @@ func (l *Lexer) scanToken() {
 	}
 
 	switch c {
-		case '+': l.addToken(token.TokenPlus)
+		case '+': {
+			if l.match('=') {
+				l.addToken(token.TokenPlusEqual)
+			} else {
+				l.addToken(token.TokenPlus)
+			}
+		}
 
 		case '-': {
 			if l.match('>') {
 				l.addToken(token.TokenArrow)
+			} else if l.match('=') {
+				l.addToken(token.TokenMinusEqual)
 			} else {
 				l.addToken(token.TokenMinus)
 			}
 		}
 
-		case '*': l.addToken(token.TokenStar)
+		case '*': {
+			if l.match('=') {
+				l.addToken(token.TokenStarEqual)
+			} else {
+				l.addToken(token.TokenStar)
+			}
+		}
+
 		case '/': {
 			if l.match('/') {
 				// A comment goes until the end of the line.
 				for l.peek() != '\n' && !l.isAtEnd() {
 					l.advance()
 				}
+			} else if l.match('=') {
+				l.addToken(token.TokenSlashEqual)
 			} else {
 				l.addToken(token.TokenSlash)
 			}
 		}
 
+		case '%': {
+			if l.match('=') {
+				l.addToken(token.TokenPercentEqual)
+			} else {
+				l.addToken(token.TokenPercent)
+			}
+		}
+		
 		case '(': l.addToken(token.TokenLeftParen)
 		case ')': l.addToken(token.TokenRightParen)
 
@@ -137,8 +162,6 @@ func (l *Lexer) scanToken() {
 				l.addToken(token.TokenDot)
 			}
 		}
-		
-		case '%': l.addToken(token.TokenPercent)
 
 		default: {
 			if unicode.IsDigit(rune(c)) {
