@@ -8,7 +8,7 @@ import (
 
 const (
 	PrecLowest = iota
-	PrecAssignment          // =
+	PrecAssignment          // = += -= *= /= %=
 	PrecOr                  // or
 	PrecAnd                 // and
 	PrecEqual               // == !=

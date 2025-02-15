@@ -320,10 +320,19 @@ func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Ex
 	return p.makeAssignment(left, right, operator)
 }
 
+// this operator will act as a macro for the default assignment, which generates
+// the same AST nodes if you repeat the l-value and put it into a binary expression.
+// examples:
+// v += 10; -> v = v + 10;
+// w -= 20; -> w = w - 20;
+// x *= 30; -> x = x * 30;
+// y /= 40; -> y = y / 40;
+// z %= 50; -> z = z % 50;
 func (p *Parser) parseOperatorAssignment(left ast.Expression, _ token.Position, finalOp token.TokenKind) ast.Expression {
 	operator := p.advance()
 
 	// this will convert the assignment operator into the correspondent binary operator.
+	// examples:
 	// '+=' -> '+'
 	// '-=' -> '-'
 	// ...
@@ -333,7 +342,9 @@ func (p *Parser) parseOperatorAssignment(left ast.Expression, _ token.Position, 
 
 	// this will convert the right-hand expression into a binary expression that contains the left-hand side
 	// of the assignment into the left-hand of the binary expression.
-	// x += 20 -> x = x + 20
+	// examples:
+	// x += 10 -> x = x + 10
+	// y -= 20 -> y = y - 20
 	right := p.parseExpression()
 	right.Data = ast.BinaryExpression{
 		Left: left,
