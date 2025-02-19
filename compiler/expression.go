@@ -53,6 +53,15 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.VoidExpression: {
+			if e.Expr != nil {
+				c.expression(*e.Expr)
+
+				c.writeBytePos(OP_POP, value.ChunkMetadata{
+					Position: expr.Base.Pos,
+					Length: expr.Base.Length,
+				})
+			}
+
 			c.writeBytePos(OP_PUSH_VOID, value.ChunkMetadata{
 				Position: expr.Base.Pos,
 				Length: expr.Base.Length,

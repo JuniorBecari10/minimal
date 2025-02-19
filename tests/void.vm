@@ -1,0 +1,10 @@
+fn main() {
+    println(side_effect()); // 10 (print)
+    println(void); // void
+    println(void(side_effect())); // void (print)
+}
+
+fn side_effect() {
+    println("side effect!");
+    return 10;
+}

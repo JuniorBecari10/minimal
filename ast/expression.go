@@ -32,7 +32,10 @@ type RangeExpression struct {
 }
 
 type NilExpression struct {}
-type VoidExpression struct {}
+
+type VoidExpression struct {
+	Expr *Expression // optional
+}
 
 type UnaryExpression struct {
 	Operand  Expression

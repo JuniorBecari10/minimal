@@ -12,7 +12,7 @@ func (p *Parser) expression(precedence int) ast.Expression {
 	prefixFn, ok := p.prefixMap[p.peek(0).Kind]
 
 	if !ok {
-		p.error(fmt.Sprintf("Unexpected token: '%s'.", p.peek(0).Lexeme))
+		p.error(fmt.Sprintf("Expected expression, but found token: '%s'.", p.peek(0).Lexeme))
 		return ast.Expression{}
 	}
 
@@ -119,12 +119,23 @@ func (p *Parser) parseNil() ast.Expression {
 func (p *Parser) parseVoid() ast.Expression {
 	tok := p.advance()
 
+	var expr *ast.Expression = nil
+
+	if p.match(token.TokenLeftParen) {
+		e := p.parseExpression()
+
+		p.expect(token.TokenRightParen)
+		expr = &e
+	}
+
 	return ast.Expression{
 		Base: ast.AstBase{
 			Pos: tok.Pos,
 			Length: len(tok.Lexeme),
 		},
-		Data: ast.VoidExpression{},
+		Data: ast.VoidExpression{
+			Expr: expr,
+		},
 	}
 }
 
