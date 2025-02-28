@@ -364,7 +364,8 @@ func (v *VM) Run() InterpretResult {
 
                 // 1. Check if all three operands are numbers (or if 'step' is nil).
                 // 2. Check if 'end' is reachable.
-                // (if 'step' is positive, then 'end' must be greater than 'start', and vice versa. 'step' must never be equal to 0.)
+                // (if 'step' is positive, then 'end' must be greater than 'start', and vice versa. 'step' must never be equal to 0, unless 'start' is equal to 'end')
+
                 if !isNumber(start) {
 					v.error(fmt.Sprintf("Given 'start' expression ('%s') type is not 'num'. Its type is '%s'.", start.String(), start.Type()))
 					return STATUS_TYPE_ERROR
@@ -384,8 +385,10 @@ func (v *VM) Run() InterpretResult {
                 if isNil(step) {
                     if endNum < startNum {
                         stepNum = -1
+                    } else if endNum == startNum {
+                        stepNum = 0
                     }
-                    // if endNum >= startNum, then stepNum = 1.
+                    // if endNum > startNum, then stepNum = 1.
                 } else {
                     // 'step' is defined, so we get it.
                     stepNum = step.(value.ValueNumber).Value
@@ -393,7 +396,7 @@ func (v *VM) Run() InterpretResult {
 
                 if endNum > startNum && stepNum < 0 ||
                    endNum < startNum && stepNum > 0 ||
-                   stepNum == 0 {
+                   endNum != startNum && stepNum == 0 {
 					v.error("Range's end is unreachable if iterated over.")
 					return STATUS_UNREACHABLE_RANGE
                 }

@@ -288,7 +288,10 @@ func (c *Compiler) expression(expr ast.Expression) {
                 c.writeBytePos(OP_PUSH_NIL, value.NewMetaLen1(expr.Base.Pos))
             }
 
-			c.writeBytePos(OP_MAKE_RANGE, value.NewMetaLen1(e.End.Base.Pos))
+			c.writeBytePos(OP_MAKE_RANGE, value.ChunkMetadata{
+                Position: expr.Base.Pos,
+                Length: 2,
+            })
         }
 
 		case ast.GetPropertyExpression: {
