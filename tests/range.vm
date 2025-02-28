@@ -1,6 +1,15 @@
 fn main() {
-    var range = 1..10;
+    var progressive = 0..10; // 'step' is 1.
+    var regressive = 10..0;  // 'step' is -1.
+
+    var explicit_step = 0..10:2;
     // var inclusive = 1..=10; // not supported yet
 
-    println(range); // 1..10:1
+    println(progressive);   // 0..10:1
+    println(regressive);    // 10..0:-1
+    println(explicit_step); // 0..10:2
+
+    // Errors (uncomment)
+    // println(0..10:-1);
+    // println(10..0:1);
 }

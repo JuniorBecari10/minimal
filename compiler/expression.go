@@ -284,14 +284,11 @@ func (c *Compiler) expression(expr ast.Expression) {
             if (e.Step != nil) {
                 c.expression(*e.Step)
             } else {
-                // Push the constant '1'. 
-                index := c.addConstant(value.ValueNumber{ Value: 1 })
-
-                c.writeBytePos(OP_PUSH_CONST, value.NewMetaLen1(expr.Base.Pos))
-                c.writeBytes(util.IntToBytes(index))
+                // Push the constant 'nil', which defers the step number decision to runtime.
+                c.writeBytePos(OP_PUSH_NIL, value.NewMetaLen1(expr.Base.Pos))
             }
 
-			c.writeBytePos(OP_RANGE, value.ChunkMetadata{})
+			c.writeBytePos(OP_MAKE_RANGE, value.NewMetaLen1(e.End.Base.Pos))
         }
 
 		case ast.GetPropertyExpression: {

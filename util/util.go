@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"vm-go/token"
@@ -33,7 +34,7 @@ func Reverse[T any](slice []T) {
 }
 
 func Remove[T any](slice []T, index int) []T {
-	return append(slice[:index], slice[index+1:]...)
+	return slices.Delete(slice, index, index)
 }
 
 // Just like 'map'
