@@ -3,6 +3,6 @@ fn main() {
     var floating = 1.2;
 
     println(integer); // 1
-    println(floating); // 1.20
+    println(floating); // 1.2
 }
 

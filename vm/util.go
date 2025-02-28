@@ -311,9 +311,20 @@ func (v *VM) getPropertyValue(obj value.Value, index int) (value.Value, Interpre
 			return property, STATUS_OK
 		}
 
+        case value.ValueRange: {
+			property, ok := instance.GetProperty(name)
+
+			if !ok {
+				v.error(fmt.Sprintf("Property '%s' doesn't exist in the range '%s'.", name, obj.String()))
+				return nil, STATUS_PROPERTY_DOESNT_EXIST
+			}
+
+			return property, STATUS_OK
+        }
+
 		default: {
 			// TODO: add methods to another types, defined by a table at runtime.
-			v.error(fmt.Sprintf("The object '%s' has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
+			v.error(fmt.Sprintf("The object '%s' has no properties, because it isn't an instance or a range. Its type is '%s'.", obj.String(), obj.Type()))
 			return nil, STATUS_PROPERTY_DOESNT_EXIST
 		}
 	}
@@ -347,9 +358,21 @@ func (v *VM) setProperty(obj value.Value, index int, val value.Value) InterpretR
 			return STATUS_OK
 		}
 
+        case value.ValueRange: {
+			ok := instance.SetProperty(name, val)
+
+			if !ok {
+				v.error(fmt.Sprintf("Property '%s' doesn't exist in the range '%s'.", name, obj.String()))
+				return STATUS_PROPERTY_DOESNT_EXIST
+			}
+
+			v.push(val)
+			return STATUS_OK
+        }
+
 		default: {
 			// TODO: add methods to another types, defined by a table at runtime.
-			v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance. Its type is '%s'.", obj.String(), obj.Type()))
+			v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance or a range. Its type is '%s'.", obj.String(), obj.Type()))
 			return STATUS_PROPERTY_DOESNT_EXIST
 		}
 	}

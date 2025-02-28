@@ -51,6 +51,44 @@ type ValueRange struct {
     Step  float64
 }
 
+func (r *ValueRange) GetProperty(name string) (Value, bool) {
+    switch name {
+        case "start": return ValueNumber{Value: r.Start}, true
+        case "end": return ValueNumber{Value: r.End}, true
+        case "step": return ValueNumber{Value: r.Step}, true
+
+        default: return ValueNil{}, false
+    }
+}
+
+func (r *ValueRange) SetProperty(name string, value Value) bool {
+    val, ok := value.(ValueNumber)
+    valNum := val.Value
+    
+    // TODO: Actually this will print the wrong error message of 'property doesn't exist'
+    if !ok {
+        return false
+    }
+
+    switch name {
+        case "start": {
+            r.Start = valNum
+            return true
+        }
+        case "end": {
+            r.End = valNum
+            return true
+        }
+        case "step": {
+            r.Step = valNum
+            return true
+        }
+
+        default:
+            return false
+    }
+}
+
 type ValueRecord struct {
 	Name string
 	FieldNames []string
@@ -100,14 +138,7 @@ func (in *ValueInstance) SetProperty(name string, value Value) bool {
 // ---
 
 func (x ValueNumber) String() string {
-	// Check if it's an integer.
-	// Is it cheaper to convert it to int64 and then back to float64, or
-	// use math.Fmod to simulate 'x % 1 == 0' for floats?
-	if x.Value == float64(int64(x.Value)) {
-		return fmt.Sprintf("%.0f", x.Value)
-	}
-	
-	return fmt.Sprintf("%.2f", x.Value)
+	return fmt.Sprintf("%.10g", x.Value)
 }
 
 func (x ValueString) String() string { return x.Value }
