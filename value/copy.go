@@ -57,6 +57,14 @@ func CopyValue(value Value) Value {
 			}
 		}
 
+        case ValueRange: {
+            return ValueRange{
+                Start: v.Start,
+                End: v.End,
+                Step: v.Step,
+            }
+        }
+
 		case ValueRecord: {
 			return ValueRecord{
 				FieldNames: util.CopyList(v.FieldNames, func(s string) string {

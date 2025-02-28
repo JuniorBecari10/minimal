@@ -17,6 +17,7 @@ const (
 	STATUS_TYPE_ERROR
 	STATUS_INCORRECT_ARITY
 	STATUS_PROPERTY_DOESNT_EXIST
+    STATUS_UNREACHABLE_RANGE
 )
 
 type VM struct {
@@ -346,13 +347,52 @@ func (v *VM) Run() InterpretResult {
 				op := v.pop()
 
 				if !isNumber(op) {
-					v.error(fmt.Sprintf("Given expression ('%s') type is not 'num' to perform a number negation. Its type is '%s'.", op.String(),  op.Type()))
+					v.error(fmt.Sprintf("Given expression ('%s') type is not 'num' to perform a number negation. Its type is '%s'.", op.String(), op.Type()))
 					return STATUS_TYPE_ERROR
 				}
 
 				opNum := op.(value.ValueNumber)
 				v.push(value.ValueNumber{ Value: -opNum.Value })
 			}
+
+            case compiler.OP_RANGE: {
+                step := v.pop()
+                end := v.pop()
+                start := v.pop()
+
+                // Check if the given range is valid:
+
+                // 1. Check if all three operands are numbers.
+                // 2. Check if 'end' is reachable.
+                // (if 'step' is positive, then 'end' must be greater than 'start', and vice versa. 'step' must never be equal to 0.)
+                if !isNumber(start) {
+					v.error(fmt.Sprintf("Given 'start' expression ('%s') type is not 'num'. Its type is '%s'.", start.String(), start.Type()))
+					return STATUS_TYPE_ERROR
+                } else if !isNumber(end) {
+					v.error(fmt.Sprintf("Given 'end' expression ('%s') type is not 'num'. Its type is '%s'.", end.String(), end.Type()))
+					return STATUS_TYPE_ERROR
+                } else if !isNumber(step) {
+					v.error(fmt.Sprintf("Given 'step' expression ('%s') type is not 'num'. Its type is '%s'.", step.String(), step.Type()))
+					return STATUS_TYPE_ERROR
+                }
+
+                startNum := start.(value.ValueNumber).Value
+                endNum := end.(value.ValueNumber).Value
+                stepNum := step.(value.ValueNumber).Value
+                
+                if endNum > startNum && stepNum < 0 ||
+                   endNum < startNum && stepNum > 0 ||
+                   stepNum == 0 {
+					v.error("Range's end is unreachable if iterated over.")
+					return STATUS_UNREACHABLE_RANGE
+                }
+
+                v.push(value.ValueRange{
+                    Start: startNum,
+                    End: endNum,
+                    Step: stepNum,
+                })
+            }
 
 			case compiler.OP_CALL: {
 				arity := v.getInt()

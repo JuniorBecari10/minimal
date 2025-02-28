@@ -277,6 +277,23 @@ func (c *Compiler) expression(expr ast.Expression) {
 			c.compileIf(e.Condition, func() { c.expression(e.Then) }, else_, expr.Base.Pos)
 		}
 
+        case ast.RangeExpression: {
+            c.expression(e.Start)
+            c.expression(e.End)
+
+            if (e.Step != nil) {
+                c.expression(*e.Step)
+            } else {
+                // Push the constant '1'. 
+                index := c.addConstant(value.ValueNumber{ Value: 1 })
+
+                c.writeBytePos(OP_PUSH_CONST, value.NewMetaLen1(expr.Base.Pos))
+                c.writeBytes(util.IntToBytes(index))
+            }
+
+			c.writeBytePos(OP_RANGE, value.ChunkMetadata{})
+        }
+
 		case ast.GetPropertyExpression: {
 			c.expression(e.Left)
 

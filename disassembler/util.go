@@ -124,6 +124,9 @@ func getInstructionName(inst byte) string {
 		case compiler.OP_PUSH_VOID:
 			return "PUSH_VOID"
 
+		case compiler.OP_RANGE:
+			return "RANGE"
+
 		case compiler.OP_ASSERT_BOOL:
 			return "ASSERT_BOOL"
 

@@ -45,6 +45,12 @@ type ValueNativeFn struct {
 	Fn NativeFn
 }
 
+type ValueRange struct {
+    Start float64
+    End   float64
+    Step  float64
+}
+
 type ValueRecord struct {
 	Name string
 	FieldNames []string
@@ -122,6 +128,7 @@ func (x ValueFunction) String() string {
 
 func (x ValueNativeFn) String() string { return "<native fn>" }
 func (x ValueClosure) String() string { return x.Fn.String() }
+func (x ValueRange) String() string { return fmt.Sprintf("%.10g..%.10g:%.10g", x.Start, x.End, x.Step) }
 func (x ValueRecord) String() string { return fmt.Sprintf("<record %s>", x.Name) }
 
 func (x ValueInstance) String() string {
@@ -162,6 +169,7 @@ func (x ValueFunction) Type() string { return "fn" }
 func (x ValueNativeFn) Type() string { return "native fn" }
 func (x ValueClosure) Type() string { return "fn" }
 
+func (x ValueRange) Type() string { return "range" }
 func (x ValueRecord) Type() string { return "record" }
 func (x ValueInstance) Type() string { return x.Record.Name }
 

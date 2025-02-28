@@ -70,6 +70,8 @@ const (
 	OP_PUSH_NIL
 	OP_PUSH_VOID
 
+    OP_RANGE
+
 	// TODO: extend this to accept more types, if necessary
 	OP_ASSERT_BOOL
 )
