@@ -1,0 +1,13 @@
+record R(a);
+
+fn main() {
+    var a = 0..10;
+    var r = R(10);
+
+    a.start = 2;
+    r.a = 2;
+
+    println(a.start); // 2
+    println(r.a); // 2
+}
+

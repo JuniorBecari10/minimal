@@ -207,6 +207,8 @@ func (v *VM) Run() InterpretResult {
 				obj := v.pop()
 				index := v.getInt()
 				
+                // the range properties aren't being changed maybe it's because
+                // the data is copied instead of being referenced
 				res := v.setProperty(obj, index, val)
 
 				if res != STATUS_OK {
