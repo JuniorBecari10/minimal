@@ -3,6 +3,15 @@ package value
 import (
 	"bytes"
 	"fmt"
+    "vm-go/util"
+)
+
+type RangeSetStatus int
+const (
+    RANGE_OK RangeSetStatus = iota
+    RANGE_PROPERTY_DOESNT_EXIST
+    RANGE_TYPE_ERROR
+    RANGE_REACHABILITY_ERROR
 )
 
 type NativeFn = func(args []Value) Value
@@ -45,48 +54,51 @@ type ValueNativeFn struct {
 	Fn NativeFn
 }
 
+// The fields are pointers because they are not copied directly,
+// and can be therefore passed by reference.
 type ValueRange struct {
-    Start float64
-    End   float64
-    Step  float64
+    Start *float64
+    End   *float64
+    Step  *float64
 }
 
 func (r *ValueRange) GetProperty(name string) (Value, bool) {
     switch name {
-        case "start": return ValueNumber{Value: r.Start}, true
-        case "end": return ValueNumber{Value: r.End}, true
-        case "step": return ValueNumber{Value: r.Step}, true
+        case "start": return ValueNumber{Value: *r.Start}, true
+        case "end": return ValueNumber{Value: *r.End}, true
+        case "step": return ValueNumber{Value: *r.Step}, true
 
         default: return ValueNil{}, false
     }
 }
 
-func (r *ValueRange) SetProperty(name string, value Value) bool {
+func (r *ValueRange) SetProperty(name string, value Value) RangeSetStatus {
     val, ok := value.(ValueNumber)
     valNum := val.Value
     
-    // TODO: Actually this will print the wrong error message of 'property doesn't exist'
     if !ok {
-        return false
+        return RANGE_TYPE_ERROR
     }
 
     switch name {
-        case "start": {
-            r.Start = valNum
-            return true
-        }
-        case "end": {
-            r.End = valNum
-            return true
-        }
-        case "step": {
-            r.Step = valNum
-            return true
-        }
+        case "start":
+            *r.Start = valNum
+        
+        case "end":
+            *r.End = valNum
+    
+        case "step":
+            *r.Step = valNum
 
         default:
-            return false
+            return RANGE_PROPERTY_DOESNT_EXIST
     }
+
+    if !util.IsRangeReachable(*r.Start, *r.End, *r.Step) {
+        return RANGE_REACHABILITY_ERROR
+    }
+
+    return RANGE_OK
 }
 
 type ValueRecord struct {
@@ -159,7 +171,11 @@ func (x ValueFunction) String() string {
 
 func (x ValueNativeFn) String() string { return "<native fn>" }
 func (x ValueClosure) String() string { return x.Fn.String() }
-func (x ValueRange) String() string { return fmt.Sprintf("%.10g..%.10g:%.10g", x.Start, x.End, x.Step) }
+
+func (x ValueRange) String() string {
+    return fmt.Sprintf("%.10g..%.10g:%.10g", *x.Start, *x.End, *x.Step)
+}
+
 func (x ValueRecord) String() string { return fmt.Sprintf("<record %s>", x.Name) }
 
 func (x ValueInstance) String() string {

@@ -97,6 +97,12 @@ func Center(str string, width int, padChar string) string {
 	return strings.Repeat(padChar, leftPadding) + str + strings.Repeat(" ", rightPadding)
 }
 
+func IsRangeReachable(start, end, step float64) bool {
+    return !(end > start && step < 0 ||
+           end < start && step > 0 ||
+           end != start && step == 0)
+}
+
 func Error(pos token.Position, length int, message string, fileData *FileData) {
 	fmt.Printf("[-] Error: %s\n", message)
 	fmt.Printf(" | %s [-] %s (%d, %d)\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))), fileData.Name, pos.Line + 1, pos.Col + 1)

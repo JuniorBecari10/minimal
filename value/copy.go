@@ -58,10 +58,14 @@ func CopyValue(value Value) Value {
 		}
 
         case ValueRange: {
+            start := *v.Start
+            end := *v.End
+            step := *v.Step
+
             return ValueRange{
-                Start: v.Start,
-                End: v.End,
-                Step: v.Step,
+                Start: &start,
+                End: &end,
+                Step: &step,
             }
         }
 

@@ -4,10 +4,10 @@ fn main() {
     var a = 0..10;
     var r = R(10);
 
-    a.start = 2;
+    a.start = 8;
     r.a = 2;
 
-    println(a.start); // 2
+    println(a.start); // 8
     println(r.a); // 2
 }
 

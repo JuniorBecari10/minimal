@@ -164,7 +164,7 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_DEF_LOCAL:
-				v.callStack[len(v.callStack)-1].locals = append(v.callStack[len(v.callStack)-1].locals, v.pop())
+				v.callStack[len(v.callStack)-1].locals = append(v.callStack[len(v.callStack)-1].locals, value.CopyValue(v.pop()))
 
 			case compiler.OP_GET_LOCAL:
 				v.push(v.callStack[len(v.callStack)-1].locals[v.getInt()])
@@ -396,17 +396,16 @@ func (v *VM) Run() InterpretResult {
                     stepNum = step.(value.ValueNumber).Value
                 }
 
-                if endNum > startNum && stepNum < 0 ||
-                   endNum < startNum && stepNum > 0 ||
-                   endNum != startNum && stepNum == 0 {
-					v.error("Range's end is unreachable if iterated over.")
-					return STATUS_UNREACHABLE_RANGE
+                status := v.testRangeReachability(startNum, endNum, stepNum)
+
+                if status != STATUS_OK {
+                    return status
                 }
 
                 v.push(value.ValueRange{
-                    Start: startNum,
-                    End: endNum,
-                    Step: stepNum,
+                    Start: &startNum,
+                    End: &endNum,
+                    Step: &stepNum,
                 })
             }
 

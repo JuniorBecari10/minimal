@@ -359,15 +359,30 @@ func (v *VM) setProperty(obj value.Value, index int, val value.Value) InterpretR
 		}
 
         case value.ValueRange: {
-			ok := instance.SetProperty(name, val)
+			switch instance.SetProperty(name, val) {
+                case value.RANGE_OK: {
+                    v.push(val)
+                    return STATUS_OK
+                }
 
-			if !ok {
-				v.error(fmt.Sprintf("Property '%s' doesn't exist in the range '%s'.", name, obj.String()))
-				return STATUS_PROPERTY_DOESNT_EXIST
-			}
+                case value.RANGE_PROPERTY_DOESNT_EXIST: {
+                    v.error(fmt.Sprintf("Property '%s' doesn't exist in the range '%s'.", name, obj.String()))
+                    return STATUS_PROPERTY_DOESNT_EXIST
+                }
 
-			v.push(val)
-			return STATUS_OK
+                case value.RANGE_TYPE_ERROR: {
+                    v.error(fmt.Sprintf("Property '%s' doesn't exist in the range '%s'.", name, obj.String()))
+                    return STATUS_TYPE_ERROR
+                }
+
+                case value.RANGE_REACHABILITY_ERROR: {
+                    v.error("Range's end will be unreachable if iterated over.")
+                    return STATUS_UNREACHABLE_RANGE
+                }
+
+                default:
+                    return STATUS_OUT_OF_BOUNDS
+                }
         }
 
 		default: {
@@ -513,6 +528,15 @@ func (v *VM) binaryBool(operator byte) InterpretResult {
 	}
 
 	return STATUS_OK
+}
+
+func (v *VM) testRangeReachability(start, end, step float64) InterpretResult {
+    if !util.IsRangeReachable(start, end, step) {
+        v.error("Range's end will be unreachable if iterated over.")
+        return STATUS_UNREACHABLE_RANGE
+    }
+
+    return STATUS_OK
 }
 
 // ---
