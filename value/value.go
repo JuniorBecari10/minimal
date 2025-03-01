@@ -3,6 +3,15 @@ package value
 import (
 	"bytes"
 	"fmt"
+    "vm-go/util"
+)
+
+type RangeSetStatus int
+const (
+    RANGE_OK RangeSetStatus = iota
+    RANGE_PROPERTY_DOESNT_EXIST
+    RANGE_TYPE_ERROR
+    RANGE_REACHABILITY_ERROR
 )
 
 type NativeFn = func(args []Value) Value
@@ -43,6 +52,53 @@ type ValueClosure struct {
 type ValueNativeFn struct {
 	Arity int
 	Fn NativeFn
+}
+
+// The fields are pointers because they are not copied directly,
+// and can be therefore passed by reference.
+type ValueRange struct {
+    Start *float64
+    End   *float64
+    Step  *float64
+}
+
+func (r *ValueRange) GetProperty(name string) (Value, bool) {
+    switch name {
+        case "start": return ValueNumber{Value: *r.Start}, true
+        case "end": return ValueNumber{Value: *r.End}, true
+        case "step": return ValueNumber{Value: *r.Step}, true
+
+        default: return ValueNil{}, false
+    }
+}
+
+func (r *ValueRange) SetProperty(name string, value Value) RangeSetStatus {
+    val, ok := value.(ValueNumber)
+    valNum := val.Value
+    
+    if !ok {
+        return RANGE_TYPE_ERROR
+    }
+
+    switch name {
+        case "start":
+            *r.Start = valNum
+        
+        case "end":
+            *r.End = valNum
+    
+        case "step":
+            *r.Step = valNum
+
+        default:
+            return RANGE_PROPERTY_DOESNT_EXIST
+    }
+
+    if !util.IsRangeReachable(*r.Start, *r.End, *r.Step) {
+        return RANGE_REACHABILITY_ERROR
+    }
+
+    return RANGE_OK
 }
 
 type ValueRecord struct {
@@ -94,14 +150,7 @@ func (in *ValueInstance) SetProperty(name string, value Value) bool {
 // ---
 
 func (x ValueNumber) String() string {
-	// Check if it's an integer.
-	// Is it cheaper to convert it to int64 and then back to float64, or
-	// use math.Fmod to simulate 'x % 1 == 0' for floats?
-	if x.Value == float64(int64(x.Value)) {
-		return fmt.Sprintf("%.0f", x.Value)
-	}
-	
-	return fmt.Sprintf("%.2f", x.Value)
+	return fmt.Sprintf("%.10g", x.Value)
 }
 
 func (x ValueString) String() string { return x.Value }
@@ -122,6 +171,11 @@ func (x ValueFunction) String() string {
 
 func (x ValueNativeFn) String() string { return "<native fn>" }
 func (x ValueClosure) String() string { return x.Fn.String() }
+
+func (x ValueRange) String() string {
+    return fmt.Sprintf("%.10g..%.10g:%.10g", *x.Start, *x.End, *x.Step)
+}
+
 func (x ValueRecord) String() string { return fmt.Sprintf("<record %s>", x.Name) }
 
 func (x ValueInstance) String() string {
@@ -162,6 +216,7 @@ func (x ValueFunction) Type() string { return "fn" }
 func (x ValueNativeFn) Type() string { return "native fn" }
 func (x ValueClosure) Type() string { return "fn" }
 
+func (x ValueRange) Type() string { return "range" }
 func (x ValueRecord) Type() string { return "record" }
 func (x ValueInstance) Type() string { return x.Record.Name }
 

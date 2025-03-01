@@ -2,12 +2,23 @@ record A(a);
 
 fn main() {
     var a = A(10);
+    var range = 0..10;
+
     change_a(a);
-    println(a); // 10
+    change_range(range);
+
+    println(a.a); // 10
+    println(range.start); // 0
 }
 
 // changing a parameter should not change the original variable.
 fn change_a(a) {
     a.a = 20;
-    println(a); // 20
+    println(a.a); // 20
 }
+
+fn change_range(range) {
+    range.start = 5;
+    println(range.start); // 5
+}
+

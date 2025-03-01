@@ -1,4 +1,50 @@
 fn main() {
-    var range = 1..10;
+    var progressive = 0..10;      // 'step' is 1.
+    var regressive = 10..0;       // 'step' is -1.
+    var equal = 0..0;             // 'step' is 0.
+    var equal_explicit = 0..0:0;  // 'step' is 0.
+    var explicit_nil = 0..10:nil; // 'step' is 1.
+
+    var explicit_step = 0..10:2;
     // var inclusive = 1..=10; // not supported yet
+
+    println(progressive);    // 0..10:1
+    println(regressive);     // 10..0:-1
+    println(explicit_step);  // 0..10:2
+    println(equal);          // 0..0:0
+    println(equal_explicit); // 0..0:0
+    println(explicit_nil);   // 0..10:0
+
+    // Errors (uncomment)
+    // println(0..10:-1);
+    // println(10..0:1);
+    // println(0..1:0);
+
+    // println("not a number"..0:0);
+    // println(0.."still not a number":0);
+    // println(0..0:"yet not a number");
+
+    // Copy Test
+    println("---");
+
+    var a = 0..10;
+    var b = a;
+
+    a.start = 2;
+    a.end = 11;
+    a.step = 3;
+
+    println(a); // 2..11:3
+    println(b); // 0..10:1
+
+    // Test Get
+    println("---");
+
+    println(a.start); // 2
+    println(a.end);   // 11
+    println(a.step);  // 3
+    
+    println(b.start); // 0
+    println(b.end);   // 10
+    println(b.step);  // 1
 }

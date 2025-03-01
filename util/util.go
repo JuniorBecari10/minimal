@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"vm-go/token"
@@ -33,7 +34,7 @@ func Reverse[T any](slice []T) {
 }
 
 func Remove[T any](slice []T, index int) []T {
-	return append(slice[:index], slice[index+1:]...)
+	return slices.Delete(slice, index, index)
 }
 
 // Just like 'map'
@@ -94,6 +95,12 @@ func Center(str string, width int, padChar string) string {
 
 	// Pad the string on both sides
 	return strings.Repeat(padChar, leftPadding) + str + strings.Repeat(" ", rightPadding)
+}
+
+func IsRangeReachable(start, end, step float64) bool {
+    return !(end > start && step < 0 ||
+           end < start && step > 0 ||
+           end != start && step == 0)
 }
 
 func Error(pos token.Position, length int, message string, fileData *FileData) {

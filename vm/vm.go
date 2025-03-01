@@ -17,6 +17,7 @@ const (
 	STATUS_TYPE_ERROR
 	STATUS_INCORRECT_ARITY
 	STATUS_PROPERTY_DOESNT_EXIST
+    STATUS_UNREACHABLE_RANGE
 )
 
 type VM struct {
@@ -163,7 +164,7 @@ func (v *VM) Run() InterpretResult {
 			}
 
 			case compiler.OP_DEF_LOCAL:
-				v.callStack[len(v.callStack)-1].locals = append(v.callStack[len(v.callStack)-1].locals, v.pop())
+				v.callStack[len(v.callStack)-1].locals = append(v.callStack[len(v.callStack)-1].locals, value.CopyValue(v.pop()))
 
 			case compiler.OP_GET_LOCAL:
 				v.push(v.callStack[len(v.callStack)-1].locals[v.getInt()])
@@ -206,6 +207,8 @@ func (v *VM) Run() InterpretResult {
 				obj := v.pop()
 				index := v.getInt()
 				
+                // the range properties aren't being changed maybe it's because
+                // the data is copied instead of being referenced
 				res := v.setProperty(obj, index, val)
 
 				if res != STATUS_OK {
@@ -346,13 +349,65 @@ func (v *VM) Run() InterpretResult {
 				op := v.pop()
 
 				if !isNumber(op) {
-					v.error(fmt.Sprintf("Given expression ('%s') type is not 'num' to perform a number negation. Its type is '%s'.", op.String(),  op.Type()))
+					v.error(fmt.Sprintf("Given expression ('%s') type is not 'num' to perform a number negation. Its type is '%s'.", op.String(), op.Type()))
 					return STATUS_TYPE_ERROR
 				}
 
 				opNum := op.(value.ValueNumber)
 				v.push(value.ValueNumber{ Value: -opNum.Value })
 			}
+
+            case compiler.OP_MAKE_RANGE: {
+                step := v.pop()
+                end := v.pop()
+                start := v.pop()
+
+                // Check if the given range is valid:
+
+                // 1. Check if all three operands are numbers (or if 'step' is nil).
+                // 2. Check if 'end' is reachable.
+                // (if 'step' is positive, then 'end' must be greater than 'start', and vice versa. 'step' must never be equal to 0, unless 'start' is equal to 'end')
+
+                if !isNumber(start) {
+					v.error(fmt.Sprintf("Given 'start' expression ('%s') type is not 'num'. Its type is '%s'.", start.String(), start.Type()))
+					return STATUS_TYPE_ERROR
+                } else if !isNumber(end) {
+					v.error(fmt.Sprintf("Given 'end' expression ('%s') type is not 'num'. Its type is '%s'.", end.String(), end.Type()))
+					return STATUS_TYPE_ERROR
+                } else if !isNumber(step) && !isNil(step) {
+					v.error(fmt.Sprintf("Given 'step' expression ('%s') type is not 'num' or 'nil'. Its type is '%s'.", step.String(), step.Type()))
+					return STATUS_TYPE_ERROR
+                }
+
+                startNum := start.(value.ValueNumber).Value
+                endNum := end.(value.ValueNumber).Value
+                stepNum := 1.0
+
+                // Define 'step' if it hasn't been defined yet. (when its value is 'nil')
+                if isNil(step) {
+                    if endNum < startNum {
+                        stepNum = -1
+                    } else if endNum == startNum {
+                        stepNum = 0
+                    }
+                    // if endNum > startNum, then stepNum = 1.
+                } else {
+                    // 'step' is defined, so we get it.
+                    stepNum = step.(value.ValueNumber).Value
+                }
+
+                status := v.testRangeReachability(startNum, endNum, stepNum)
+
+                if status != STATUS_OK {
+                    return status
+                }
+
+                v.push(value.ValueRange{
+                    Start: &startNum,
+                    End: &endNum,
+                    Step: &stepNum,
+                })
+            }
 
 			case compiler.OP_CALL: {
 				arity := v.getInt()

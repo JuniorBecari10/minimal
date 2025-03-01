@@ -49,13 +49,14 @@ func (v *VM) includeNativeFns() {
 
 // ---
 
+// TODO: use format string "%.10g" without printing {}
 func nativePrint(args []value.Value) value.Value {
-	fmt.Print(args[0])
+	fmt.Print(args[0].String())
 	return value.ValueVoid{}
 }
 
 func nativePrintln(args []value.Value) value.Value {
-	fmt.Println(args[0])
+    fmt.Println(args[0].String())
 	return value.ValueVoid{}
 }
 
