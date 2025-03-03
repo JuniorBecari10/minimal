@@ -170,7 +170,7 @@ func (v *VM) Run() InterpretResult {
 				v.push(v.callStack[len(v.callStack)-1].locals[v.getInt()])
 
 			case compiler.OP_SET_LOCAL:
-				v.callStack[len(v.callStack)-1].locals[v.getInt()] = v.peek(0)
+				v.callStack[len(v.callStack)-1].locals[v.getInt()] = value.CopyValue(v.peek(0))
 
 			case compiler.OP_GET_UPVALUE: {
 				slot := v.getInt()
@@ -179,17 +179,17 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_SET_UPVALUE: {
 				slot := v.getInt()
-				v.setUpvalueValue(v.callStack[len(v.callStack)-1].function.Upvalues[slot], v.peek(0))
+				v.setUpvalueValue(v.callStack[len(v.callStack)-1].function.Upvalues[slot], value.CopyValue(v.peek(0)))
 			}
 
 			case compiler.OP_DEF_GLOBAL:
-				v.globals = append(v.globals, v.pop())
+				v.globals = append(v.globals, value.CopyValue(v.pop()))
 
 			case compiler.OP_GET_GLOBAL:
 				v.push(v.globals[v.getInt()])
 
 			case compiler.OP_SET_GLOBAL:
-				v.globals[v.getInt()] = v.peek(0)
+				v.globals[v.getInt()] = value.CopyValue(v.peek(0))
 
 			case compiler.OP_GET_PROPERTY: {
 				obj := v.pop()

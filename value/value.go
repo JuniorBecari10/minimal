@@ -139,7 +139,7 @@ func (in *ValueInstance) GetProperty(name string) (Value, bool) {
 func (in *ValueInstance) SetProperty(name string, value Value) bool {
 	for i := range in.Fields {
 		if in.Record.FieldNames[i] == name {
-			in.Fields[i] = value
+			in.Fields[i] = CopyValue(value)
 			return true
 		}
 	}

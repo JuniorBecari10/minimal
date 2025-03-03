@@ -47,4 +47,7 @@ fn main() {
     println(b.start); // 0
     println(b.end);   // 10
     println(b.step);  // 1
+
+    // Test if the dot after '10' is interpreted as a get property expression.
+    println(0..10.start);
 }
