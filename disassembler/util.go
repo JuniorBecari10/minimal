@@ -78,6 +78,8 @@ func getInstructionName(inst byte) string {
 			return "JUMP_TRUE"
 		case compiler.OP_JUMP_FALSE:
 			return "JUMP_FALSE"
+		case compiler.OP_JUMP_HAS_NO_NEXT:
+			return "JUMP_HAS_NO_NEXT"
 		case compiler.OP_LOOP:
 			return "LOOP"
 
@@ -126,6 +128,11 @@ func getInstructionName(inst byte) string {
 
 		case compiler.OP_MAKE_RANGE:
 			return "MAKE_RANGE"
+		case compiler.OP_MAKE_ITERATOR:
+			return "MAKE_ITERATOR"
+
+        case compiler.OP_NEXT:
+            return "NEXT"
 
 		case compiler.OP_ASSERT_BOOL:
 			return "ASSERT_BOOL"

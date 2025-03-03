@@ -123,6 +123,17 @@ func (c *Compiler) compileFnBody(pos token.Position) (value.Chunk, bool) {
 	return c.chunk, c.hadError
 }
 
+func (c *Compiler) identifierNoExpr(token token.Token, meta value.ChunkMetadata) {
+	index, opcode := c.resolveVariable(token, false)
+
+	if index < 0 {
+		return
+	}
+
+	c.writeBytePos(byte(opcode), meta)
+	c.writeBytes(util.IntToBytes(index))
+}
+
 func (c *Compiler) identifier(token token.Token, expr ast.Expression) {
 	index, opcode := c.resolveVariable(token, false)
 

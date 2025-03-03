@@ -43,6 +43,7 @@ const (
 	OP_JUMP
 	OP_JUMP_TRUE
 	OP_JUMP_FALSE
+    OP_JUMP_HAS_NO_NEXT
 	OP_LOOP
 
 	OP_EQUAL
@@ -71,6 +72,9 @@ const (
 	OP_PUSH_VOID
 
     OP_MAKE_RANGE
+    OP_MAKE_ITERATOR
+
+    OP_NEXT
 
 	// TODO: extend this to accept more types, if necessary
 	OP_ASSERT_BOOL
