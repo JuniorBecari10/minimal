@@ -6,7 +6,7 @@ import (
 )
 
 func (l *Lexer) match(c byte) bool {
-	if l.isAtEnd() {
+	if l.isAtEnd(0) {
 		return false
 	}
 
@@ -19,7 +19,7 @@ func (l *Lexer) match(c byte) bool {
 }
 
 func (l *Lexer) advance() byte {
-	peek := l.peek()
+	peek := l.peek(0)
 	l.current += 1
 
 	if peek == '\n' {
@@ -31,23 +31,15 @@ func (l *Lexer) advance() byte {
 	return peek
 }
 
-func (l *Lexer) peek() byte {
-	return l.peekN(0)
-}
-
-func (l *Lexer) isAtEnd() bool {
-	return l.isAtEndN(0)
-}
-
-func (l *Lexer) peekN(offset int) byte {
-	if l.isAtEndN(offset) {
+func (l *Lexer) peek(offset int) byte {
+	if l.isAtEnd(offset) {
 		return 0
 	}
 
 	return l.source[l.current + offset]
 }
 
-func (l *Lexer) isAtEndN(offset int) bool {
+func (l *Lexer) isAtEnd(offset int) bool {
 	return l.current + offset >= len(l.source)
 }
 
