@@ -131,8 +131,10 @@ func getInstructionName(inst byte) string {
 		case compiler.OP_MAKE_ITERATOR:
 			return "MAKE_ITERATOR"
 
-        case compiler.OP_NEXT:
-            return "NEXT"
+        case compiler.OP_GET_NEXT:
+            return "GET_NEXT"
+        case compiler.OP_ADVANCE:
+            return "ADVANCE"
 
 		case compiler.OP_ASSERT_BOOL:
 			return "ASSERT_BOOL"

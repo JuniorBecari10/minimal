@@ -74,7 +74,8 @@ const (
     OP_MAKE_RANGE
     OP_MAKE_ITERATOR
 
-    OP_NEXT
+    OP_GET_NEXT
+    OP_ADVANCE
 
 	// TODO: extend this to accept more types, if necessary
 	OP_ASSERT_BOOL

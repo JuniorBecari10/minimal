@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "debug",
             "program": ".",
-            "args": ["tests/operator_assign.vm"]
+            "args": ["tests/for-in.vm"]
         }
 
     ]

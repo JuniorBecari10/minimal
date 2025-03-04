@@ -271,6 +271,24 @@ func (v *VM) Run() InterpretResult {
 					return STATUS_TYPE_ERROR
 				}
 			}
+            
+            case compiler.OP_JUMP_HAS_NO_NEXT: {
+                iterator := v.peek(0)
+                amount := v.getInt()
+
+                switch it := iterator.(type) {
+                    case value.RangeIterator: {
+                        if !it.HasNext() {
+                            v.ip += amount
+                        }
+                    }
+
+                    default: {
+                        v.error(fmt.Sprintf("Expected iterator, got '%s', of type '%s'.", iterator.String(), iterator.Type()))
+                        return STATUS_TYPE_ERROR
+                    }
+                }
+            }
 
 			case compiler.OP_LOOP:
 				v.ip -= v.getInt()
@@ -407,6 +425,50 @@ func (v *VM) Run() InterpretResult {
                     End: &endNum,
                     Step: &stepNum,
                 })
+            }
+
+            case compiler.OP_MAKE_ITERATOR: {
+                iterable := v.pop()
+
+                switch it := iterable.(type) {
+                    case value.ValueRange:
+                        v.push(value.NewRangeIterator(it))
+
+                    default: {
+                        v.error(fmt.Sprintf("Expected iterable, got '%s', of type '%s'.", iterable.String(), iterable.Type()))
+                        return STATUS_TYPE_ERROR
+                    }
+                }
+            }
+
+            case compiler.OP_GET_NEXT: {
+                iterator := v.peek(0)
+
+                switch it := iterator.(type) {
+                    case value.RangeIterator:
+                        v.push(it.GetNext())
+
+                    default: {
+                        v.error(fmt.Sprintf("Expected iterator, got '%s', of type '%s'.", iterator.String(), iterator.Type()))
+                        return STATUS_TYPE_ERROR
+                    }
+                }
+            }
+            
+            case compiler.OP_ADVANCE: {
+                iterator := v.pop()
+
+                switch it := iterator.(type) {
+                    case value.RangeIterator: {
+                        it.Advance()
+						v.push(it)
+                    }
+
+                    default: {
+                        v.error(fmt.Sprintf("Expected iterator, got '%s', of type '%s'.", iterator.String(), iterator.Type()))
+                        return STATUS_TYPE_ERROR
+                    }
+                }
             }
 
 			case compiler.OP_CALL: {

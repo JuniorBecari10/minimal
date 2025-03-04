@@ -1,8 +1,9 @@
 package value
 
 type Iterator interface {
-    hasNext() bool
-    next() Value
+    HasNext() bool
+    Advance()
+    GetNext() Value
 }
 
 type RangeIterator struct {
@@ -10,12 +11,32 @@ type RangeIterator struct {
     Count float64
 }
 
-// impl Iterator for RangeIterator
-func (r RangeIterator) hasNext() bool {
+func NewRangeIterator(rg ValueRange) RangeIterator {
+    return RangeIterator{
+        Range: CopyValue(rg).(ValueRange), // to avoid race conditions while iterating
+        Count: *rg.Start,
+    }
+}
+
+// impl Iterator for *RangeIterator
+func (r *RangeIterator) HasNext() bool {
     return r.Count < *r.Range.End
 }
 
-func (r *RangeIterator) next() Value {
+func (r *RangeIterator) Advance() {
     r.Count += *r.Range.Step
+}
+
+func (r *RangeIterator) GetNext() Value {
+    return ValueNumber{ Value: r.Count }
+}
+
+// impl Value for RangeIterator
+func (x RangeIterator) String() string {
+    return "<range iterator>"
+}
+
+func (x RangeIterator) Type() string {
+    return "iterator"
 }
 
