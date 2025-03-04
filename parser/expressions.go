@@ -259,7 +259,7 @@ func (p *Parser) parseUnary(op token.TokenKind) ast.Expression {
 
 // --- Infix ---
 
-func (p *Parser) parseBinary(left ast.Expression, _ token.Position, op token.TokenKind) ast.Expression {
+func (p *Parser) parseBinary(left ast.Expression, op token.TokenKind) ast.Expression {
 	precedence := p.precedenceMap[op]
 
 	operator := p.expectToken(op)
@@ -278,7 +278,7 @@ func (p *Parser) parseBinary(left ast.Expression, _ token.Position, op token.Tok
 	}
 }
 
-func (p *Parser) parseLogical(left ast.Expression, _ token.Position, op token.TokenKind) ast.Expression {
+func (p *Parser) parseLogical(left ast.Expression, op token.TokenKind) ast.Expression {
 	precedence := p.precedenceMap[op]
 
 	operator := p.expectToken(op)
@@ -339,7 +339,7 @@ func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) ast.Ex
 // x *= 30; -> x = x * 30;
 // y /= 40; -> y = y / 40;
 // z %= 50; -> z = z % 50;
-func (p *Parser) parseOperatorAssignment(left ast.Expression, _ token.Position, finalOp token.TokenKind) ast.Expression {
+func (p *Parser) parseOperatorAssignment(left ast.Expression, finalOp token.TokenKind) ast.Expression {
 	operator := p.advance()
 
 	// this will convert the assignment operator into the correspondent binary operator.
