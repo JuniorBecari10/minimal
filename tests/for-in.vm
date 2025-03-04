@@ -1,5 +1,70 @@
 fn main() {
+    // Simple loop.
     for i in 0..10 {
+        println(i);
+    }
+
+    println("---");
+
+    // Nested loops.
+    for i in 0..10 {
+        for j in 0..10 {
+            println(str(i) + ", " + str(j));
+        }
+    }
+
+    println("---");
+
+    // With step defined.
+    for i in 10..100:2 {
+        println(i);
+    }
+
+    println("---");
+
+    // Backwards.
+    for i in 10..0 {
+        println(i);
+    }
+
+    println("---");
+
+    // Equal. (should not run)
+    for i in 10..10 {
+        println(i);
+    }
+
+    println("---");
+
+    // Break
+    for i in 0..10 {
+        if i == 5 {
+            break;
+        }
+
+        println(i);
+    }
+
+    println("---");
+
+    // Continue
+    for i in 0..10 {
+        if i == 2 or i == 5 or i == 7 {
+            continue;
+        }
+
+        println(i);
+    }
+
+    println("---");
+
+    // Check race conditions.
+    // Expected behavior: the iterable is copied and therefore any modifications in the
+    // original variable don't interfere on the loop. It should behave as it was not modified.
+    // In this case, a loop from 0 to 9.
+    var range = 0..10;
+    for i in range {
+        range.end = 100;
         println(i);
     }
 }

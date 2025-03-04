@@ -337,7 +337,6 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		case ast.ContinueStatement: {
 			// The same with continue, but we'll push 'true', because we want the loop to keep running.
 
-			// this might be broken if multiple loops are nested
 			if len(c.loopFlowPos) == 0 {
 				c.error(stmt.Base.Pos, len(s.Token.Lexeme), "Cannot use 'continue' outside of a loop.")
 				return
