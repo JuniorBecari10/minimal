@@ -530,15 +530,6 @@ func (v *VM) binaryBool(operator byte) InterpretResult {
 	return STATUS_OK
 }
 
-func (v *VM) testRangeReachability(start, end, step float64, inclusive bool) InterpretResult {
-    if !util.IsRangeReachable(start, end, step, inclusive) {
-        v.error("Range's end will be unreachable if iterated over.")
-        return STATUS_UNREACHABLE_RANGE
-    }
-
-    return STATUS_OK
-}
-
 func (v *VM) makeRange(start, end, step value.Value, inclusive bool) InterpretResult {
     // Check if the given range is valid:
 
@@ -571,12 +562,6 @@ func (v *VM) makeRange(start, end, step value.Value, inclusive bool) InterpretRe
     } else {
         // 'step' is defined, so we get it.
         stepNum = step.(value.ValueNumber).Value
-    }
-
-    status := v.testRangeReachability(startNum, endNum, stepNum, inclusive)
-
-    if status != STATUS_OK {
-        return status
     }
 
     v.push(value.ValueRange{

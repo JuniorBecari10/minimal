@@ -1,5 +1,7 @@
 package value
 
+import "vm-go/util"
+
 type Iterator interface {
     HasNext() bool
     Advance()
@@ -20,6 +22,10 @@ func NewRangeIterator(rg ValueRange) RangeIterator {
 
 // impl Iterator for *RangeIterator
 func (r *RangeIterator) HasNext() bool {
+    if !util.IsRangeReachable(*r.Range.Start, *r.Range.End, *r.Range.Step, *r.Range.Inclusive) {
+        return false
+    }
+
     if *r.Range.Inclusive {
         if *r.Range.Step > 0 {
             return r.Count <= *r.Range.End
