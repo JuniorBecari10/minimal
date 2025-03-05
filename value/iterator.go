@@ -20,10 +20,18 @@ func NewRangeIterator(rg ValueRange) RangeIterator {
 
 // impl Iterator for *RangeIterator
 func (r *RangeIterator) HasNext() bool {
-    if *r.Range.Step > 0 {
-        return r.Count < *r.Range.End
+    if *r.Range.Inclusive {
+        if *r.Range.Step > 0 {
+            return r.Count <= *r.Range.End
+        } else {
+            return r.Count >= *r.Range.End
+        }
     } else {
-        return r.Count > *r.Range.End
+        if *r.Range.Step > 0 {
+            return r.Count < *r.Range.End
+        } else {
+            return r.Count > *r.Range.End
+        }
     }
 }
 

@@ -128,6 +128,8 @@ func getInstructionName(inst byte) string {
 
 		case compiler.OP_MAKE_RANGE:
 			return "MAKE_RANGE"
+		case compiler.OP_MAKE_INCL_RANGE:
+			return "MAKE_INCL_RANGE"
 		case compiler.OP_MAKE_ITERATOR:
 			return "MAKE_ITERATOR"
 
