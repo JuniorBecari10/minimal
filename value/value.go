@@ -125,7 +125,7 @@ func (r *ValueRange) SetProperty(name string, value Value) RangeSetStatus {
             return RANGE_PROPERTY_DOESNT_EXIST
     }
 
-    if !util.IsRangeReachable(*r.Start, *r.End, *r.Step) {
+    if !util.IsRangeReachable(*r.Start, *r.End, *r.Step, *r.Inclusive) {
         return RANGE_REACHABILITY_ERROR
     }
 

@@ -97,10 +97,10 @@ func Center(str string, width int, padChar string) string {
 	return strings.Repeat(padChar, leftPadding) + str + strings.Repeat(" ", rightPadding)
 }
 
-func IsRangeReachable(start, end, step float64) bool {
-    return !(end > start && step < 0 || // regressive
-           end < start && step > 0 ||   // progressive
-           end != start && step == 0)   // equal
+func IsRangeReachable(start, end, step float64, inclusive bool) bool {
+    return (step > 0 && start <= end) ||
+           (step < 0 && start >= end) ||
+           (step == 0 && start == end && !inclusive)
 }
 
 func Error(pos token.Position, length int, message string, fileData *FileData) {
