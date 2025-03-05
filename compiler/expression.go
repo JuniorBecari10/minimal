@@ -162,7 +162,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 					c.writeByte(OP_DIV)
 				
 				case token.TokenPercent:
-					c.writeByte(OP_MODULO)
+					c.writeByte(OP_MOD)
 				
 				case token.TokenDoubleEqual:
 					c.writeByte(OP_EQUAL)

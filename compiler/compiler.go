@@ -18,7 +18,7 @@ const (
 	OP_SUB
 	OP_MUL
 	OP_DIV
-	OP_MODULO
+	OP_MOD
 
 	OP_DEF_LOCAL
 	OP_GET_LOCAL
@@ -141,7 +141,7 @@ func newFnCompiler(ast []ast.Statement, enclosing *Compiler) *Compiler {
 
 		locals: []Local{},
 		globals: enclosing.globals,
-		upvalues: []Upvalue{}, // TODO: inherit?
+		upvalues: []Upvalue{},
 
 		chunk: value.Chunk{},
 		scopeDepth: enclosing.scopeDepth + 1,

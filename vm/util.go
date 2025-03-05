@@ -435,7 +435,7 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 
 			v.push(value.ValueNumber{ Value: leftNum.Value / rightNum.Value })
 		}
-		case compiler.OP_MODULO: {
+		case compiler.OP_MOD: {
 			if rightNum.Value == 0 {
 				v.error(
 					fmt.Sprintf(

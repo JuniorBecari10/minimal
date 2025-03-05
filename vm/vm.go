@@ -155,7 +155,7 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV, compiler.OP_MODULO: {
+			case compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV, compiler.OP_MOD: {
 				status := v.binaryNum(i)
 
 				if status != STATUS_OK {
