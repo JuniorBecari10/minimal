@@ -61,11 +61,13 @@ func CopyValue(value Value) Value {
             start := *v.Start
             end := *v.End
             step := *v.Step
+            inclusive := *v.Inclusive
 
             return ValueRange{
                 Start: &start,
                 End: &end,
                 Step: &step,
+                Inclusive: &inclusive,
             }
         }
 

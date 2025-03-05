@@ -1,0 +1,12 @@
+fn main() {
+    var range = 0..10;
+    println(range); // 0..10:1;
+
+    range.start = 2;
+    range.end = 50;
+    range.step = 2;
+    range.inclusive = true;
+
+    println(range); // 2..=50:2
+}
+

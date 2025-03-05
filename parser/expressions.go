@@ -384,6 +384,8 @@ func (p *Parser) parseDot(left ast.Expression, pos token.Position) ast.Expressio
 
 func (p *Parser) parseRange(left ast.Expression, pos token.Position) ast.Expression {
 	operator := p.expectToken(token.TokenDoubleDot)
+
+    inclusive := p.match(token.TokenEqual)
 	right := p.expression(PrecRange)
 
 	var step *ast.Expression = nil
@@ -402,6 +404,8 @@ func (p *Parser) parseRange(left ast.Expression, pos token.Position) ast.Express
 			Start: left,
 			End: right,
 			Step: step,
+
+            Inclusive: inclusive,
 		},
 	}
 }

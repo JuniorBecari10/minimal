@@ -98,9 +98,9 @@ func Center(str string, width int, padChar string) string {
 }
 
 func IsRangeReachable(start, end, step float64) bool {
-    return !(end > start && step < 0 ||
-           end < start && step > 0 ||
-           end != start && step == 0)
+    return !(end > start && step < 0 || // regressive
+           end < start && step > 0 ||   // progressive
+           end != start && step == 0)   // equal
 }
 
 func Error(pos token.Position, length int, message string, fileData *FileData) {
