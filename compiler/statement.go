@@ -121,19 +121,20 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
                 OP_DEF_LOCAL
             
-            +-- OP_JUMP_HAS_NO_NEXT <--+
-            |                          |
-            |   OP_JUMP ------+        |
-            +-- OP_JUMP_FALSE |        | <- break/continue point
-            |   OP_POP        |        |
-            |   OP_JUMP ------+---+    |
-            |                 |   |    |
-            |   [ body ] <----+   |    |
+            +-- OP_JUMP_HAS_NO_NEXT
+            |
+            |   OP_JUMP ------+
+            +-- OP_JUMP_FALSE | <- break/continue point
+            |   OP_POP        |
+			|   OP_JUMP ------+---+
+            |                 |   |
+            |   [ body ] <----+---+----+
             |                     |    |
             |   - end scope - <---+    |
             |   - begin scope -        |
 			|                          |
             |   OP_ADVANCE             |
+            +-- OP_JUMP_HAS_NO_NEXT    |
             |   OP_GET_NEXT            |
             |   OP_DEF_LOCAL           |
             |                          |
@@ -154,8 +155,6 @@ func (c *Compiler) statement(stmt ast.Statement) {
             c.addVariable(s.Variable, s.Variable.Pos)
             c.addDeclarationInstruction(s.Variable.Pos)
             
-            jumpNoNextPos := len(c.chunk.Code)
-
 			c.writeBytePos(OP_JUMP_HAS_NO_NEXT, value.NewMetaLen1(stmt.Base.Pos))
 			jumpNoNextOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
@@ -176,6 +175,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			jump2OffsetIndex := len(c.chunk.Code)
             c.writeBytes(util.IntToBytes(0)) // dummy
 			
+            bodyPos := len(c.chunk.Code)
             c.backpatch(jump1OffsetIndex, util.IntToBytes(len(c.chunk.Code) - jump1OffsetIndex - 4)) // index
             c.block(s.Block.Stmts, stmt.Base.Pos)
             
@@ -188,6 +188,11 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.beginScope()
 
             c.writeBytePos(OP_ADVANCE, value.NewMetaLen1(stmt.Base.Pos))
+			
+			c.writeBytePos(OP_JUMP_HAS_NO_NEXT, value.NewMetaLen1(stmt.Base.Pos))
+			jumpNoNext2OffsetIndex := len(c.chunk.Code)
+			
+			c.writeBytes(util.IntToBytes(0)) // dummy
             c.writeBytePos(OP_GET_NEXT, value.NewMetaLen1(stmt.Base.Pos))
 
 			// Create a new variable for the mutation to occur.
@@ -195,10 +200,11 @@ func (c *Compiler) statement(stmt ast.Statement) {
             c.addDeclarationInstruction(s.Variable.Pos)
 
 			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
-			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - jumpNoNextPos + 4)) // index
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - bodyPos + 4)) // index
             
 			c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 			c.backpatch(jumpNoNextOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpNoNextOffsetIndex - 4)) // index
+			c.backpatch(jumpNoNext2OffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpNoNext2OffsetIndex - 4)) // index
 			
             c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 			c.endScope(stmt.Base.Pos)

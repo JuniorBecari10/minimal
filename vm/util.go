@@ -295,6 +295,21 @@ func (v *VM) call(callee value.Value, arity int) InterpretResult {
 	return STATUS_OK
 }
 
+func (v *VM) makeIterator(iterable value.Value) (value.Value, InterpretResult) {
+	switch it := iterable.(type) {
+		case value.ValueRange:
+			return value.NewRangeIterator(it), STATUS_OK
+		
+		case value.ValueString:
+			return value.NewStrBytesIterator(it.Value), STATUS_OK
+
+		default: {
+			v.error(fmt.Sprintf("Expected iterable, got '%s', of type '%s'.", iterable.String(), iterable.Type()))
+			return nil, STATUS_TYPE_ERROR
+		}
+	}
+}
+
 func (v *VM) getPropertyValue(obj value.Value, index int) (value.Value, InterpretResult) {
 	nameValue := v.currentChunk.Constants[index]
 	name := nameValue.(value.ValueString).Value
@@ -316,6 +331,17 @@ func (v *VM) getPropertyValue(obj value.Value, index int) (value.Value, Interpre
 
 			if !ok {
 				v.error(fmt.Sprintf("Property '%s' doesn't exist in the range '%s'.", name, obj.String()))
+				return nil, STATUS_PROPERTY_DOESNT_EXIST
+			}
+
+			return property, STATUS_OK
+        }
+
+        case value.ValueString: {
+			property, ok := instance.GetProperty(name)
+
+			if !ok {
+				v.error(fmt.Sprintf("Property '%s' doesn't exist in the string '%s'.", name, obj.String()))
 				return nil, STATUS_PROPERTY_DOESNT_EXIST
 			}
 
@@ -375,11 +401,6 @@ func (v *VM) setProperty(obj value.Value, index int, val value.Value) InterpretR
                     return STATUS_TYPE_ERROR
                 }
 
-                case value.RANGE_REACHABILITY_ERROR: {
-                    v.error("Range's end will be unreachable if iterated over.")
-                    return STATUS_UNREACHABLE_RANGE
-                }
-
                 default:
                     return STATUS_OUT_OF_BOUNDS
                 }
@@ -387,7 +408,7 @@ func (v *VM) setProperty(obj value.Value, index int, val value.Value) InterpretR
 
 		default: {
 			// TODO: add methods to another types, defined by a table at runtime.
-			v.error(fmt.Sprintf("This object ('%s') has no properties, because it isn't an instance or a range. Its type is '%s'.", obj.String(), obj.Type()))
+			v.error(fmt.Sprintf("This object ('%s') has no properties, or doesn't support changing them. Its type is '%s'.", obj.String(), obj.Type()))
 			return STATUS_PROPERTY_DOESNT_EXIST
 		}
 	}

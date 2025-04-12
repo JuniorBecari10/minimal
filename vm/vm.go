@@ -282,6 +282,12 @@ func (v *VM) Run() InterpretResult {
                             v.ip += amount
                         }
                     }
+                    
+					case value.StrBytesIterator: {
+                        if !it.HasNext() {
+                            v.ip += amount
+                        }
+                    }
 
                     default: {
                         v.error(fmt.Sprintf("Expected iterator, got '%s', of type '%s'.", iterator.String(), iterator.Type()))
@@ -401,16 +407,13 @@ func (v *VM) Run() InterpretResult {
 
             case compiler.OP_MAKE_ITERATOR: {
                 iterable := v.pop()
+				it, status := v.makeIterator(iterable)
 
-                switch it := iterable.(type) {
-                    case value.ValueRange:
-                        v.push(value.NewRangeIterator(it))
-
-                    default: {
-                        v.error(fmt.Sprintf("Expected iterable, got '%s', of type '%s'.", iterable.String(), iterable.Type()))
-                        return STATUS_TYPE_ERROR
-                    }
+                if status != STATUS_OK {
+                    return status
                 }
+
+				v.push(it)
             }
 
             case compiler.OP_GET_NEXT: {
@@ -418,6 +421,9 @@ func (v *VM) Run() InterpretResult {
 
                 switch it := iterator.(type) {
                     case value.RangeIterator:
+                        v.push(it.GetNext())
+                    
+					case value.StrBytesIterator:
                         v.push(it.GetNext())
 
                     default: {
@@ -432,6 +438,11 @@ func (v *VM) Run() InterpretResult {
 
                 switch it := iterator.(type) {
                     case value.RangeIterator: {
+                        it.Advance()
+						v.push(it)
+                    }
+                    
+					case value.StrBytesIterator: {
                         it.Advance()
 						v.push(it)
                     }

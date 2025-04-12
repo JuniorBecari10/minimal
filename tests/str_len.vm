@@ -1,0 +1,6 @@
+fn main() {
+    // 'len' returns the number of bytes.
+
+    println("hello".len());      // 5
+    println("olá, você!".len()); // 12 ('á' and 'ê' are 2 bytes long)
+}

@@ -1,0 +1,4 @@
+fn main() {
+    var s = "olá, você!";
+    println(s);
+}

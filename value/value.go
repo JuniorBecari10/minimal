@@ -3,7 +3,6 @@ package value
 import (
 	"bytes"
 	"fmt"
-    "vm-go/util"
 )
 
 type RangeSetStatus int
@@ -11,7 +10,6 @@ const (
     RANGE_OK RangeSetStatus = iota
     RANGE_PROPERTY_DOESNT_EXIST
     RANGE_TYPE_ERROR
-    RANGE_REACHABILITY_ERROR
 )
 
 type NativeFn = func(args []Value) Value
@@ -29,6 +27,19 @@ type ValueNumber struct {
 
 type ValueString struct {
 	Value string
+}
+
+func (s *ValueString) GetProperty(name string) (Value, bool) {
+    switch name {
+        case "len": return ValueNativeFn{
+			Arity: 0,
+			Fn: func(_ []Value) Value {
+				return ValueNumber{float64(len(s.Value))}
+			},
+		}, true
+
+        default: return ValueNil{}, false
+    }
 }
 
 type ValueBool struct {
@@ -123,10 +134,6 @@ func (r *ValueRange) SetProperty(name string, value Value) RangeSetStatus {
 
         default:
             return RANGE_PROPERTY_DOESNT_EXIST
-    }
-
-    if !util.IsRangeReachable(*r.Start, *r.End, *r.Step, *r.Inclusive) {
-        return RANGE_REACHABILITY_ERROR
     }
 
     return RANGE_OK
