@@ -1,0 +1,21 @@
+fn main() {
+    // Break
+    for i in 0..10 {
+        if i == 5 {
+            break;
+        }
+
+        println(i);
+    }
+
+    println("---");
+
+    // Continue
+    for i in 0..10 {
+        if i == 2 or i == 5 or i == 7 {
+            continue;
+        }
+
+        println(i);
+    }
+}

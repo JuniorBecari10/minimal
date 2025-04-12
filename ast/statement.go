@@ -85,8 +85,8 @@ func (x VarStatement) stmt()   {}
 func (x BlockStatement) stmt() {}
 func (x IfStatement) stmt()    {}
 func (x WhileStatement) stmt() {}
-func (x ForVarStatement) stmt() {}
 func (x ForStatement) stmt() {}
+func (x ForVarStatement) stmt() {}
 func (x LoopStatement) stmt() {}
 func (x ExprStatement) stmt()  {}
 func (x BreakStatement) stmt()  {}

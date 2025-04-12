@@ -18,7 +18,7 @@ const (
 	OP_SUB
 	OP_MUL
 	OP_DIV
-	OP_MODULO
+	OP_MOD
 
 	OP_DEF_LOCAL
 	OP_GET_LOCAL
@@ -43,6 +43,7 @@ const (
 	OP_JUMP
 	OP_JUMP_TRUE
 	OP_JUMP_FALSE
+    OP_JUMP_HAS_NO_NEXT
 	OP_LOOP
 
 	OP_EQUAL
@@ -71,6 +72,11 @@ const (
 	OP_PUSH_VOID
 
     OP_MAKE_RANGE
+    OP_MAKE_INCL_RANGE
+    OP_MAKE_ITERATOR
+
+    OP_GET_NEXT
+    OP_ADVANCE
 
 	// TODO: extend this to accept more types, if necessary
 	OP_ASSERT_BOOL
@@ -136,7 +142,7 @@ func newFnCompiler(ast []ast.Statement, enclosing *Compiler) *Compiler {
 
 		locals: []Local{},
 		globals: enclosing.globals,
-		upvalues: []Upvalue{}, // TODO: inherit?
+		upvalues: []Upvalue{},
 
 		chunk: value.Chunk{},
 		scopeDepth: enclosing.scopeDepth + 1,

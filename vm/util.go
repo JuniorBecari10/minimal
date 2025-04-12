@@ -371,7 +371,7 @@ func (v *VM) setProperty(obj value.Value, index int, val value.Value) InterpretR
                 }
 
                 case value.RANGE_TYPE_ERROR: {
-                    v.error(fmt.Sprintf("Property '%s' doesn't exist in the range '%s'.", name, obj.String()))
+                    v.error(fmt.Sprintf("Unexpected value '%s', of type '%s'.", val.String(), val.Type()))
                     return STATUS_TYPE_ERROR
                 }
 
@@ -435,7 +435,7 @@ func (v *VM) binaryNum(operator byte) InterpretResult {
 
 			v.push(value.ValueNumber{ Value: leftNum.Value / rightNum.Value })
 		}
-		case compiler.OP_MODULO: {
+		case compiler.OP_MOD: {
 			if rightNum.Value == 0 {
 				v.error(
 					fmt.Sprintf(
@@ -530,11 +530,46 @@ func (v *VM) binaryBool(operator byte) InterpretResult {
 	return STATUS_OK
 }
 
-func (v *VM) testRangeReachability(start, end, step float64) InterpretResult {
-    if !util.IsRangeReachable(start, end, step) {
-        v.error("Range's end will be unreachable if iterated over.")
-        return STATUS_UNREACHABLE_RANGE
+func (v *VM) makeRange(start, end, step value.Value, inclusive bool) InterpretResult {
+    // Check if the given range is valid:
+
+    // 1. Check if all three operands are numbers (or if 'step' is nil).
+    // 2. Check if 'end' is reachable.
+    // (if 'step' is positive, then 'end' must be greater than 'start', and vice versa. 'step' must never be equal to 0, unless 'start' is equal to 'end')
+
+    if !isNumber(start) {
+        v.error(fmt.Sprintf("Given 'start' expression ('%s') type is not 'num'. Its type is '%s'.", start.String(), start.Type()))
+        return STATUS_TYPE_ERROR
+    } else if !isNumber(end) {
+        v.error(fmt.Sprintf("Given 'end' expression ('%s') type is not 'num'. Its type is '%s'.", end.String(), end.Type()))
+        return STATUS_TYPE_ERROR
+    } else if !isNumber(step) && !isNil(step) {
+        v.error(fmt.Sprintf("Given 'step' expression ('%s') type is not 'num' or 'nil'. Its type is '%s'.", step.String(), step.Type()))
+        return STATUS_TYPE_ERROR
     }
+
+    startNum := start.(value.ValueNumber).Value
+    endNum := end.(value.ValueNumber).Value
+    stepNum := 1.0
+
+    // Define 'step' if it hasn't been defined yet. (when its value is 'nil')
+    if isNil(step) {
+        if endNum < startNum {
+            stepNum = -1
+        }
+
+        // if endNum >= startNum, then stepNum = 1.
+    } else {
+        // 'step' is defined, so we get it.
+        stepNum = step.(value.ValueNumber).Value
+    }
+
+    v.push(value.ValueRange{
+        Start: &startNum,
+        End: &endNum,
+        Step: &stepNum,
+        Inclusive: &inclusive,
+    })
 
     return STATUS_OK
 }

@@ -13,6 +13,22 @@ import (
 	If/Else
 	Control Flow:
 
+    If:
+
+		[ condition ]
+
+	+-- OP_JUMP_FALSE
+	|   OP_POP
+	|
+	|   [ then branch ]
+	|
+	|   OP_JUMP ---------+
+	+-> OP_POP           |
+                         |
+    continues... <-------+
+
+    If/Else:
+
 		[ condition ]
 
 	+-- OP_JUMP_FALSE
@@ -42,7 +58,18 @@ func (c *Compiler) compileIf(condition ast.Expression, then func(), else_ *func(
 
 	then()
 
-	if else_ != nil {
+	if else_ == nil {
+		// insert the real offset into the instruction, if there's no else
+        c.writeBytePos(OP_JUMP, value.NewMetaLen1(pos))
+
+        jumpOffsetIndex := len(c.chunk.Code)
+        c.writeBytes(util.IntToBytes(0)) // dummy
+
+		c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
+		c.writeBytePos(OP_POP, value.NewMetaLen1(pos))
+		
+        c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
+	} else {
 		c.writeBytePos(OP_JUMP, value.NewMetaLen1(pos))
 		jumpOffsetIndex := len(c.chunk.Code)
 		c.writeBytes(util.IntToBytes(0)) // dummy
@@ -54,9 +81,6 @@ func (c *Compiler) compileIf(condition ast.Expression, then func(), else_ *func(
 		(*else_)()
 
 		c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
-	} else {
-		// insert the real offset into the instruction, if there's no else
-		c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 	}
 }
 

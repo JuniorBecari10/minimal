@@ -155,7 +155,7 @@ func (v *VM) Run() InterpretResult {
 				}
 			}
 
-			case compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV, compiler.OP_MODULO: {
+			case compiler.OP_SUB, compiler.OP_MUL, compiler.OP_DIV, compiler.OP_MOD: {
 				status := v.binaryNum(i)
 
 				if status != STATUS_OK {
@@ -170,7 +170,7 @@ func (v *VM) Run() InterpretResult {
 				v.push(v.callStack[len(v.callStack)-1].locals[v.getInt()])
 
 			case compiler.OP_SET_LOCAL:
-				v.callStack[len(v.callStack)-1].locals[v.getInt()] = v.peek(0)
+				v.callStack[len(v.callStack)-1].locals[v.getInt()] = value.CopyValue(v.peek(0))
 
 			case compiler.OP_GET_UPVALUE: {
 				slot := v.getInt()
@@ -179,17 +179,17 @@ func (v *VM) Run() InterpretResult {
 
 			case compiler.OP_SET_UPVALUE: {
 				slot := v.getInt()
-				v.setUpvalueValue(v.callStack[len(v.callStack)-1].function.Upvalues[slot], v.peek(0))
+				v.setUpvalueValue(v.callStack[len(v.callStack)-1].function.Upvalues[slot], value.CopyValue(v.peek(0)))
 			}
 
 			case compiler.OP_DEF_GLOBAL:
-				v.globals = append(v.globals, v.pop())
+				v.globals = append(v.globals, value.CopyValue(v.pop()))
 
 			case compiler.OP_GET_GLOBAL:
 				v.push(v.globals[v.getInt()])
 
 			case compiler.OP_SET_GLOBAL:
-				v.globals[v.getInt()] = v.peek(0)
+				v.globals[v.getInt()] = value.CopyValue(v.peek(0))
 
 			case compiler.OP_GET_PROPERTY: {
 				obj := v.pop()
@@ -271,6 +271,24 @@ func (v *VM) Run() InterpretResult {
 					return STATUS_TYPE_ERROR
 				}
 			}
+            
+            case compiler.OP_JUMP_HAS_NO_NEXT: {
+                iterator := v.peek(0)
+                amount := v.getInt()
+
+                switch it := iterator.(type) {
+                    case value.RangeIterator: {
+                        if !it.HasNext() {
+                            v.ip += amount
+                        }
+                    }
+
+                    default: {
+                        v.error(fmt.Sprintf("Expected iterator, got '%s', of type '%s'.", iterator.String(), iterator.Type()))
+                        return STATUS_TYPE_ERROR
+                    }
+                }
+            }
 
 			case compiler.OP_LOOP:
 				v.ip -= v.getInt()
@@ -361,52 +379,68 @@ func (v *VM) Run() InterpretResult {
                 step := v.pop()
                 end := v.pop()
                 start := v.pop()
-
-                // Check if the given range is valid:
-
-                // 1. Check if all three operands are numbers (or if 'step' is nil).
-                // 2. Check if 'end' is reachable.
-                // (if 'step' is positive, then 'end' must be greater than 'start', and vice versa. 'step' must never be equal to 0, unless 'start' is equal to 'end')
-
-                if !isNumber(start) {
-					v.error(fmt.Sprintf("Given 'start' expression ('%s') type is not 'num'. Its type is '%s'.", start.String(), start.Type()))
-					return STATUS_TYPE_ERROR
-                } else if !isNumber(end) {
-					v.error(fmt.Sprintf("Given 'end' expression ('%s') type is not 'num'. Its type is '%s'.", end.String(), end.Type()))
-					return STATUS_TYPE_ERROR
-                } else if !isNumber(step) && !isNil(step) {
-					v.error(fmt.Sprintf("Given 'step' expression ('%s') type is not 'num' or 'nil'. Its type is '%s'.", step.String(), step.Type()))
-					return STATUS_TYPE_ERROR
-                }
-
-                startNum := start.(value.ValueNumber).Value
-                endNum := end.(value.ValueNumber).Value
-                stepNum := 1.0
-
-                // Define 'step' if it hasn't been defined yet. (when its value is 'nil')
-                if isNil(step) {
-                    if endNum < startNum {
-                        stepNum = -1
-                    } else if endNum == startNum {
-                        stepNum = 0
-                    }
-                    // if endNum > startNum, then stepNum = 1.
-                } else {
-                    // 'step' is defined, so we get it.
-                    stepNum = step.(value.ValueNumber).Value
-                }
-
-                status := v.testRangeReachability(startNum, endNum, stepNum)
+                
+                status := v.makeRange(start, end, step, false)
 
                 if status != STATUS_OK {
                     return status
                 }
+            }
+            
+            case compiler.OP_MAKE_INCL_RANGE: {
+                step := v.pop()
+                end := v.pop()
+                start := v.pop()
+                
+                status := v.makeRange(start, end, step, true)
 
-                v.push(value.ValueRange{
-                    Start: &startNum,
-                    End: &endNum,
-                    Step: &stepNum,
-                })
+                if status != STATUS_OK {
+                    return status
+                }
+            }
+
+            case compiler.OP_MAKE_ITERATOR: {
+                iterable := v.pop()
+
+                switch it := iterable.(type) {
+                    case value.ValueRange:
+                        v.push(value.NewRangeIterator(it))
+
+                    default: {
+                        v.error(fmt.Sprintf("Expected iterable, got '%s', of type '%s'.", iterable.String(), iterable.Type()))
+                        return STATUS_TYPE_ERROR
+                    }
+                }
+            }
+
+            case compiler.OP_GET_NEXT: {
+                iterator := v.peek(0)
+
+                switch it := iterator.(type) {
+                    case value.RangeIterator:
+                        v.push(it.GetNext())
+
+                    default: {
+                        v.error(fmt.Sprintf("Expected iterator, got '%s', of type '%s'.", iterator.String(), iterator.Type()))
+                        return STATUS_TYPE_ERROR
+                    }
+                }
+            }
+            
+            case compiler.OP_ADVANCE: {
+                iterator := v.pop()
+
+                switch it := iterator.(type) {
+                    case value.RangeIterator: {
+                        it.Advance()
+						v.push(it)
+                    }
+
+                    default: {
+                        v.error(fmt.Sprintf("Expected iterator, got '%s', of type '%s'.", iterator.String(), iterator.Type()))
+                        return STATUS_TYPE_ERROR
+                    }
+                }
             }
 
 			case compiler.OP_CALL: {

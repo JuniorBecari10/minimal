@@ -6,14 +6,21 @@ fn main() {
     var explicit_nil = 0..10:nil; // 'step' is 1.
 
     var explicit_step = 0..10:2;
-    // var inclusive = 1..=10; // not supported yet
+    
+    var inclusive = 1..=10;
+    var incl_backwards = 10..=1;
+    var incl_explicit_step = 0..=10:2;
 
-    println(progressive);    // 0..10:1
-    println(regressive);     // 10..0:-1
-    println(explicit_step);  // 0..10:2
-    println(equal);          // 0..0:0
-    println(equal_explicit); // 0..0:0
-    println(explicit_nil);   // 0..10:0
+    println(progressive);        // 0..10:1
+    println(regressive);         // 10..0:-1
+    println(explicit_step);      // 0..10:2
+    println(equal);              // 0..0:0
+    println(equal_explicit);     // 0..0:0
+    println(explicit_nil);       // 0..10:0
+
+    println(inclusive);          // 0..=10:1
+    println(incl_backwards);     // 10..=1:-1
+    println(incl_explicit_step); // 0..=10:2
 
     // Errors (uncomment)
     // println(0..10:-1);
@@ -47,4 +54,7 @@ fn main() {
     println(b.start); // 0
     println(b.end);   // 10
     println(b.step);  // 1
+
+    // Test if the dot after '10' is interpreted as a get property expression.
+    println(0..10.start);
 }

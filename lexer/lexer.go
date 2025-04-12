@@ -41,7 +41,7 @@ func NewLexer(source string, fileData *util.FileData) *Lexer {
 }
 
 func (l *Lexer) Lex() ([]token.Token, bool) {
-	for !l.isAtEnd() {
+	for !l.isAtEnd(0) {
 		l.scanToken()
 	}
 
@@ -51,7 +51,7 @@ func (l *Lexer) Lex() ([]token.Token, bool) {
 // ---
 
 func (l *Lexer) scanToken() {
-	for strings.IndexByte(" \r\t\n", l.peek()) != -1 {
+	for strings.IndexByte(" \r\t\n", l.peek(0)) != -1 {
 		l.advance()
 	}
 
@@ -94,7 +94,7 @@ func (l *Lexer) scanToken() {
 		case '/': {
 			if l.match('/') {
 				// A comment goes until the end of the line.
-				for l.peek() != '\n' && !l.isAtEnd() {
+				for l.peek(0) != '\n' && !l.isAtEnd(0) {
 					l.advance()
 				}
 			} else if l.match('=') {

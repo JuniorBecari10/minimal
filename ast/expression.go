@@ -29,6 +29,8 @@ type RangeExpression struct {
 	Start Expression
 	End Expression
 	Step *Expression // optional
+
+    Inclusive bool
 }
 
 type NilExpression struct {}

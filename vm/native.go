@@ -11,40 +11,20 @@ import (
 )
 
 func (v *VM) includeNativeFns() {
-	v.globals = append(v.globals, value.ValueNativeFn{
-		Arity: 1,
-		Fn: nativePrint,
-	})
+    appendNativeFn(&v.globals, 1, nativePrint)
+    appendNativeFn(&v.globals, 1, nativePrintln)
+    appendNativeFn(&v.globals, 1, nativeInput)
+    appendNativeFn(&v.globals, 0, nativeTime)
+    appendNativeFn(&v.globals, 1, nativeStr)
+    appendNativeFn(&v.globals, 1, nativeNum)
+    appendNativeFn(&v.globals, 1, nativeType)
+}
 
-	v.globals = append(v.globals, value.ValueNativeFn{
-		Arity: 1,
-		Fn: nativePrintln,
-	})
-
-	v.globals = append(v.globals, value.ValueNativeFn{
-		Arity: 1,
-		Fn: nativeInput,
-	})
-
-	v.globals = append(v.globals, value.ValueNativeFn{
-		Arity: 0,
-		Fn: nativeTime,
-	})
-
-	v.globals = append(v.globals, value.ValueNativeFn{
-		Arity: 1,
-		Fn: nativeStr,
-	})
-
-	v.globals = append(v.globals, value.ValueNativeFn{
-		Arity: 1,
-		Fn: nativeNum,
-	})
-
-	v.globals = append(v.globals, value.ValueNativeFn{
-		Arity: 1,
-		Fn: nativeType,
-	})
+func appendNativeFn(list *[]value.Value, arity int, fn value.NativeFn) {
+    *list = append(*list, value.ValueNativeFn{
+        Arity: arity,
+        Fn: fn,
+    })
 }
 
 // ---

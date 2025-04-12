@@ -1,0 +1,65 @@
+record A(a);
+
+var orig_a = 0..10;
+var orig_b = A(10);
+
+var def_global_a = orig_a;
+var def_global_b = orig_b;
+
+fn main() {
+    def_global_a.start = 1;
+    def_global_b.a = 20;
+
+    println(orig_a.start); // 0
+    println(orig_b.a); // 10
+    
+    println(def_global_a.start); // 1
+    println(def_global_b.a); // 20
+
+    println("---");
+
+    var def_local_a = orig_a;
+    var def_local_b = orig_b;
+
+    def_local_a.start = 1;
+    def_local_b.a = 20;
+    
+    println(orig_a.start); // 0
+    println(orig_b.a); // 10
+    
+    println(def_local_a.start); // 1
+    println(def_local_b.a); // 20
+    
+    println("---");
+
+    var prop_a = A(orig_a);
+    var prop_b = A(orig_b);
+
+    prop_a.a.start = 1;
+    prop_b.a.a = 20;
+
+    println(orig_a.start); // 0
+    println(orig_b.a); // 10
+
+    println(prop_a.a.start); // 1
+    println(prop_b.a.a); // 20
+
+    println("---");
+
+    var upvalue_a = orig_a;
+    var upvalue_b = orig_b;
+
+    fn outer() {
+        upvalue_a.start = 1;
+        upvalue_b.a = 20;
+
+        println(orig_a.start); // 0
+        println(orig_b.a); // 10
+
+        println(upvalue_a.start); // 1
+        println(upvalue_b.a); // 20
+    }
+
+    outer();
+}
+

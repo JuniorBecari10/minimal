@@ -67,31 +67,31 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 	}
 
 	p.infixMap = map[token.TokenKind]func(ast.Expression, token.Position) ast.Expression{
-		token.TokenPlus:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenPlus) },
-		token.TokenMinus:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenMinus) },
+		token.TokenPlus:         func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenPlus) },
+		token.TokenMinus:        func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenMinus) },
 		
-		token.TokenStar:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenStar) },
-		token.TokenSlash:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenSlash) },
-		token.TokenPercent:      func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenPercent) },
+		token.TokenStar:         func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenStar) },
+		token.TokenSlash:        func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenSlash) },
+		token.TokenPercent:      func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenPercent) },
 
-		token.TokenPlusEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenPlus) },
-		token.TokenMinusEqual:   func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenMinus) },
+		token.TokenPlusEqual:    func(left ast.Expression, _ token.Position) ast.Expression { return p.parseOperatorAssignment(left, token.TokenPlus) },
+		token.TokenMinusEqual:   func(left ast.Expression, _ token.Position) ast.Expression { return p.parseOperatorAssignment(left, token.TokenMinus) },
 		
-		token.TokenStarEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenStar) },
-		token.TokenSlashEqual:   func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenSlash) },
-		token.TokenPercentEqual: func(left ast.Expression, pos token.Position) ast.Expression { return p.parseOperatorAssignment(left, pos, token.TokenPercent) },
+		token.TokenStarEqual:    func(left ast.Expression, _ token.Position) ast.Expression { return p.parseOperatorAssignment(left, token.TokenStar) },
+		token.TokenSlashEqual:   func(left ast.Expression, _ token.Position) ast.Expression { return p.parseOperatorAssignment(left, token.TokenSlash) },
+		token.TokenPercentEqual: func(left ast.Expression, _ token.Position) ast.Expression { return p.parseOperatorAssignment(left, token.TokenPercent) },
 		
-		token.TokenOrKw:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseLogical(left, pos, token.TokenOrKw) },
-		token.TokenAndKw:        func(left ast.Expression, pos token.Position) ast.Expression { return p.parseLogical(left, pos, token.TokenAndKw) },
+		token.TokenOrKw:         func(left ast.Expression, _ token.Position) ast.Expression { return p.parseLogical(left, token.TokenOrKw) },
+		token.TokenAndKw:        func(left ast.Expression, _ token.Position) ast.Expression { return p.parseLogical(left, token.TokenAndKw) },
 		
-		token.TokenGreater:      func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenGreater) },
-		token.TokenGreaterEqual: func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenGreaterEqual) },
+		token.TokenGreater:      func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenGreater) },
+		token.TokenGreaterEqual: func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenGreaterEqual) },
 		
-		token.TokenLess:         func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenLess) },
-		token.TokenLessEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenLessEqual) },
+		token.TokenLess:         func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenLess) },
+		token.TokenLessEqual:    func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenLessEqual) },
 
-		token.TokenDoubleEqual:  func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenDoubleEqual) },
-		token.TokenBangEqual:    func(left ast.Expression, pos token.Position) ast.Expression { return p.parseBinary(left, pos, token.TokenBangEqual) },
+		token.TokenDoubleEqual:  func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenDoubleEqual) },
+		token.TokenBangEqual:    func(left ast.Expression, _ token.Position) ast.Expression { return p.parseBinary(left, token.TokenBangEqual) },
 
 		token.TokenEqual: p.parseAssignment,
 		token.TokenLeftParen: p.parseCall,

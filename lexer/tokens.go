@@ -6,14 +6,14 @@ import (
 )
 
 func (l *Lexer) number() {
-	for unicode.IsDigit(rune(l.peek())) {
+	for unicode.IsDigit(rune(l.peek(0))) {
 		l.advance()
 	}
 
-	if l.peek() == '.' && unicode.IsDigit(rune(l.peekN(1))) {
+	if l.peek(0) == '.' && unicode.IsDigit(rune(l.peek(1))) {
 		l.advance()
 
-		for unicode.IsDigit(rune(l.peek())) {
+		for unicode.IsDigit(rune(l.peek(0))) {
 			l.advance()
 		}
 	}
@@ -22,11 +22,11 @@ func (l *Lexer) number() {
 }
 
 func (l *Lexer) string() {
-	for l.peek() != '"' && !l.isAtEnd() {
+	for l.peek(0) != '"' && !l.isAtEnd(0) {
 		l.advance()
 	}
 
-	if l.isAtEnd() {
+	if l.isAtEnd(0) {
 		l.error("Unterminated string")
 		return
 	}
@@ -36,7 +36,7 @@ func (l *Lexer) string() {
 }
 
 func (l *Lexer) identifier() {
-	for unicode.IsLetter(rune(l.peek())) || unicode.IsDigit(rune(l.peek())) || l.peek() == '_' {
+	for unicode.IsLetter(rune(l.peek(0))) || unicode.IsDigit(rune(l.peek(0))) || l.peek(0) == '_' {
 		l.advance()
 	}
 

@@ -1,0 +1,25 @@
+fn main() {
+    var x = 10;
+
+    if x == 10 {
+        println("x is 10");
+    }
+
+    if x != 10 {
+        println("this won't run");
+    }
+
+    if x == 10 {
+        println("x is 10");
+    }
+    else {
+        println("this won't run");
+    }
+
+    if x != 10 {
+        println("this won't run");
+    }
+    else {
+        println("x is 10");
+    }
+}

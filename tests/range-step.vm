@@ -1,0 +1,9 @@
+fn main() {
+    var a = 10..10:0;  // yes
+    var b = 10..=10:0; // no
+
+    for i in b {
+        println(i);
+    }
+}
+

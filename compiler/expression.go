@@ -162,7 +162,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 					c.writeByte(OP_DIV)
 				
 				case token.TokenPercent:
-					c.writeByte(OP_MODULO)
+					c.writeByte(OP_MOD)
 				
 				case token.TokenDoubleEqual:
 					c.writeByte(OP_EQUAL)
@@ -288,7 +288,13 @@ func (c *Compiler) expression(expr ast.Expression) {
                 c.writeBytePos(OP_PUSH_NIL, value.NewMetaLen1(expr.Base.Pos))
             }
 
-			c.writeBytePos(OP_MAKE_RANGE, value.ChunkMetadata{
+            var opcode byte = OP_MAKE_RANGE
+
+            if e.Inclusive {
+                opcode = OP_MAKE_INCL_RANGE
+            }
+
+			c.writeBytePos(opcode, value.ChunkMetadata{
                 Position: expr.Base.Pos,
                 Length: 2,
             })

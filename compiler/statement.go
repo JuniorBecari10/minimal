@@ -108,6 +108,101 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
 			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
 		}
+        
+		/*
+            For Loop
+            Control Flow:
+
+				- begin scope -
+
+                [ iterable ]
+                OP_MAKE_ITERATOR
+                OP_GET_NEXT
+
+                OP_DEF_LOCAL
+            
+            +-- OP_JUMP_HAS_NO_NEXT <--+
+            |                          |
+            |   OP_JUMP ------+        |
+            +-- OP_JUMP_FALSE |        | <- break/continue point
+            |   OP_POP        |        |
+            |   OP_JUMP ------+---+    |
+            |                 |   |    |
+            |   [ body ] <----+   |    |
+            |                     |    |
+            |   - end scope - <---+    |
+            |   - begin scope -        |
+			|                          |
+            |   OP_ADVANCE             |
+            |   OP_GET_NEXT            |
+            |   OP_DEF_LOCAL           |
+            |                          |
+            |   OP_LOOP ---------------+
+            +-> OP_POP
+
+				- end scope -
+
+            continues...
+		*/
+        case ast.ForStatement: {
+            c.beginScope()
+            
+            c.expression(s.Iterable)
+			c.writeBytePos(OP_MAKE_ITERATOR, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(OP_GET_NEXT, value.NewMetaLen1(stmt.Base.Pos))
+			
+            c.addVariable(s.Variable, s.Variable.Pos)
+            c.addDeclarationInstruction(s.Variable.Pos)
+            
+            jumpNoNextPos := len(c.chunk.Code)
+
+			c.writeBytePos(OP_JUMP_HAS_NO_NEXT, value.NewMetaLen1(stmt.Base.Pos))
+			jumpNoNextOffsetIndex := len(c.chunk.Code)
+			c.writeBytes(util.IntToBytes(0)) // dummy
+			
+            c.writeBytePos(OP_JUMP, value.NewMetaLen1(stmt.Base.Pos))
+			jump1OffsetIndex := len(c.chunk.Code)
+			c.writeBytes(util.IntToBytes(0)) // dummy
+			
+            c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
+
+			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
+			jumpFalseOffsetIndex := len(c.chunk.Code)
+			c.writeBytes(util.IntToBytes(0)) // dummy
+            
+            c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			
+            c.writeBytePos(OP_JUMP, value.NewMetaLen1(stmt.Base.Pos))
+			jump2OffsetIndex := len(c.chunk.Code)
+            c.writeBytes(util.IntToBytes(0)) // dummy
+			
+            c.backpatch(jump1OffsetIndex, util.IntToBytes(len(c.chunk.Code) - jump1OffsetIndex - 4)) // index
+            c.block(s.Block.Stmts, stmt.Base.Pos)
+            
+            util.PopList(&c.loopFlowPos)
+            
+			c.backpatch(jump2OffsetIndex, util.IntToBytes(len(c.chunk.Code) - jump2OffsetIndex - 4)) // index
+			
+            // End the scope to discard the loop variable and close it in an upvalue if it's been captured.
+			c.endScope(stmt.Base.Pos)
+			c.beginScope()
+
+            c.writeBytePos(OP_ADVANCE, value.NewMetaLen1(stmt.Base.Pos))
+            c.writeBytePos(OP_GET_NEXT, value.NewMetaLen1(stmt.Base.Pos))
+
+			// Create a new variable for the mutation to occur.
+            c.addVariable(s.Variable, s.Variable.Pos)
+            c.addDeclarationInstruction(s.Variable.Pos)
+
+			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - jumpNoNextPos + 4)) // index
+            
+			c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
+			c.backpatch(jumpNoNextOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpNoNextOffsetIndex - 4)) // index
+			
+            c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.endScope(stmt.Base.Pos)
+        }
 
 		/*
             For Var Loop
@@ -242,7 +337,6 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		case ast.ContinueStatement: {
 			// The same with continue, but we'll push 'true', because we want the loop to keep running.
 
-			// this might be broken if multiple loops are nested
 			if len(c.loopFlowPos) == 0 {
 				c.error(stmt.Base.Pos, len(s.Token.Lexeme), "Cannot use 'continue' outside of a loop.")
 				return

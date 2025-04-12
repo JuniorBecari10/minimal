@@ -60,6 +60,8 @@ type ValueRange struct {
     Start *float64
     End   *float64
     Step  *float64
+
+    Inclusive *bool
 }
 
 func (r *ValueRange) GetProperty(name string) (Value, bool) {
@@ -67,34 +69,63 @@ func (r *ValueRange) GetProperty(name string) (Value, bool) {
         case "start": return ValueNumber{Value: *r.Start}, true
         case "end": return ValueNumber{Value: *r.End}, true
         case "step": return ValueNumber{Value: *r.Step}, true
+        case "inclusive": return ValueBool{Value: *r.Inclusive}, true
 
         default: return ValueNil{}, false
     }
 }
 
 func (r *ValueRange) SetProperty(name string, value Value) RangeSetStatus {
-    val, ok := value.(ValueNumber)
-    valNum := val.Value
-    
-    if !ok {
-        return RANGE_TYPE_ERROR
-    }
-
     switch name {
-        case "start":
+        case "start": {
+            val, ok := value.(ValueNumber)
+            valNum := val.Value
+            
+            if !ok {
+                return RANGE_TYPE_ERROR
+            }
+
             *r.Start = valNum
+        }
         
-        case "end":
+        case "end": {
+            val, ok := value.(ValueNumber)
+            valNum := val.Value
+            
+            if !ok {
+                return RANGE_TYPE_ERROR
+            }
+
             *r.End = valNum
+        }
     
-        case "step":
+        case "step": {
+            val, ok := value.(ValueNumber)
+            valNum := val.Value
+            
+            if !ok {
+                return RANGE_TYPE_ERROR
+            }
+
             *r.Step = valNum
+        }
+
+        case "inclusive": {        
+            val, ok := value.(ValueBool)
+            valBool := val.Value
+            
+            if !ok {
+                return RANGE_TYPE_ERROR
+            }
+
+            *r.Inclusive = valBool
+        }
 
         default:
             return RANGE_PROPERTY_DOESNT_EXIST
     }
 
-    if !util.IsRangeReachable(*r.Start, *r.End, *r.Step) {
+    if !util.IsRangeReachable(*r.Start, *r.End, *r.Step, *r.Inclusive) {
         return RANGE_REACHABILITY_ERROR
     }
 
@@ -139,7 +170,7 @@ func (in *ValueInstance) GetProperty(name string) (Value, bool) {
 func (in *ValueInstance) SetProperty(name string, value Value) bool {
 	for i := range in.Fields {
 		if in.Record.FieldNames[i] == name {
-			in.Fields[i] = value
+			in.Fields[i] = CopyValue(value)
 			return true
 		}
 	}
@@ -173,7 +204,11 @@ func (x ValueNativeFn) String() string { return "<native fn>" }
 func (x ValueClosure) String() string { return x.Fn.String() }
 
 func (x ValueRange) String() string {
-    return fmt.Sprintf("%.10g..%.10g:%.10g", *x.Start, *x.End, *x.Step)
+    if *x.Inclusive {
+        return fmt.Sprintf("%.10g..=%.10g:%.10g", *x.Start, *x.End, *x.Step)
+    } else {
+        return fmt.Sprintf("%.10g..%.10g:%.10g", *x.Start, *x.End, *x.Step)
+    }
 }
 
 func (x ValueRecord) String() string { return fmt.Sprintf("<record %s>", x.Name) }
