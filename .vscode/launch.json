@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "debug",
             "program": ".",
-            "args": ["tests/for-in-inclusive.vm"]
+            "args": ["tests/for/for_in_inclusive.vm"]
         }
 
     ]
