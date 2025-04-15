@@ -5,13 +5,6 @@ import (
 	"fmt"
 )
 
-type RangeSetStatus int
-const (
-    RANGE_OK RangeSetStatus = iota
-    RANGE_PROPERTY_DOESNT_EXIST
-    RANGE_TYPE_ERROR
-)
-
 type NativeFn = func(args []Value) Value
 
 type Value interface {
