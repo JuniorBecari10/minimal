@@ -17,16 +17,33 @@ type RunMode int
 const (
 	ModeCompile RunMode = iota
 	ModeDisassemble
+	ModeDeserialize
 )
 
 // 'output' is optional, but when mode is ModeCompile it must be set
-func Run(source, fileName string, output *string, mode RunMode) {
-	fileData := util.FileData{
-		Name: util.GetFileName(fileName),
-		Lines: strings.Split(source, "\n"),
-	}
+func Run(source, file string, output *string, mode RunMode) {
 
-	chunk, hadError := compile(source, &fileData)
+	var chunk value.Chunk
+	var hadError bool = false
+	var fileData util.FileData
+
+	fileName := util.GetFileName(file)
+
+	if mode == ModeDeserialize {
+		fileData = util.FileData{
+			Name: fileName,
+			Lines: []string{},
+		}
+		
+		chunk = value.Deserialize([]byte(source))
+	} else {
+		fileData = util.FileData{
+			Name: fileName,
+			Lines: strings.Split(source, "\n"),
+		}
+		
+		chunk, hadError = compile(source, &fileData)
+	}
 
 	if hadError {
 		return
@@ -38,7 +55,7 @@ func Run(source, fileName string, output *string, mode RunMode) {
 			
 			file, err := os.Create(outputFile)
 			if err != nil {
-				fmt.Fprint(os.Stderr, "Cannot write to '%s'.\n", outputFile)
+				fmt.Fprintf(os.Stderr, "Cannot write to '%s'.\n", outputFile)
 				os.Exit(1)
 			}
 
@@ -49,13 +66,13 @@ func Run(source, fileName string, output *string, mode RunMode) {
 			}()
 			
 			if _, err := file.Write(chunk.Serialize()); err != nil {
-				fmt.Fprint(os.Stderr, "Cannot write to '%s'.\n", outputFile)
+				fmt.Fprintf(os.Stderr, "Cannot write to '%s'.\n", outputFile)
 				os.Exit(1)
 			}
 		}
 
-		case ModeDisassemble: {
-			diss := disassembler.NewDisassembler(chunk, &fileData)
+		case ModeDisassemble, ModeDeserialize: {
+			diss := disassembler.NewDisassembler(chunk)
 			diss.Disassemble()
 		}
 	}

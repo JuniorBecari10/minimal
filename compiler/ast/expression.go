@@ -104,21 +104,21 @@ type SetPropertyExpression struct {
 
 // ---
 
-func (x NumberExpression) expr()     {}
-func (x StringExpression) expr()     {}
-func (x BoolExpression) expr()       {}
-func (x NilExpression) expr()        {}
-func (x VoidExpression) expr()        {}
-func (x RangeExpression) expr() {}
-func (x UnaryExpression) expr()      {}
-func (x LogicalExpression) expr()     {}
-func (x BinaryExpression) expr()     {}
-func (x GroupExpression) expr()      {}
-func (x CallExpression) expr()      {}
-func (x IdentifierExpression) expr() {}
-func (x SelfExpression) expr() {}
+func (x NumberExpression) expr()               {}
+func (x StringExpression) expr()               {}
+func (x BoolExpression) expr()                 {}
+func (x NilExpression) expr()                  {}
+func (x VoidExpression) expr()                 {}
+func (x RangeExpression) expr()                {}
+func (x UnaryExpression) expr()                {}
+func (x LogicalExpression) expr()              {}
+func (x BinaryExpression) expr()               {}
+func (x GroupExpression) expr()                {}
+func (x CallExpression) expr()                 {}
+func (x IdentifierExpression) expr()           {}
+func (x SelfExpression) expr()                 {}
 func (x IdentifierAssignmentExpression) expr() {}
-func (x FnExpression) expr() {}
-func (x IfExpression) expr() {}
-func (x GetPropertyExpression) expr() {}
-func (x SetPropertyExpression) expr() {}
+func (x FnExpression) expr()                   {}
+func (x IfExpression) expr()                   {}
+func (x GetPropertyExpression) expr()          {}
+func (x SetPropertyExpression) expr()          {}

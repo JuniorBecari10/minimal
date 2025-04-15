@@ -8,7 +8,7 @@ import (
 
 func main() {
 	if len(os.Args) == 1 {
-		fmt.Fprintln(os.Stderr, "Usage: vm <source> [(-d | --dissassemble) | (-o <output>)]")
+		fmt.Fprintln(os.Stderr, "Usage: vm <source> [(-o <output>) | (-d | --dissassemble) | (-b | --bytecode)]")
 		os.Exit(1)
 	}
 
@@ -24,6 +24,8 @@ func main() {
 
 	if len(os.Args) >= 3 && (os.Args[2] == "-d" || os.Args[2] == "--dissassemble") {
 		mode = run.ModeDisassemble
+	} else if len(os.Args) >= 3 && (os.Args[2] == "-b" || os.Args[2] == "--bytecode") {
+		mode = run.ModeDeserialize
 	}
 
 	if mode == run.ModeCompile {

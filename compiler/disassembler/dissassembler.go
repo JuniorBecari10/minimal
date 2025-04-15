@@ -12,16 +12,12 @@ import (
 type Disassembler struct {
 	chunk value.Chunk
 	ip int
-
-	fileData *util.FileData
 }
 
-func NewDisassembler(chunk value.Chunk, fileData *util.FileData) *Disassembler {
+func NewDisassembler(chunk value.Chunk) *Disassembler {
 	return &Disassembler{
 		chunk: chunk,
 		ip: 0,
-
-		fileData: fileData,
 	}
 }
 
@@ -56,7 +52,7 @@ func (d *Disassembler) disassemble(name string) {
 	for _, c := range d.chunk.Constants {
 		switch fn := c.(type) {
 			case value.ValueFunction: {
-				fnDiss := NewDisassembler(fn.Chunk, d.fileData)
+				fnDiss := NewDisassembler(fn.Chunk)
 				fnName := fmt.Sprintf("anonymous function, in %s", name)
 
 				if fn.Name != nil {
