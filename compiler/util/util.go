@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"vm-go/token"
@@ -24,28 +23,6 @@ func BytesToInt(b []byte) (int, error) {
 	}
 
 	return int(binary.LittleEndian.Uint32(b)), nil
-}
-
-// This modifies in-place.
-func Reverse[T any](slice []T) {
-	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
-		slice[i], slice[j] = slice[j], slice[i]
-	}
-}
-
-func Remove[T any](slice []T, index int) []T {
-	return slices.Delete(slice, index, index)
-}
-
-// Just like 'map'
-func CopyList[T any](list []T, copier func(T) T) []T {
-	res := make([]T, 0, len(list)) // pre-allocate with enough capacity
-
-	for _, e := range list {
-		res = append(res, copier(e))
-	}
-
-	return res
 }
 
 // Removes the last element from the supplied list and returns it.
@@ -97,12 +74,6 @@ func Center(str string, width int, padChar string) string {
 	return strings.Repeat(padChar, leftPadding) + str + strings.Repeat(" ", rightPadding)
 }
 
-func IsRangeReachable(start, end, step float64, inclusive bool) bool {
-    return (step > 0 && start <= end) ||
-           (step < 0 && start >= end) ||
-           (step == 0 && start == end && !inclusive)
-}
-
 func Error(pos token.Position, length int, message string, fileData *FileData) {
 	fmt.Printf("[-] Error: %s\n", message)
 	fmt.Printf(" | %s [-] %s (%d, %d)\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))), fileData.Name, pos.Line + 1, pos.Col + 1)
@@ -111,3 +82,4 @@ func Error(pos token.Position, length int, message string, fileData *FileData) {
 	fmt.Printf(" | %s [-]\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))))
 	fmt.Printf("[-]\n\n")
 }
+

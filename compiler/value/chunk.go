@@ -20,3 +20,9 @@ func NewMetaLen1(pos token.Position) ChunkMetadata {
 		Length: 1,
 	}
 }
+
+// ---
+
+func (c *Chunk) Serialize() []byte {
+	return []byte{}
+}

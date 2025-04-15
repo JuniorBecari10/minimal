@@ -29,19 +29,6 @@ type ValueString struct {
 	Value string
 }
 
-func (s *ValueString) GetProperty(name string) (Value, bool) {
-    switch name {
-        case "len": return ValueNativeFn{
-			Arity: 0,
-			Fn: func(_ []Value) Value {
-				return ValueNumber{float64(len(s.Value))}
-			},
-		}, true
-
-        default: return ValueNil{}, false
-    }
-}
-
 type ValueBool struct {
 	Value bool
 }
@@ -57,7 +44,7 @@ type ValueFunction struct {
 
 type ValueClosure struct {
 	Fn *ValueFunction
-	Upvalues []*Upvalue
+	Upvalues []Upvalue
 }
 
 type ValueNativeFn struct {
@@ -65,78 +52,12 @@ type ValueNativeFn struct {
 	Fn NativeFn
 }
 
-// The fields are pointers because they are not copied directly,
-// and can be therefore passed by reference.
 type ValueRange struct {
-    Start *float64
-    End   *float64
-    Step  *float64
+    Start float64
+    End   float64
+    Step  float64
 
-    Inclusive *bool
-}
-
-func (r *ValueRange) GetProperty(name string) (Value, bool) {
-    switch name {
-        case "start": return ValueNumber{Value: *r.Start}, true
-        case "end": return ValueNumber{Value: *r.End}, true
-        case "step": return ValueNumber{Value: *r.Step}, true
-        case "inclusive": return ValueBool{Value: *r.Inclusive}, true
-
-        default: return ValueNil{}, false
-    }
-}
-
-func (r *ValueRange) SetProperty(name string, value Value) RangeSetStatus {
-    switch name {
-        case "start": {
-            val, ok := value.(ValueNumber)
-            valNum := val.Value
-            
-            if !ok {
-                return RANGE_TYPE_ERROR
-            }
-
-            *r.Start = valNum
-        }
-        
-        case "end": {
-            val, ok := value.(ValueNumber)
-            valNum := val.Value
-            
-            if !ok {
-                return RANGE_TYPE_ERROR
-            }
-
-            *r.End = valNum
-        }
-    
-        case "step": {
-            val, ok := value.(ValueNumber)
-            valNum := val.Value
-            
-            if !ok {
-                return RANGE_TYPE_ERROR
-            }
-
-            *r.Step = valNum
-        }
-
-        case "inclusive": {        
-            val, ok := value.(ValueBool)
-            valBool := val.Value
-            
-            if !ok {
-                return RANGE_TYPE_ERROR
-            }
-
-            *r.Inclusive = valBool
-        }
-
-        default:
-            return RANGE_PROPERTY_DOESNT_EXIST
-    }
-
-    return RANGE_OK
+    Inclusive bool
 }
 
 type ValueRecord struct {
@@ -153,36 +74,6 @@ type ValueInstance struct {
 type ValueBoundMethod struct {
 	Receiver Value
 	Method ValueClosure
-}
-
-func (in *ValueInstance) GetProperty(name string) (Value, bool) {
-	for i, value := range in.Fields {
-		if in.Record.FieldNames[i] == name {
-			return value, true
-		}
-	}
-
-	for _, method := range in.Record.Methods {
-		if *method.Fn.Name == name {
-			return ValueBoundMethod{
-				Receiver: *in,
-				Method: method,
-			}, true
-		}
-	}
-
-	return ValueNil{}, false
-}
-
-func (in *ValueInstance) SetProperty(name string, value Value) bool {
-	for i := range in.Fields {
-		if in.Record.FieldNames[i] == name {
-			in.Fields[i] = CopyValue(value)
-			return true
-		}
-	}
-
-	return false
 }
 
 // ---
@@ -211,10 +102,10 @@ func (x ValueNativeFn) String() string { return "<native fn>" }
 func (x ValueClosure) String() string { return x.Fn.String() }
 
 func (x ValueRange) String() string {
-    if *x.Inclusive {
-        return fmt.Sprintf("%.10g..=%.10g:%.10g", *x.Start, *x.End, *x.Step)
+    if x.Inclusive {
+        return fmt.Sprintf("%.10g..=%.10g:%.10g", x.Start, x.End, x.Step)
     } else {
-        return fmt.Sprintf("%.10g..%.10g:%.10g", *x.Start, *x.End, *x.Step)
+        return fmt.Sprintf("%.10g..%.10g:%.10g", x.Start, x.End, x.Step)
     }
 }
 
@@ -263,3 +154,4 @@ func (x ValueRecord) Type() string { return "record" }
 func (x ValueInstance) Type() string { return x.Record.Name }
 
 func (x ValueBoundMethod) Type() string { return "bound fn" }
+

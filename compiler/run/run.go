@@ -1,6 +1,8 @@
 package run
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"vm-go/compiler"
 	"vm-go/disassembler"
@@ -8,17 +10,17 @@ import (
 	"vm-go/parser"
 	"vm-go/util"
 	"vm-go/value"
-	"vm-go/vm"
 )
 
 type RunMode int
 
 const (
-	ModeRun RunMode = iota
+	ModeCompile RunMode = iota
 	ModeDisassemble
 )
 
-func Run(source, fileName string, mode RunMode) {
+// 'output' is optional, but when mode is ModeCompile it must be set
+func Run(source, fileName string, output *string, mode RunMode) {
 	fileData := util.FileData{
 		Name: util.GetFileName(fileName),
 		Lines: strings.Split(source, "\n"),
@@ -31,9 +33,25 @@ func Run(source, fileName string, mode RunMode) {
 	}
 	
 	switch mode {
-		case ModeRun: {
-			vm_ := vm.NewVM(chunk, &fileData)
-			vm_.Run()
+		case ModeCompile: {
+			outputFile := *output
+			
+			file, err := os.Create(outputFile)
+			if err != nil {
+				fmt.Fprint(os.Stderr, "Cannot write to '%s'.\n", outputFile)
+				os.Exit(1)
+			}
+
+			defer func() {
+				if err := file.Close(); err != nil {
+					panic(err)
+				}
+			}()
+			
+			if _, err := file.Write(chunk.Serialize()); err != nil {
+				fmt.Fprint(os.Stderr, "Cannot write to '%s'.\n", outputFile)
+				os.Exit(1)
+			}
 		}
 
 		case ModeDisassemble: {
