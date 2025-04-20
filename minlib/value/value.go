@@ -147,4 +147,3 @@ func (x ValueRecord) Type() string { return "record" }
 func (x ValueInstance) Type() string { return x.Record.Name }
 
 func (x ValueBoundMethod) Type() string { return "bound fn" }
-

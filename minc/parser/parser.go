@@ -2,8 +2,8 @@ package parser
 
 import (
 	"minc/ast"
-	"minc/token"
-	"minc/util"
+	"minlib/token"
+	"minlib/util"
 )
 
 const (

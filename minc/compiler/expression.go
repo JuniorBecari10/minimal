@@ -3,9 +3,9 @@ package compiler
 import (
 	"fmt"
 	"minc/ast"
-	"minc/token"
-	"minc/util"
-	"minc/value"
+	"minlib/token"
+	"minlib/util"
+	"minlib/value"
 )
 
 func (c *Compiler) expression(expr ast.Expression) {

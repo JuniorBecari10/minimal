@@ -1,6 +1,6 @@
 package value
 
-import "minc/token"
+import "minlib/token"
 
 type Chunk struct {
 	Code      []byte

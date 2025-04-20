@@ -2,7 +2,7 @@ package parser
 
 import (
 	"minc/ast"
-	"minc/token"
+	"minlib/token"
 )
 
 func (p *Parser) declaration(allowStatements bool) ast.Statement {

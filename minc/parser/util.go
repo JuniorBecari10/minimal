@@ -3,8 +3,8 @@ package parser
 import (
 	"fmt"
 	"minc/ast"
-	"minc/token"
-	"minc/util"
+	"minlib/token"
+	"minlib/util"
 )
 
 func (p *Parser) parseBlock() ast.BlockStatement {

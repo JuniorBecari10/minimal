@@ -2,8 +2,8 @@ package compiler
 
 import (
 	"minc/ast"
-	"minc/util"
-	"minc/value"
+	"minlib/util"
+	"minlib/value"
 )
 
 func (c *Compiler) statement(stmt ast.Statement) {

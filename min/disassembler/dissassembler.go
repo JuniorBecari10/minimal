@@ -2,9 +2,9 @@ package disassembler
 
 import (
 	"fmt"
-	"minc/compiler"
-	"minlib/util"
+	"minc/compiler" // allowed, since 'compiler' doesn't depend on 'disassembler'. the other shared modules are all inside 'minlib'.
 	"minlib/value"
+	"minlib/util"
 	"strconv"
 	"strings"
 )

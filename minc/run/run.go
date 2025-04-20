@@ -6,8 +6,8 @@ import (
 	"minc/disassembler"
 	"minc/lexer"
 	"minc/parser"
-	"minc/util"
-	"minc/value"
+	"minlib/util"
+	"minlib/value"
 	"os"
 	"strings"
 )

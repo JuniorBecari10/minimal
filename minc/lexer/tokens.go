@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"minc/token"
+	"minlib/token"
 	"unicode"
 )
 

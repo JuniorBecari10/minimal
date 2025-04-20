@@ -2,9 +2,9 @@ package compiler
 
 import (
 	"minc/ast"
-	"minc/token"
-	"minc/util"
-	"minc/value"
+	"minlib/token"
+	"minlib/util"
+	"minlib/value"
 )
 
 type Opcode int

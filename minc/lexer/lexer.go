@@ -2,8 +2,8 @@ package lexer
 
 import (
 	"fmt"
-	"minc/token"
-	"minc/util"
+	"minlib/token"
+	"minlib/util"
 	"strings"
 	"unicode"
 )

@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"minc/token"
+	"minlib/token"
 )
 
 type Expression struct {

@@ -1,6 +1,6 @@
 package ast
 
-import "minc/token"
+import "minlib/token"
 
 type Statement struct {
 	Base AstBase

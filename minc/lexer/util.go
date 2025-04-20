@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"minc/token"
-	"minc/util"
+	"minlib/token"
+	"minlib/util"
 )
 
 func (l *Lexer) match(c byte) bool {

@@ -3,7 +3,7 @@ package util
 import (
 	"encoding/binary"
 	"fmt"
-	"minc/token"
+	"minlib/token"
 	"path/filepath"
 	"strconv"
 	"strings"

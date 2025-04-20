@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"minc/token"
+	"minlib/token"
 )
 
 func Deserialize(data []byte) Chunk {
