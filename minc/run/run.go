@@ -3,7 +3,6 @@ package run
 import (
 	"fmt"
 	"minc/compiler"
-	"minc/disassembler"
 	"minc/lexer"
 	"minc/parser"
 	"minlib/util"
@@ -12,69 +11,34 @@ import (
 	"strings"
 )
 
-type RunMode int
-
-const (
-	ModeCompile RunMode = iota
-	ModeDisassemble
-	ModeDeserialize
-)
-
 // 'output' is optional, but when mode is ModeCompile it must be set
-func Run(source, file string, output *string, mode RunMode) {
-
-	var chunk value.Chunk
-	var hadError bool = false
-	var fileData util.FileData
-
-	fileName := util.GetFileName(file)
-
-	if mode == ModeDeserialize {
-		fileData = util.FileData{
-			Name: fileName,
-			Lines: []string{},
-		}
-		
-		chunk = value.Deserialize([]byte(source))
-	} else {
-		fileData = util.FileData{
-			Name: fileName,
-			Lines: strings.Split(source, "\n"),
-		}
-		
-		chunk, hadError = compile(source, &fileData)
+func Run(source, output string) {
+	fileData := util.FileData{
+		Name: source,
+		Lines: strings.Split(source, "\n"),
 	}
+	
+	chunk, hadError := compile(source, &fileData)
 
 	if hadError {
 		return
 	}
+			
+	file, err := os.Create(output)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot write to '%s'.\n", output)
+		os.Exit(1)
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(err)
+		}
+	}()
 	
-	switch mode {
-		case ModeCompile: {
-			outputFile := *output
-			
-			file, err := os.Create(outputFile)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Cannot write to '%s'.\n", outputFile)
-				os.Exit(1)
-			}
-
-			defer func() {
-				if err := file.Close(); err != nil {
-					panic(err)
-				}
-			}()
-			
-			if _, err := file.Write(chunk.Serialize()); err != nil {
-				fmt.Fprintf(os.Stderr, "Cannot write to '%s'.\n", outputFile)
-				os.Exit(1)
-			}
-		}
-
-		case ModeDisassemble, ModeDeserialize: {
-			diss := disassembler.NewDisassembler(chunk)
-			diss.Disassemble()
-		}
+	if _, err := file.Write(chunk.Serialize()); err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot write to '%s'.\n", output)
+		os.Exit(1)
 	}
 }
 
