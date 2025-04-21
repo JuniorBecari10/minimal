@@ -2,6 +2,7 @@ package run
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -12,7 +13,12 @@ import (
 	"minlib/value"
 )
 
-// Run compiles the source file and writes the compiled output to the specified file.
+const (
+	STDIN = "*stdin"
+	STDOUT = "*stdout"
+	STDERR = "*stderr"
+)
+
 func Run(sourcePath, outputPath string) {
 	sourceContent, err := readFile(sourcePath)
 	if err != nil {
@@ -36,43 +42,72 @@ func Run(sourcePath, outputPath string) {
 	}
 }
 
-// readFile reads the source file content as a string.
 func readFile(path string) (string, error) {
+	// check for special '*stdin'
+	if path == STDIN {
+		input, err := io.ReadAll(os.Stdin)
+		
+		if err != nil {
+			return "", err
+		}
+
+		return string(input), nil
+	}
+
 	data, err := os.ReadFile(path)
+	
 	if err != nil {
 		return "", err
 	}
+
 	return string(data), nil
 }
 
-// writeOutputFile writes serialized bytecode to a file.
 func writeOutputFile(path string, data []byte) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	var out io.Writer
 
-	_, err = file.Write(data)
+	// check for special '*stdout' and '*stderr'
+	switch strings.ToLower(path) {
+		case "*stdout":
+			out = os.Stdout
+		
+		case "*stderr":
+			out = os.Stderr
+		
+		default: {
+			file, err := os.Create(path)
+			
+			if err != nil {
+				return err
+			}
+			
+			defer file.Close()
+			out = file
+		}
+	}
+
+	_, err := out.Write(data)
 	return err
 }
 
-// compileSource runs the lexer, parser, and compiler phases.
 func compileSource(source string, fileData *util.FileData) (value.Chunk, bool) {
 	lex := lexer.NewLexer(source, fileData)
 	tokens, hadError := lex.Lex()
+	
 	if hadError {
 		return value.Chunk{}, true
 	}
 
 	parse := parser.NewParser(tokens, fileData)
 	ast, hadError := parse.Parse()
+	
 	if hadError {
 		return value.Chunk{}, true
 	}
 
 	comp := compiler.NewCompiler(ast, fileData)
 	chunk, hadError := comp.Compile()
+	
 	if hadError {
 		return value.Chunk{}, true
 	}
