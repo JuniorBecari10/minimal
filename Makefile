@@ -45,3 +45,4 @@ minvm-release:
 	$(MAKE) -C minvm release
 
 .PHONY: all clean min minc minvm-debug minvm-release
+

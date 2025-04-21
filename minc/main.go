@@ -14,3 +14,4 @@ func main() {
 
 	run.Run(os.Args[1], os.Args[2])
 }
+

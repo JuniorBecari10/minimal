@@ -2,67 +2,81 @@ package run
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"minc/compiler"
 	"minc/lexer"
 	"minc/parser"
 	"minlib/util"
 	"minlib/value"
-	"os"
-	"strings"
 )
 
-// 'output' is optional, but when mode is ModeCompile it must be set
-func Run(source, output string) {
-	fileData := util.FileData{
-		Name: source,
-		Lines: strings.Split(source, "\n"),
-	}
-	
-	chunk, hadError := compile(source, &fileData)
-
-	if hadError {
-		return
-	}
-			
-	file, err := os.Create(output)
+// Run compiles the source file and writes the compiled output to the specified file.
+func Run(sourcePath, outputPath string) {
+	sourceContent, err := readFile(sourcePath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot write to '%s'.\n", output)
+		fmt.Fprintf(os.Stderr, "Error reading source file '%s': %v\n", sourcePath, err)
 		os.Exit(1)
 	}
 
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	
-	if _, err := file.Write(chunk.Serialize()); err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot write to '%s'.\n", output)
+	fileData := util.FileData{
+		Name:  sourcePath,
+		Lines: strings.Split(sourceContent, "\n"),
+	}
+
+	chunk, hadError := compileSource(sourceContent, &fileData)
+	if hadError {
+		os.Exit(1)
+	}
+
+	if err := writeOutputFile(outputPath, chunk.Serialize()); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing to output file '%s': %v\n", outputPath, err)
 		os.Exit(1)
 	}
 }
 
-func compile(source string, fileData *util.FileData) (value.Chunk, bool) {
-	lexer := lexer.NewLexer(source, fileData)
-	tokens, hadError := lexer.Lex()
-
-	if hadError {
-		return value.Chunk{}, true
+// readFile reads the source file content as a string.
+func readFile(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
 	}
-
-	parser := parser.NewParser(tokens, fileData)
-	ast, hadError := parser.Parse()
-
-	if hadError {
-		return value.Chunk{}, true
-	}
-
-	compiler := compiler.NewCompiler(ast, fileData)
-	chunk_, hadError := compiler.Compile()
-
-	if hadError {
-		return value.Chunk{}, true
-	}
-
-	return chunk_, false
+	return string(data), nil
 }
+
+// writeOutputFile writes serialized bytecode to a file.
+func writeOutputFile(path string, data []byte) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	return err
+}
+
+// compileSource runs the lexer, parser, and compiler phases.
+func compileSource(source string, fileData *util.FileData) (value.Chunk, bool) {
+	lex := lexer.NewLexer(source, fileData)
+	tokens, hadError := lex.Lex()
+	if hadError {
+		return value.Chunk{}, true
+	}
+
+	parse := parser.NewParser(tokens, fileData)
+	ast, hadError := parse.Parse()
+	if hadError {
+		return value.Chunk{}, true
+	}
+
+	comp := compiler.NewCompiler(ast, fileData)
+	chunk, hadError := comp.Compile()
+	if hadError {
+		return value.Chunk{}, true
+	}
+
+	return chunk, false
+}
+
