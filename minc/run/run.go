@@ -2,7 +2,6 @@ package run
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -13,81 +12,30 @@ import (
 	"minlib/value"
 )
 
-const (
-	STDIN = "*stdin"
-	STDOUT = "*stdout"
-	STDERR = "*stderr"
-)
 
-func Run(sourcePath, outputPath string) {
-	sourceContent, err := readFile(sourcePath)
+func Compile(sourcePath, outputPath string) {
+	sourceContent, err := util.ReadSourceFile(sourcePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading source file '%s': %v\n", sourcePath, err)
 		os.Exit(1)
 	}
 
+	source := string(sourceContent)
+
 	fileData := util.FileData{
 		Name:  sourcePath,
-		Lines: strings.Split(sourceContent, "\n"),
+		Lines: strings.Split(source, "\n"),
 	}
 
-	chunk, hadError := compileSource(sourceContent, &fileData)
+	chunk, hadError := compileSource(source, &fileData)
 	if hadError {
 		os.Exit(1)
 	}
 
-	if err := writeOutputFile(outputPath, chunk.Serialize()); err != nil {
+	if err := util.WriteOutputFile(outputPath, chunk.Serialize()); err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing to output file '%s': %v\n", outputPath, err)
 		os.Exit(1)
 	}
-}
-
-func readFile(path string) (string, error) {
-	// check for special '*stdin'
-	if path == STDIN {
-		input, err := io.ReadAll(os.Stdin)
-		
-		if err != nil {
-			return "", err
-		}
-
-		return string(input), nil
-	}
-
-	data, err := os.ReadFile(path)
-	
-	if err != nil {
-		return "", err
-	}
-
-	return string(data), nil
-}
-
-func writeOutputFile(path string, data []byte) error {
-	var out io.Writer
-
-	// check for special '*stdout' and '*stderr'
-	switch strings.ToLower(path) {
-		case "*stdout":
-			out = os.Stdout
-		
-		case "*stderr":
-			out = os.Stderr
-		
-		default: {
-			file, err := os.Create(path)
-			
-			if err != nil {
-				return err
-			}
-			
-			defer file.Close()
-			out = file
-		}
-	}
-
-	_, err := out.Write(data)
-	return err
 }
 
 func compileSource(source string, fileData *util.FileData) (value.Chunk, bool) {

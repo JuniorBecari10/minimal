@@ -12,6 +12,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	run.Run(os.Args[1], os.Args[2])
+	run.Compile(os.Args[1], os.Args[2])
 }
 

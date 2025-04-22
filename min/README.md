@@ -3,9 +3,6 @@
 The official tool for working with Minimal. <br />
 It has several tools for compiling, running and disassembling Minimal code.
 
-For `min` to work, both `minc` and `minvm` need to be in the system's path, <br />
-so that `min` can find and use them.
-
 ## Usage
 
 ```
