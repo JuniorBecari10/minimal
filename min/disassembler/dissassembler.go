@@ -2,7 +2,7 @@ package disassembler
 
 import (
 	"fmt"
-	"minc/compiler" // allowed, since 'compiler' doesn't depend on 'disassembler'. the other shared modules are all inside 'minlib'.
+	"minlib/instructions"
 	"minlib/value"
 	"minlib/util"
 	"strconv"
@@ -79,7 +79,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 	switch inst {
 		// inst index value
-		case compiler.OP_PUSH_CONST: {
+		case instructions.OP_PUSH_CONST: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -99,7 +99,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			)
 		}
 
-        case compiler.OP_GET_PROPERTY, compiler.OP_SET_PROPERTY: {
+        case instructions.OP_GET_PROPERTY, instructions.OP_SET_PROPERTY: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -113,7 +113,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
         }
 
 		// inst index value count + metadata
-		case compiler.OP_PUSH_CLOSURE: {
+		case instructions.OP_PUSH_CLOSURE: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -160,11 +160,11 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst [int]
-		case compiler.OP_POPN_LOCAL,
-			compiler.OP_GET_LOCAL, compiler.OP_SET_LOCAL,
-			compiler.OP_GET_UPVALUE, compiler.OP_SET_UPVALUE,
-			compiler.OP_GET_GLOBAL, compiler.OP_SET_GLOBAL,
-			compiler.OP_CALL, compiler.OP_APPEND_METHODS: {
+		case instructions.OP_POPN_LOCAL,
+			instructions.OP_GET_LOCAL, instructions.OP_SET_LOCAL,
+			instructions.OP_GET_UPVALUE, instructions.OP_SET_UPVALUE,
+			instructions.OP_GET_GLOBAL, instructions.OP_SET_GLOBAL,
+			instructions.OP_CALL, instructions.OP_APPEND_METHODS: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -175,7 +175,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst [int] [int]
-		case compiler.OP_CALL_PROPERTY: {
+		case instructions.OP_CALL_PROPERTY: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -190,7 +190,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst amount result (add)
-		case compiler.OP_JUMP, compiler.OP_JUMP_TRUE, compiler.OP_JUMP_FALSE, compiler.OP_JUMP_HAS_NO_NEXT: {
+		case instructions.OP_JUMP, instructions.OP_JUMP_TRUE, instructions.OP_JUMP_FALSE, instructions.OP_JUMP_HAS_NO_NEXT: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -202,7 +202,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst amount result (subtract)
-		case compiler.OP_LOOP: {
+		case instructions.OP_LOOP: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 

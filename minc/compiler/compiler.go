@@ -2,84 +2,10 @@ package compiler
 
 import (
 	"minc/ast"
+	"minlib/instructions"
 	"minlib/token"
 	"minlib/util"
 	"minlib/value"
-)
-
-type Opcode int
-
-const (
-	OP_PUSH_CONST = iota
-	OP_PUSH_CLOSURE
-	OP_APPEND_METHODS
-
-	OP_ADD
-	OP_SUB
-	OP_MUL
-	OP_DIV
-	OP_MOD
-
-	OP_DEF_LOCAL
-	OP_GET_LOCAL
-	OP_SET_LOCAL
-
-	OP_GET_UPVALUE
-	OP_SET_UPVALUE
-
-	OP_DEF_GLOBAL
-	OP_GET_GLOBAL
-	OP_SET_GLOBAL
-
-	OP_GET_PROPERTY
-	OP_SET_PROPERTY
-
-	OP_POP
-	OP_POP_LOCAL
-	OP_POPN_LOCAL
-
-	OP_CLOSE_UPVALUE
-
-	OP_JUMP
-	OP_JUMP_TRUE
-	OP_JUMP_FALSE
-    OP_JUMP_HAS_NO_NEXT
-	OP_LOOP
-
-	OP_EQUAL
-	OP_NOT_EQUAL
-
-	OP_GREATER
-	OP_GREATER_EQUAL
-
-	OP_LESS
-	OP_LESS_EQUAL
-
-	OP_AND
-	OP_OR
-
-	OP_NOT
-	OP_NEGATE
-
-	OP_CALL
-	OP_CALL_PROPERTY
-	OP_RETURN
-
-	OP_PUSH_TRUE
-	OP_PUSH_FALSE
-	
-	OP_PUSH_NIL
-	OP_PUSH_VOID
-
-    OP_MAKE_RANGE
-    OP_MAKE_INCL_RANGE
-    OP_MAKE_ITERATOR
-
-    OP_GET_NEXT
-    OP_ADVANCE
-
-	// TODO: extend this to accept more types, if necessary
-	OP_ASSERT_BOOL
 )
 
 type Local struct {
@@ -260,14 +186,14 @@ func (c *Compiler) callMain() {
 			// check if it's a function
 			// in the meanwhile, this error will be caught at runtime
 
-			c.writeBytePos(OP_GET_GLOBAL, value.ChunkMetadata{
+			c.writeBytePos(instructions.GET_GLOBAL, value.ChunkMetadata{
 				Position: global.name.Pos,
 				Length: len(global.name.Lexeme),
 			})
 
 			c.writeBytes(util.IntToBytes(i))
 
-			c.writeBytePos(OP_CALL, value.ChunkMetadata{
+			c.writeBytePos(instructions.CALL, value.ChunkMetadata{
 				Position: global.name.Pos,
 				Length: len(global.name.Lexeme),
 			})

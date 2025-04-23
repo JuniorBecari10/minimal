@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"minc/ast"
+	"minlib/instructions"
 	"minlib/token"
 	"minlib/util"
 	"minlib/value"
@@ -50,34 +51,34 @@ import (
 // please pass in 'nil' for it.
 func (c *Compiler) compileIf(condition ast.Expression, then func(), else_ *func(), pos token.Position) {
 	c.expression(condition)
-	c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(pos))
+	c.writeBytePos(instructions.JUMP_FALSE, value.NewMetaLen1(pos))
 
 	jumpFalseOffsetIndex := len(c.chunk.Code)
 	c.writeBytes(util.IntToBytes(0)) // dummy
-	c.writeBytePos(OP_POP, value.NewMetaLen1(pos))
+	c.writeBytePos(instructions.POP, value.NewMetaLen1(pos))
 
 	then()
 
 	if else_ == nil {
 		// insert the real offset into the instruction, if there's no else
-        c.writeBytePos(OP_JUMP, value.NewMetaLen1(pos))
+        c.writeBytePos(instructions.JUMP, value.NewMetaLen1(pos))
 
         jumpOffsetIndex := len(c.chunk.Code)
         c.writeBytes(util.IntToBytes(0)) // dummy
 
 		c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
-		c.writeBytePos(OP_POP, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.POP, value.NewMetaLen1(pos))
 		
         c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
 	} else {
-		c.writeBytePos(OP_JUMP, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.JUMP, value.NewMetaLen1(pos))
 		jumpOffsetIndex := len(c.chunk.Code)
 		c.writeBytes(util.IntToBytes(0)) // dummy
 
-		// insert the real offset into the instruction, right before OP_POP
+		// insert the real offset into the instruction, right before instructions.POP
 		c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 
-		c.writeBytePos(OP_POP, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.POP, value.NewMetaLen1(pos))
 		(*else_)()
 
 		c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
@@ -115,7 +116,7 @@ func (c *Compiler) compileFunctionCompiler(fnCompiler *Compiler, parameters []as
 	}
 
 	index := c.addConstant(function)
-	c.writeBytePos(OP_PUSH_CLOSURE, value.NewMetaLen1(pos))
+	c.writeBytePos(instructions.PUSH_CLOSURE, value.NewMetaLen1(pos))
 	c.writeBytes(util.IntToBytes(index))
 
 	c.writeBytes(util.IntToBytes(len(fnCompiler.upvalues)))
@@ -136,12 +137,12 @@ func (c *Compiler) compileFunctionCompiler(fnCompiler *Compiler, parameters []as
 func (c *Compiler) compileFnBody(pos token.Position) (value.Chunk, bool) {
 	c.statements(c.ast)
 
-	// Check if the last instrution is a OP_RETURN and emit another returning void if not.
-	if len(c.chunk.Code) > 0 && c.chunk.Code[len(c.chunk.Code) - 1] != OP_RETURN {
+	// Check if the last instrution is a instructions.RETURN and emit another returning void if not.
+	if len(c.chunk.Code) > 0 && c.chunk.Code[len(c.chunk.Code) - 1] != instructions.RETURN {
 		c.endScope(pos)
 
-		c.writeBytePos(OP_PUSH_VOID, value.NewMetaLen1(pos))
-		c.writeBytePos(OP_RETURN, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.PUSH_VOID, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.RETURN, value.NewMetaLen1(pos))
 	}
 
 	return c.chunk, c.hadError
@@ -196,13 +197,13 @@ func (c *Compiler) backpatch(index int, bytes []byte) {
 
 func (c *Compiler) addDeclarationInstruction(pos token.Position) {
 	if c.scopeDepth == 0 {
-		c.writeBytePos(OP_DEF_GLOBAL, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.DEF_GLOBAL, value.NewMetaLen1(pos))
 	} else {
-		c.writeBytePos(OP_DEF_LOCAL, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.DEF_LOCAL, value.NewMetaLen1(pos))
 	}
 }
 
-func (c *Compiler) resolveVariable(token token.Token, set bool) (int, Opcode) {
+func (c *Compiler) resolveVariable(token token.Token, set bool) (int, instructions.Opcode) {
 	// search it in locals
 	index, opcode := c.resolveLocal(token, set)
 
@@ -235,38 +236,38 @@ func (c *Compiler) resolveVariable(token token.Token, set bool) (int, Opcode) {
 		c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' doesn't exist in this or in a parent scope.", token.Lexeme))
 	}
 
-	return -1, OP_GET_LOCAL
+	return -1, instructions.GET_LOCAL
 }
 
-func (c *Compiler) resolveLocal(token token.Token, set bool) (int, Opcode) {
+func (c *Compiler) resolveLocal(token token.Token, set bool) (int, instructions.Opcode) {
 	for i := len(c.locals) - 1; i >= 0; i-- {
 		if c.locals[i].name.Lexeme == token.Lexeme {
-			var opcode Opcode
+			var opcode instructions.Opcode
 
 			if set {
-				opcode = OP_SET_LOCAL
+				opcode = instructions.SET_LOCAL
 			} else {
-				opcode = OP_GET_LOCAL
+				opcode = instructions.GET_LOCAL
 			}
 
 			return i, opcode
 		}
 	}
 
-	return -1, OP_GET_LOCAL
+	return -1, instructions.GET_LOCAL
 }
 
-func (c *Compiler) resolveUpvalue(token token.Token, set bool) (int, Opcode) {
+func (c *Compiler) resolveUpvalue(token token.Token, set bool) (int, instructions.Opcode) {
 	if c.enclosing == nil {
-		return -1, OP_GET_UPVALUE
+		return -1, instructions.GET_UPVALUE
 	}
 
-	var opcode Opcode
+	var opcode instructions.Opcode
 
 	if set {
-		opcode = OP_SET_UPVALUE
+		opcode = instructions.SET_UPVALUE
 	} else {
-		opcode = OP_GET_UPVALUE
+		opcode = instructions.GET_UPVALUE
 	}
 
 	// search it in enclosing's locals.
@@ -293,10 +294,10 @@ func (c *Compiler) resolveUpvalue(token token.Token, set bool) (int, Opcode) {
 	}
 
 	// didn't find it in any enclosing function.
-	return -1, OP_GET_UPVALUE
+	return -1, instructions.GET_UPVALUE
 }
 
-func (c *Compiler) resolveGlobal(token token.Token, set bool) (int, Opcode) {
+func (c *Compiler) resolveGlobal(token token.Token, set bool) (int, instructions.Opcode) {
 	for i := len(c.globals) - 1; i >= 0; i-- {
 		if c.globals[i].name.Lexeme == token.Lexeme {
 			// the scope depth is also verified, because if the compiler is in an inner scope, the global is
@@ -306,19 +307,19 @@ func (c *Compiler) resolveGlobal(token token.Token, set bool) (int, Opcode) {
 				c.error(token.Pos, len(token.Lexeme), fmt.Sprintf("'%s' is used before being initialized.", token.Lexeme))
 			}
 
-			var opcode Opcode
+			var opcode instructions.Opcode
 
 			if set {
-				opcode = OP_SET_GLOBAL
+				opcode = instructions.SET_GLOBAL
 			} else {
-				opcode = OP_GET_GLOBAL
+				opcode = instructions.GET_GLOBAL
 			}
 
 			return i, opcode
 		}
 	}
 
-	return -1, OP_GET_GLOBAL
+	return -1, instructions.GET_GLOBAL
 }
 
 func (c *Compiler) addUpvalue(index int, isLocal bool) int {
@@ -433,7 +434,7 @@ func (c *Compiler) endScope(pos token.Position) {
 				c.emitPop(count, pos)
 
 				// Pop the captured variable and reset the count for further counting.
-				c.writeBytePos(OP_CLOSE_UPVALUE, value.NewMetaLen1(pos))
+				c.writeBytePos(instructions.CLOSE_UPVALUE, value.NewMetaLen1(pos))
 				count = 0
 				realCount++
 			} else {
@@ -455,10 +456,10 @@ func (c *Compiler) emitPop(count int, pos token.Position) {
 	// If count <= 0 this function does nothing.
 
 	if count > 1 {
-		c.writeBytePos(OP_POPN_LOCAL, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.POPN_LOCAL, value.NewMetaLen1(pos))
 		c.writeBytes(util.IntToBytes(count))
 	} else if count == 1 {
-		c.writeBytePos(OP_POP_LOCAL, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.POP_LOCAL, value.NewMetaLen1(pos))
 	}
 }
 
