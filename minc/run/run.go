@@ -12,7 +12,6 @@ import (
 	"minlib/value"
 )
 
-
 func Compile(sourcePath, outputPath string) {
 	sourceContent, err := util.ReadSourceFile(sourcePath)
 	if err != nil {
