@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"minc/ast"
+	"minlib/instructions"
 	"minlib/token"
 	"minlib/util"
 	"minlib/value"
@@ -17,7 +18,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.NumberExpression: {
 			index := c.addConstant(value.ValueNumber{ Value: e.Literal })
 
-			c.writeBytePos(OP_PUSH_CONST, value.ChunkMetadata{
+			c.writeBytePos(instructions.PUSH_CONST, value.ChunkMetadata{
 				Position: expr.Base.Pos,
 				Length: expr.Base.Length,
 			})
@@ -27,18 +28,18 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.StringExpression: {
 			index := c.addConstant(value.ValueString{ Value: e.Literal })
 
-			c.writeBytePos(OP_PUSH_CONST, value.NewMetaLen1(expr.Base.Pos))
+			c.writeBytePos(instructions.PUSH_CONST, value.NewMetaLen1(expr.Base.Pos))
 			c.writeBytes(util.IntToBytes(index))
 		}
 
 		case ast.BoolExpression: {
 			if e.Literal {
-				c.writeBytePos(OP_PUSH_TRUE, value.ChunkMetadata{
+				c.writeBytePos(instructions.PUSH_TRUE, value.ChunkMetadata{
 					Position: expr.Base.Pos,
 					Length: expr.Base.Length,
 				})
 			} else {
-				c.writeBytePos(OP_PUSH_FALSE, value.ChunkMetadata{
+				c.writeBytePos(instructions.PUSH_FALSE, value.ChunkMetadata{
 					Position: expr.Base.Pos,
 					Length: expr.Base.Length,
 				})
@@ -46,7 +47,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.NilExpression: {
-			c.writeBytePos(OP_PUSH_NIL, value.ChunkMetadata{
+			c.writeBytePos(instructions.PUSH_NIL, value.ChunkMetadata{
 				Position: expr.Base.Pos,
 				Length: expr.Base.Length,
 			})
@@ -56,13 +57,13 @@ func (c *Compiler) expression(expr ast.Expression) {
 			if e.Expr != nil {
 				c.expression(*e.Expr)
 
-				c.writeBytePos(OP_POP, value.ChunkMetadata{
+				c.writeBytePos(instructions.POP, value.ChunkMetadata{
 					Position: expr.Base.Pos,
 					Length: expr.Base.Length,
 				})
 			}
 
-			c.writeBytePos(OP_PUSH_VOID, value.ChunkMetadata{
+			c.writeBytePos(instructions.PUSH_VOID, value.ChunkMetadata{
 				Position: expr.Base.Pos,
 				Length: expr.Base.Length,
 			})
@@ -80,11 +81,11 @@ func (c *Compiler) expression(expr ast.Expression) {
 
                 [ left operand ]
 
-            +-- OP_JUMP_FALSE (and) / OP_JUMP_TRUE (or)
-            |   OP_POP
+            +-- instructions.JUMP_FALSE (and) / instructions.JUMP_TRUE (or)
+            |   instructions.POP
             |
             |   [ right operand ]
-            |   OP_ASSERT_BOOL
+            |   instructions.ASSERT_BOOL
             |
             +-> continues...
 		*/
@@ -94,9 +95,9 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 				switch e.Operator.Kind {
 					case token.TokenAndKw:
-						operation = OP_JUMP_FALSE
+						operation = instructions.JUMP_FALSE
 					case token.TokenOrKw:
-						operation = OP_JUMP_TRUE
+						operation = instructions.JUMP_TRUE
 					default:
 						panic(fmt.Sprintf("Unknown logical operator: '%s'", e.Operator.Lexeme))
 				}
@@ -109,13 +110,13 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 				jumpOffsetIndex := len(c.chunk.Code)
 				c.writeBytes(util.IntToBytes(0)) // dummy
-				c.writeBytePos(OP_POP, value.ChunkMetadata{
+				c.writeBytePos(instructions.POP, value.ChunkMetadata{
 					Position: expr.Base.Pos,
 					Length: expr.Base.Length,
 				})
 
 				c.expression(e.Right)
-				c.writeBytePos(OP_ASSERT_BOOL, value.ChunkMetadata{
+				c.writeBytePos(instructions.ASSERT_BOOL, value.ChunkMetadata{
 					Position: expr.Base.Pos,
 					Length: expr.Base.Length,
 				})
@@ -132,9 +133,9 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 				switch e.Operator.Kind {
 					case token.TokenAndKw:
-						c.writeByte(OP_AND)
+						c.writeByte(instructions.AND)
 					case token.TokenOrKw:
-						c.writeByte(OP_OR)
+						c.writeByte(instructions.OR)
 
 					default:
 						panic(fmt.Sprintf("Unknown logical operator: '%s'", e.Operator.Kind))
@@ -153,36 +154,36 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			switch e.Operator.Kind {
 				case token.TokenPlus:
-					c.writeByte(OP_ADD)
+					c.writeByte(instructions.ADD)
 				case token.TokenMinus:
-					c.writeByte(OP_SUB)
+					c.writeByte(instructions.SUB)
 				case token.TokenStar:
-					c.writeByte(OP_MUL)
+					c.writeByte(instructions.MUL)
 				case token.TokenSlash:
-					c.writeByte(OP_DIV)
+					c.writeByte(instructions.DIV)
 				
 				case token.TokenPercent:
-					c.writeByte(OP_MOD)
+					c.writeByte(instructions.MOD)
 				
 				case token.TokenDoubleEqual:
-					c.writeByte(OP_EQUAL)
+					c.writeByte(instructions.EQUAL)
 				case token.TokenBangEqual:
-					c.writeByte(OP_NOT_EQUAL)
+					c.writeByte(instructions.NOT_EQUAL)
 				
 				case token.TokenGreater:
-					c.writeByte(OP_GREATER)
+					c.writeByte(instructions.GREATER)
 				case token.TokenGreaterEqual:
-					c.writeByte(OP_GREATER_EQUAL)
+					c.writeByte(instructions.GREATER_EQUAL)
 				
 				case token.TokenLess:
-					c.writeByte(OP_LESS)
+					c.writeByte(instructions.LESS)
 				case token.TokenLessEqual:
-					c.writeByte(OP_LESS_EQUAL)
+					c.writeByte(instructions.LESS_EQUAL)
 				
 				case token.TokenAndKw:
-					c.writeByte(OP_AND)
+					c.writeByte(instructions.AND)
 				case token.TokenOrKw:
-					c.writeByte(OP_OR)
+					c.writeByte(instructions.OR)
 
 				default:
 					panic(fmt.Sprintf("Unknown binary operator: '%s'", e.Operator.Kind))
@@ -199,9 +200,9 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			switch e.Operator.Kind {
 				case token.TokenNotKw:
-					c.writeByte(OP_NOT)
+					c.writeByte(instructions.NOT)
 				case token.TokenMinus:
-					c.writeByte(OP_NEGATE)
+					c.writeByte(instructions.NEGATE)
 				
 				default:
 					panic(fmt.Sprintf("Unknown unary operator: '%s'", e.Operator.Kind))
@@ -222,7 +223,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 					// Store the name as a string in the constant table and retrieve it later.
 					index := c.addConstant(value.ValueString{ Value: callee.Property.Lexeme })
 
-					c.writeBytePos(OP_CALL_PROPERTY, value.ChunkMetadata{
+					c.writeBytePos(instructions.CALL_PROPERTY, value.ChunkMetadata{
 						Position: callee.Property.Pos,
 						Length: len(callee.Property.Lexeme),
 					})
@@ -237,7 +238,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 						c.expression(arg)
 					}
 
-					c.writeBytePos(OP_CALL, value.ChunkMetadata{
+					c.writeBytePos(instructions.CALL, value.ChunkMetadata{
 						Position: expr.Base.Pos,
 						Length: expr.Base.Length,
 					})
@@ -285,13 +286,13 @@ func (c *Compiler) expression(expr ast.Expression) {
                 c.expression(*e.Step)
             } else {
                 // Push the constant 'nil', which defers the step number decision to runtime.
-                c.writeBytePos(OP_PUSH_NIL, value.NewMetaLen1(expr.Base.Pos))
+                c.writeBytePos(instructions.PUSH_NIL, value.NewMetaLen1(expr.Base.Pos))
             }
 
-            var opcode byte = OP_MAKE_RANGE
+            var opcode byte = instructions.MAKE_RANGE
 
             if e.Inclusive {
-                opcode = OP_MAKE_INCL_RANGE
+                opcode = instructions.MAKE_INCL_RANGE
             }
 
 			c.writeBytePos(opcode, value.ChunkMetadata{
@@ -306,7 +307,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			// Store the name as a string in the constant table and retrieve it later.
 			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
 
-			c.writeBytePos(OP_GET_PROPERTY, value.ChunkMetadata{
+			c.writeBytePos(instructions.GET_PROPERTY, value.ChunkMetadata{
 				Position: e.Property.Pos,
 				Length: len(e.Property.Lexeme),
 			})
@@ -321,7 +322,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			// The value to be assigned will be on top of the object we'll assign it to.
 			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
 
-			c.writeBytePos(OP_SET_PROPERTY, value.ChunkMetadata{
+			c.writeBytePos(instructions.SET_PROPERTY, value.ChunkMetadata{
 				Position: e.Property.Pos,
 				Length: len(e.Property.Lexeme),
 			})

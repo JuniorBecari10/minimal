@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"minc/ast"
+	"minlib/instructions"
 	"minlib/util"
 	"minlib/value"
 )
@@ -21,7 +22,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				Methods: []value.ValueClosure{}, // empty for now
 			})
 
-			c.writeBytePos(OP_PUSH_CONST, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.PUSH_CONST, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(index))
 
 			// stack the methods and add an APPEND_METHODS instruction to put them into the record
@@ -30,7 +31,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			}
 
 			if len(s.Methods) > 0 {
-				c.writeBytePos(OP_APPEND_METHODS, value.NewMetaLen1(stmt.Base.Pos))
+				c.writeBytePos(instructions.APPEND_METHODS, value.NewMetaLen1(stmt.Base.Pos))
 				c.writeBytes(util.IntToBytes(len(s.Methods)))
 			}
 
@@ -78,13 +79,13 @@ func (c *Compiler) statement(stmt ast.Statement) {
                 [ condition ] <-+
                                 |
                                 |
-            +-- OP_JUMP_FALSE   | <- break/continue point
-            |   OP_POP          |
+            +-- JUMP_FALSE   | <- break/continue point
+            |   POP          |
             |                   |
             |   [ body ]        |
             |                   |
-            |   OP_LOOP --------+
-            +-> OP_POP
+            |   LOOP --------+
+            +-> POP
 
             continues...
 		*/
@@ -93,20 +94,20 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.expression(s.Condition)
 
 			c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
-			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 			jumpOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
-			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 			c.block(s.Block.Stmts, stmt.Base.Pos)
 
 			util.PopList(&c.loopFlowPos)
 			
-			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionPos + 4)) // index
 
 			c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
-			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 		}
         
 		/*
@@ -116,30 +117,30 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				- begin scope -
 
                 [ iterable ]
-                OP_MAKE_ITERATOR
-                OP_GET_NEXT
+                MAKE_ITERATOR
+                GET_NEXT
 
-                OP_DEF_LOCAL
+                DEF_LOCAL
             
-            +-- OP_JUMP_HAS_NO_NEXT
+            +-- JUMP_HAS_NO_NEXT
             |
-            |   OP_JUMP ------+
-            +-- OP_JUMP_FALSE | <- break/continue point
-            |   OP_POP        |
-			|   OP_JUMP ------+---+
+            |   JUMP ------+
+            +-- JUMP_FALSE | <- break/continue point
+            |   POP        |
+			|   JUMP ------+---+
             |                 |   |
             |   [ body ] <----+---+----+
             |                     |    |
             |   - end scope - <---+    |
             |   - begin scope -        |
 			|                          |
-            |   OP_ADVANCE             |
-            +-- OP_JUMP_HAS_NO_NEXT    |
-            |   OP_GET_NEXT            |
-            |   OP_DEF_LOCAL           |
+            |   ADVANCE             |
+            +-- JUMP_HAS_NO_NEXT    |
+            |   GET_NEXT            |
+            |   DEF_LOCAL           |
             |                          |
-            |   OP_LOOP ---------------+
-            +-> OP_POP
+            |   LOOP ---------------+
+            +-> POP
 
 				- end scope -
 
@@ -149,29 +150,29 @@ func (c *Compiler) statement(stmt ast.Statement) {
             c.beginScope()
             
             c.expression(s.Iterable)
-			c.writeBytePos(OP_MAKE_ITERATOR, value.NewMetaLen1(stmt.Base.Pos))
-			c.writeBytePos(OP_GET_NEXT, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.MAKE_ITERATOR, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.GET_NEXT, value.NewMetaLen1(stmt.Base.Pos))
 			
             c.addVariable(s.Variable, s.Variable.Pos)
             c.addDeclarationInstruction(s.Variable.Pos)
             
-			c.writeBytePos(OP_JUMP_HAS_NO_NEXT, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.JUMP_HAS_NO_NEXT, value.NewMetaLen1(stmt.Base.Pos))
 			jumpNoNextOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 			
-            c.writeBytePos(OP_JUMP, value.NewMetaLen1(stmt.Base.Pos))
+            c.writeBytePos(instructions.JUMP, value.NewMetaLen1(stmt.Base.Pos))
 			jump1OffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 			
             c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
 
-			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 			jumpFalseOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
             
-            c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+            c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 			
-            c.writeBytePos(OP_JUMP, value.NewMetaLen1(stmt.Base.Pos))
+            c.writeBytePos(instructions.JUMP, value.NewMetaLen1(stmt.Base.Pos))
 			jump2OffsetIndex := len(c.chunk.Code)
             c.writeBytes(util.IntToBytes(0)) // dummy
 			
@@ -187,26 +188,26 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.endScope(stmt.Base.Pos)
 			c.beginScope()
 
-            c.writeBytePos(OP_ADVANCE, value.NewMetaLen1(stmt.Base.Pos))
+            c.writeBytePos(instructions.ADVANCE, value.NewMetaLen1(stmt.Base.Pos))
 			
-			c.writeBytePos(OP_JUMP_HAS_NO_NEXT, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.JUMP_HAS_NO_NEXT, value.NewMetaLen1(stmt.Base.Pos))
 			jumpNoNext2OffsetIndex := len(c.chunk.Code)
 			
 			c.writeBytes(util.IntToBytes(0)) // dummy
-            c.writeBytePos(OP_GET_NEXT, value.NewMetaLen1(stmt.Base.Pos))
+            c.writeBytePos(instructions.GET_NEXT, value.NewMetaLen1(stmt.Base.Pos))
 
 			// Create a new variable for the mutation to occur.
             c.addVariable(s.Variable, s.Variable.Pos)
             c.addDeclarationInstruction(s.Variable.Pos)
 
-			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - bodyPos + 4)) // index
             
 			c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
 			c.backpatch(jumpNoNextOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpNoNextOffsetIndex - 4)) // index
 			c.backpatch(jumpNoNext2OffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpNoNext2OffsetIndex - 4)) // index
 			
-            c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+            c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 			c.endScope(stmt.Base.Pos)
         }
 
@@ -219,22 +220,22 @@ func (c *Compiler) statement(stmt ast.Statement) {
                 [ initializer ]
                 [ condition ] <------+
                                      |
-            +-- OP_JUMP_FALSE        | <- break/continue point
-            |   OP_POP               |
+            +-- JUMP_FALSE        | <- break/continue point
+            |   POP               |
             |                        |
             |   [ body ]             |
             |                        |
-            |   OP_GET_LOCAL <index> |
+            |   GET_LOCAL <index> |
             |   - end scope -        |
             |   - begin scope -      |
 			|                        |
 			|   [ initializer* ]     | (this version of the initializer uses the saved value on the stack)
             |                        |
             | + [ increment ]        | (generated if increment is set)
-            | + OP_POP               |
+            | + POP               |
             |                        |
-            |   OP_LOOP -------------+
-            +-> OP_POP
+            |   LOOP -------------+
+            +-> POP
 
 				- end scope -
 
@@ -250,12 +251,12 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 			c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
 
-			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 			jumpFalseOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
 			// And the block inside another.
-			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 			c.block(s.Block.Stmts, stmt.Base.Pos)
 
 			util.PopList(&c.loopFlowPos)
@@ -273,14 +274,14 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			
 			if s.Increment != nil {
 				c.expression(*s.Increment)
-				c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+				c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 			}
 
-			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - conditionPos + 4)) // index
 
 			c.backpatch(jumpFalseOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpFalseOffsetIndex - 4)) // index
-			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 			
 			c.endScope(stmt.Base.Pos)
 		}
@@ -289,43 +290,43 @@ func (c *Compiler) statement(stmt ast.Statement) {
             Indefinite Loop
             Control Flow:
 
-            +-- OP_JUMP
-            |   OP_JUMP_FALSE --+ <- break/continue point
-            |   OP_POP          |
+            +-- JUMP
+            |   JUMP_FALSE --+ <- break/continue point
+            |   POP          |
             |                   |
             +-> [ block ] <-+   |
                             |   |
-                OP_LOOP ----+   |
-                OP_POP <--------+
+                LOOP ----+   |
+                POP <--------+
 
             continues...
 		*/
 		case ast.LoopStatement: {
-			c.writeBytePos(OP_JUMP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.JUMP, value.NewMetaLen1(stmt.Base.Pos))
 			jumpJumpOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
 
 			c.loopFlowPos = append(c.loopFlowPos, len(c.chunk.Code))
-			c.writeBytePos(OP_JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.JUMP_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 			jumpEndOffsetIndex := len(c.chunk.Code)
 			c.writeBytes(util.IntToBytes(0)) // dummy
-			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 
 			c.backpatch(jumpJumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpJumpOffsetIndex - 4)) // index
 
 			loopPos := len(c.chunk.Code)
 			c.block(s.Block.Stmts, stmt.Base.Pos)
 
-			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - loopPos + 4)) // index
 
 			util.PopList(&c.loopFlowPos)
 			c.backpatch(jumpEndOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpEndOffsetIndex - 4)) // index
-			c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 		}
 
 		case ast.BreakStatement: {
-			// We'll jump to OP_JUMP_FALSE, which jumps to the end of the loop.
+			// We'll jump to instructions.JUMP_FALSE, which jumps to the end of the loop.
 			// So, to do that, we'll push 'false' onto the stack and jump there,
 			// which will cause the instruction to break out of the loop.
 
@@ -334,9 +335,9 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				return
 			}
 
-			c.writeBytePos(OP_PUSH_FALSE, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.PUSH_FALSE, value.NewMetaLen1(stmt.Base.Pos))
 
-			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos[len(c.loopFlowPos)-1] + 4)) // index
 		}
 
@@ -348,9 +349,9 @@ func (c *Compiler) statement(stmt ast.Statement) {
 				return
 			}
 
-			c.writeBytePos(OP_PUSH_TRUE, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.PUSH_TRUE, value.NewMetaLen1(stmt.Base.Pos))
 
-			c.writeBytePos(OP_LOOP, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.LOOP, value.NewMetaLen1(stmt.Base.Pos))
 			c.writeBytes(util.IntToBytes(len(c.chunk.Code) - c.loopFlowPos[len(c.loopFlowPos)-1] + 4)) // index
 		}
 
@@ -358,10 +359,10 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			if s.Expression != nil {
 				c.expression(*s.Expression)
 			} else {
-				c.writeBytePos(OP_PUSH_VOID, value.NewMetaLen1(stmt.Base.Pos))
+				c.writeBytePos(instructions.PUSH_VOID, value.NewMetaLen1(stmt.Base.Pos))
 			}
 
-			c.writeBytePos(OP_RETURN, value.NewMetaLen1(stmt.Base.Pos))
+			c.writeBytePos(instructions.RETURN, value.NewMetaLen1(stmt.Base.Pos))
 		}
 
 		case ast.BlockStatement:
@@ -373,7 +374,7 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 			if reduced != nil {
 				c.expression(*reduced)
-				c.writeBytePos(OP_POP, value.NewMetaLen1(stmt.Base.Pos))
+				c.writeBytePos(instructions.POP, value.NewMetaLen1(stmt.Base.Pos))
 			}
 		}
 	}
