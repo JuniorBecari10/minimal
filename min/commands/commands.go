@@ -19,7 +19,7 @@ func Disasm(sourcePath string) {
 		fmt.Fprintf(os.Stderr, "Cannot read source file '%s'.", sourcePath)
 	}
 
-	
+	fmt.Println(source)
 }
 
 func Disasmb(bytecodePath string) {

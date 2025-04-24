@@ -2,6 +2,7 @@ package value
 
 import (
 	"bytes"
+	"io"
 	"encoding/binary"
 	"fmt"
 	"minlib/token"
@@ -25,7 +26,7 @@ func Deserialize(data []byte) Chunk {
 	chunk.Constants = make([]Value, constCount)
 	
 	for i := range chunk.Constants {
-		chunk.Constants[i] = deserializeValue(bytes.NewReader(buf.Bytes()))
+		chunk.Constants[i] = deserializeValue(buf)
 	}
 
 	// Read metadata
@@ -35,22 +36,14 @@ func Deserialize(data []byte) Chunk {
 	chunk.Metadata = make([]ChunkMetadata, metaCount)
 	
 	for i := range chunk.Metadata {
-		var line, col, length int32
-		
-		binary.Read(buf, binary.LittleEndian, &line)
-		binary.Read(buf, binary.LittleEndian, &col)
-		binary.Read(buf, binary.LittleEndian, &length)
-		
-		chunk.Metadata[i] = ChunkMetadata{
-			Position: token.Position{Line: int(line), Col: int(col)},
-			Length:   int(length),
-		}
+		chunk.Metadata[i] = readMetadata(buf)
 	}
 
 	return chunk
 }
 
-func deserializeValue(buf *bytes.Reader) Value {
+func deserializeValue(r io.Reader) Value {
+	buf := r.(*bytes.Buffer)
 	tag, _ := buf.ReadByte()
 
 	switch tag {
@@ -188,7 +181,9 @@ func deserializeValue(buf *bytes.Reader) Value {
 	}
 }
 
-func deserializeString(buf *bytes.Reader) string {
+func deserializeString(r io.Reader) string {
+	buf := r.(*bytes.Buffer)
+
 	var strlen int32
 	binary.Read(buf, binary.LittleEndian, &strlen)
 	
@@ -197,7 +192,9 @@ func deserializeString(buf *bytes.Reader) string {
 	
 	return string(strbytes)
 }
-func readChunk(buf *bytes.Reader) Chunk {
+func readChunk(r io.Reader) Chunk {
+	buf := r.(*bytes.Buffer)
+
 	var chunkLen int32
 	binary.Read(buf, binary.LittleEndian, &chunkLen)
 
@@ -206,7 +203,8 @@ func readChunk(buf *bytes.Reader) Chunk {
 
 	return Deserialize(chunkData)
 }
-func readMetadata(buf *bytes.Reader) ChunkMetadata {
+func readMetadata(r io.Reader) ChunkMetadata {
+	buf := r.(*bytes.Buffer)
 	var line, col, length int32
 
 	binary.Read(buf, binary.LittleEndian, &line)

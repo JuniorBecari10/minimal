@@ -26,7 +26,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "Usage: min <command> [argument]")
+	fmt.Fprintf(os.Stderr, "Usage: min <command> [argument]\n")
 	os.Exit(1)
 }
 
