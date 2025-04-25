@@ -79,7 +79,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 	switch inst {
 		// inst index value
-		case instructions.OP_PUSH_CONST: {
+		case instructions.PUSH_CONST: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -99,7 +99,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			)
 		}
 
-        case instructions.OP_GET_PROPERTY, instructions.OP_SET_PROPERTY: {
+        case instructions.GET_PROPERTY, instructions.SET_PROPERTY: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -113,7 +113,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
         }
 
 		// inst index value count + metadata
-		case instructions.OP_PUSH_CLOSURE: {
+		case instructions.PUSH_CLOSURE: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -160,11 +160,11 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst [int]
-		case instructions.OP_POPN_LOCAL,
-			instructions.OP_GET_LOCAL, instructions.OP_SET_LOCAL,
-			instructions.OP_GET_UPVALUE, instructions.OP_SET_UPVALUE,
-			instructions.OP_GET_GLOBAL, instructions.OP_SET_GLOBAL,
-			instructions.OP_CALL, instructions.OP_APPEND_METHODS: {
+		case instructions.POPN_LOCAL,
+			instructions.GET_LOCAL, instructions.SET_LOCAL,
+			instructions.GET_UPVALUE, instructions.SET_UPVALUE,
+			instructions.GET_GLOBAL, instructions.SET_GLOBAL,
+			instructions.CALL, instructions.APPEND_METHODS: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -175,7 +175,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst [int] [int]
-		case instructions.OP_CALL_PROPERTY: {
+		case instructions.CALL_PROPERTY: {
 			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -190,7 +190,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst amount result (add)
-		case instructions.OP_JUMP, instructions.OP_JUMP_TRUE, instructions.OP_JUMP_FALSE, instructions.OP_JUMP_HAS_NO_NEXT: {
+		case instructions.JUMP, instructions.JUMP_TRUE, instructions.JUMP_FALSE, instructions.JUMP_HAS_NO_NEXT: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
@@ -202,7 +202,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
 		// inst amount result (subtract)
-		case instructions.OP_LOOP: {
+		case instructions.LOOP: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 

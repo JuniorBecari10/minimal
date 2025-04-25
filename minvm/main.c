@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "util.h"
+#include "include/util.h"
 
 char *read_file(const char *path);
 
@@ -11,6 +11,7 @@ int main(int argc, char **argv) {
 
     char *file = read_file(argv[1]);
 
+    printf("%s\n", file);
     free(file);
     return 0;
 }
