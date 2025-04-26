@@ -65,7 +65,11 @@ func getInstructionName(inst byte) string {
 		case instructions.POP:
 			return "POP"
 		case instructions.POP_LOCAL:
+<<<<<<< HEAD
 			return ".LOCAL"
+=======
+			return "PLOCAL"
+>>>>>>> 0321b9a33c30ec12315fd30d0318b728aad97d9e
 		case instructions.POPN_LOCAL:
 			return "POPN_LOCAL"
 
