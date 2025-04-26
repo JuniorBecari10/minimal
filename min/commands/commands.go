@@ -2,9 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"min/disassembler"
 	"minlib/util"
 	"minlib/value"
+	"min/disassembler"
 	"os"
 )
 
@@ -17,6 +17,7 @@ func Disasm(sourcePath string) {
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot read source file '%s'.", sourcePath)
+		os.Exit(1)
 	}
 
 	fmt.Println(source)
@@ -27,6 +28,7 @@ func Disasmb(bytecodePath string) {
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot read bytecode file '%s'.", bytecode)
+		os.Exit(1)
 	}
 
 	chunk := value.Deserialize([]byte(bytecode))

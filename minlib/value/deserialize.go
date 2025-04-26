@@ -12,35 +12,46 @@ func Deserialize(data []byte) Chunk {
 	buf := bytes.NewBuffer(data)
 	chunk := Chunk{}
 
-	// Read code
-	var codeLen int32
-	
-	binary.Read(buf, binary.LittleEndian, &codeLen)
-	chunk.Code = make([]byte, codeLen)
-	buf.Read(chunk.Code)
-
-	// Read constants
-	var constCount int32
-	
-	binary.Read(buf, binary.LittleEndian, &constCount)
-	chunk.Constants = make([]Value, constCount)
-	
-	for i := range chunk.Constants {
-		chunk.Constants[i] = deserializeValue(buf)
-	}
-
-	// Read metadata
-	var metaCount int32
-	
-	binary.Read(buf, binary.LittleEndian, &metaCount)
-	chunk.Metadata = make([]ChunkMetadata, metaCount)
-	
-	for i := range chunk.Metadata {
-		chunk.Metadata[i] = readMetadata(buf)
-	}
+	readCode(buf, &chunk)
+	readConstants(buf, &chunk)
+	readMetadata(buf, &chunk)
 
 	return chunk
 }
+
+// ---
+
+func readCode(r io.Reader, chunk *Chunk) {
+	var codeLen int32
+	
+	binary.Read(r, binary.LittleEndian, &codeLen)
+	chunk.Code = make([]byte, codeLen)
+	r.Read(chunk.Code)
+}
+
+func readConstants(r io.Reader, chunk *Chunk) {
+	var constCount int32
+	
+	binary.Read(r, binary.LittleEndian, &constCount)
+	chunk.Constants = make([]Value, constCount)
+	
+	for i := range chunk.Constants {
+		chunk.Constants[i] = deserializeValue(r)
+	}
+}
+
+func readMetadata(r io.Reader, chunk *Chunk) {
+	var metaCount int32
+	
+	binary.Read(r, binary.LittleEndian, &metaCount)
+	chunk.Metadata = make([]ChunkMetadata, metaCount)
+	
+	for i := range chunk.Metadata {
+		chunk.Metadata[i] = deserializeMetadata(r)
+	}
+}
+
+// ---
 
 func deserializeValue(r io.Reader) Value {
 	buf := r.(*bytes.Buffer)
@@ -192,6 +203,7 @@ func deserializeString(r io.Reader) string {
 	
 	return string(strbytes)
 }
+
 func readChunk(r io.Reader) Chunk {
 	buf := r.(*bytes.Buffer)
 
@@ -203,7 +215,8 @@ func readChunk(r io.Reader) Chunk {
 
 	return Deserialize(chunkData)
 }
-func readMetadata(r io.Reader) ChunkMetadata {
+
+func deserializeMetadata(r io.Reader) ChunkMetadata {
 	buf := r.(*bytes.Buffer)
 	var line, col, length int32
 

@@ -7,32 +7,44 @@ import (
 )
 
 /*
-	File Structure:
-	[code len] [code] [constants len] [constants] [metadata len] [metadata]
+	File Structure (parts aren't separated by newlines):
+	
+	[code len] [code]
+	[constants len] [constants]
+	[metadata len] [metadata]
 */
 func (c *Chunk) Serialize() []byte {
 	buf := new(bytes.Buffer)
 
-	// Serialize Code
+	writeCode(buf, c)
+	writeConstants(buf, c)
+	writeMetadata(buf, c)
+
+	return buf.Bytes()
+}
+
+// ---
+
+func writeCode(buf *bytes.Buffer, c *Chunk) {
 	binary.Write(buf, binary.LittleEndian, int32(len(c.Code)))
 	buf.Write(c.Code)
+}
 
-	// Serialize Constants
+func writeConstants(buf *bytes.Buffer, c *Chunk) {
 	binary.Write(buf, binary.LittleEndian, int32(len(c.Constants)))
 	for _, v := range c.Constants {
 		serializeValue(buf, v)
 	}
+}
 
-	// Serialize Metadata
+func writeMetadata(buf *bytes.Buffer, c *Chunk) {
 	binary.Write(buf, binary.LittleEndian, int32(len(c.Metadata)))
 	for _, m := range c.Metadata {
-		binary.Write(buf, binary.LittleEndian, int32(m.Position.Line))
-		binary.Write(buf, binary.LittleEndian, int32(m.Position.Col))
-		binary.Write(buf, binary.LittleEndian, int32(m.Length))
+		serializeMetadata(buf, m)
 	}
-
-	return buf.Bytes()
 }
+
+// ---
 
 func serializeValue(buf *bytes.Buffer, v Value) {
 	switch val := v.(type) {
@@ -58,7 +70,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		case ValueVoid:
 			buf.WriteByte(5)
 
-		case *ValueFunction:
+		case ValueFunction:
 			buf.WriteByte(6)
 			binary.Write(buf, binary.LittleEndian, int32(val.Arity))
 
@@ -73,7 +85,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			binary.Write(buf, binary.LittleEndian, int32(len(chunkData)))
 			buf.Write(chunkData)
 
-		case *ValueClosure:
+		case ValueClosure:
 			buf.WriteByte(7)
 			serializeValue(buf, val.Fn)
 			
@@ -82,7 +94,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 				serializeUpvalue(buf, up)
 			}
 
-		case *ValueRange:
+		case ValueRange:
 			buf.WriteByte(8)
 			
 			binary.Write(buf, binary.LittleEndian, val.Start)
@@ -95,7 +107,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 				buf.WriteByte(0)
 			}
 
-		case *ValueRecord:
+		case ValueRecord:
 			buf.WriteByte(9)
 			
 			serializeString(buf, val.Name)
@@ -110,7 +122,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 				serializeValue(buf, &val.Methods[i])
 			}
 
-		case *ValueInstance:
+		case ValueInstance:
 			buf.WriteByte(10)
 			binary.Write(buf, binary.LittleEndian, int32(len(val.Fields)))
 			
@@ -120,7 +132,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			
 			serializeValue(buf, val.Record)
 
-		case *ValueBoundMethod:
+		case ValueBoundMethod:
 			buf.WriteByte(11)
 			
 			serializeValue(buf, val.Receiver)
@@ -128,6 +140,9 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 
 		// ValueNativeFunction cannot be serialized,
 		// but that's not a problem, because the VM needs to reimplement them
+
+		default:
+			panic(fmt.Sprintf("Unknown type: %T\n", v))
 	}
 }
 
@@ -156,3 +171,10 @@ func serializeUpvalue(buf *bytes.Buffer, up Upvalue) {
 		buf.WriteByte(0)
 	}
 }
+
+func serializeMetadata(buf *bytes.Buffer, m ChunkMetadata) {
+	binary.Write(buf, binary.LittleEndian, int32(m.Position.Line))
+	binary.Write(buf, binary.LittleEndian, int32(m.Position.Col))
+	binary.Write(buf, binary.LittleEndian, int32(m.Length))
+}
+
