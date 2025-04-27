@@ -58,8 +58,9 @@ func writeOutput(out io.Writer, data []byte) error {
 }
 
 // checks 'path' and returns a writer to either stdin, stdout or a file.
-func getOutputChannel(path string) (io.Writer, error) {
-	var out io.Writer
+// the caller must close the stream.
+func getOutputChannel(path string) (io.WriteCloser, error) {
+	var out io.WriteCloser
 
 	// check for special '*stdout' and '*stderr'
 	switch strings.ToLower(path) {
@@ -77,7 +78,6 @@ func getOutputChannel(path string) (io.Writer, error) {
 			}
 			
 			// TODO: handle closed file
-			defer file.Close()
 			out = file
 		}
 	}
@@ -88,6 +88,7 @@ func getOutputChannel(path string) (io.Writer, error) {
 // writes to the output file, which also treats '*stdout' as a special value for stdout, and '*stderr' for stderr.
 func WriteOutputFile(path string, data []byte) error {
 	out, err := getOutputChannel(path)
+	defer out.Close()
 
 	if err != nil {
 		return err
@@ -99,6 +100,7 @@ func WriteOutputFile(path string, data []byte) error {
 // writes to the output bytecode file, which also treats '*stdout' as a special value for stdout, and '*stderr' for stderr, and adds some specific things about the bytecode.
 func WriteBytecodeFile(path string, data []byte) error {
 	out, err := getOutputChannel(path)
+	defer out.Close()
 
 	if err != nil {
 		return err

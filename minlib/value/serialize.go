@@ -19,7 +19,7 @@ func (c *Chunk) Serialize() []byte {
 	writeCode(buf, c)
 	writeConstants(buf, c)
 	writeMetadata(buf, c)
-
+	
 	return buf.Bytes()
 }
 
@@ -48,21 +48,24 @@ func writeMetadata(buf *bytes.Buffer, c *Chunk) {
 
 func serializeValue(buf *bytes.Buffer, v Value) {
 	switch val := v.(type) {
-		case ValueNumber:
+		case ValueNumber: {
 			buf.WriteByte(1)
 			binary.Write(buf, binary.LittleEndian, val.Value)
+		}
 
-		case ValueString:
+		case ValueString: {
 			buf.WriteByte(2)
 			serializeString(buf, val.Value)
+		}
 
-		case ValueBool:
+		case ValueBool: {
 			buf.WriteByte(3)
 			if val.Value {
 				buf.WriteByte(1)
 			} else {
 				buf.WriteByte(0)
 			}
+		}
 
 		case ValueNil:
 			buf.WriteByte(4)
@@ -70,7 +73,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		case ValueVoid:
 			buf.WriteByte(5)
 
-		case ValueFunction:
+		case ValueFunction: {
 			buf.WriteByte(6)
 			binary.Write(buf, binary.LittleEndian, int32(val.Arity))
 
@@ -81,20 +84,21 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 				buf.WriteByte(0)
 			}
 
-			chunkData := val.Chunk.Serialize()
-			binary.Write(buf, binary.LittleEndian, int32(len(chunkData)))
-			buf.Write(chunkData)
+			buf.Write(val.Chunk.Serialize())
+		}
 
-		case ValueClosure:
+		case ValueClosure: {
 			buf.WriteByte(7)
 			serializeValue(buf, val.Fn)
 			
 			binary.Write(buf, binary.LittleEndian, int32(len(val.Upvalues)))
+			
 			for _, up := range val.Upvalues {
 				serializeUpvalue(buf, up)
 			}
+		}
 
-		case ValueRange:
+		case ValueRange: {
 			buf.WriteByte(8)
 			
 			binary.Write(buf, binary.LittleEndian, val.Start)
@@ -106,8 +110,9 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			} else {
 				buf.WriteByte(0)
 			}
+		}
 
-		case ValueRecord:
+		case ValueRecord: {
 			buf.WriteByte(9)
 			
 			serializeString(buf, val.Name)
@@ -121,8 +126,9 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			for i := range val.Methods {
 				serializeValue(buf, &val.Methods[i])
 			}
+		}
 
-		case ValueInstance:
+		case ValueInstance: {
 			buf.WriteByte(10)
 			binary.Write(buf, binary.LittleEndian, int32(len(val.Fields)))
 			
@@ -131,12 +137,14 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			}
 			
 			serializeValue(buf, val.Record)
+		}
 
-		case ValueBoundMethod:
+		case ValueBoundMethod: {
 			buf.WriteByte(11)
 			
 			serializeValue(buf, val.Receiver)
 			serializeValue(buf, &val.Method)
+		}
 
 		// ValueNativeFunction cannot be serialized,
 		// but that's not a problem, because the VM needs to reimplement them
