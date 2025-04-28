@@ -86,22 +86,19 @@ func deserializeValue(r io.Reader) Value {
 		
 		case 6: { // Function
 			var arity int32
-			
 			binary.Read(buf, binary.LittleEndian, &arity)
-			fchunk := readChunk(buf)
 
 			var hasName byte
-			
-			buf.ReadByte() // discard or check for error
 			hasName, _ = buf.ReadByte()
 			
 			var name *string
-			
 			if hasName != 0 {
 				s := deserializeString(buf)
 				name = &s
 			}
 			
+			fchunk := readChunk(buf)
+
 			return ValueFunction{Arity: int(arity), Chunk: fchunk, Name: name}
 		}
 
