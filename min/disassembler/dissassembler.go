@@ -28,17 +28,24 @@ func (d *Disassembler) Disassemble() {
 }
 
 func (d *Disassembler) disassemble(name string) {
-	fmt.Println(util.Center(fmt.Sprintf("- %s -", name), 66, " ")) // 66 = len("--------|-----------|--------|------------------|--------|--------")
+	const (
+		DASHES = "--------|-----------|--------|--------|------------------|--------|--------"
+	  	WIDTH = len(DASHES)
+  	)
+	
+	fmt.Println(util.Center(fmt.Sprintf("- %s -", name), WIDTH, " "))
 
 	if len(d.chunk.Code) == 0 {
-		fmt.Println(util.Center("function is empty.", 66, " "))
+		fmt.Println(util.Center("function is empty.", WIDTH, " "))
 		fmt.Println()
 		return
 	}
 
-	fmt.Println("--------|-----------|--------|--------|------------------|--------|--------")
+	fmt.Println(DASHES)
+	//           --------|-----------|--------|--------|------------------|--------|--------
 	fmt.Println(" offset | position  |  code  | length | instruction      | index  | result")
-	fmt.Println("--------|-----------|--------|--------|------------------|--------|--------")
+	//           --------|-----------|--------|--------|------------------|--------|--------
+	fmt.Println(DASHES)
 
 	for i := 0; !d.isAtEnd(); i++ {
 		ip := d.ip
@@ -82,7 +89,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 	switch inst {
 		// inst index value
 		case instructions.PUSH_CONST: {
-			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			index, _ := util.BytesToInt(d.chunk.Code[d.ip:d.ip + 4])
 			d.ip += 4
 
 			str := d.chunk.Constants[index].String()
