@@ -1,6 +1,7 @@
 package util
 
 import (
+	"hash/crc32"
 	"encoding/binary"
 	"fmt"
 	"minlib/token"
@@ -72,6 +73,12 @@ func Center(str string, width int, padChar string) string {
 
 	// Pad the string on both sides
 	return strings.Repeat(padChar, leftPadding) + str + strings.Repeat(" ", rightPadding)
+}
+
+// computeChecksum calculates the CRC32 checksum over the entire byte slice.
+func computeChecksum(data []byte) uint32 {
+    table := crc32.MakeTable(crc32.IEEE)
+    return crc32.Checksum(data, table)
 }
 
 func Error(pos token.Position, length int, message string, fileData *FileData) {

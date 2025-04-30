@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"strings"
@@ -77,7 +78,6 @@ func getOutputChannel(path string) (io.WriteCloser, error) {
 				return nil, err
 			}
 			
-			// TODO: handle closed file
 			out = file
 		}
 	}
@@ -106,7 +106,20 @@ func WriteBytecodeFile(path string, data []byte) error {
 		return err
 	}
 
-	// TODO: add header writing
+	buffer := new(bytes.Buffer)
 
-	return writeOutput(out, data)
+	buffer.Write([]byte(BYTECODE_HEADER))
+	err = writeOutput(buffer, data)
+	
+	if err != nil {
+		return err
+	}
+
+	_, err = buffer.Write(IntToBytes(int(computeChecksum(buffer.Bytes()))))
+	
+	if err != nil {
+		return err
+	}
+
+	return writeOutput(out, buffer.Bytes())
 }

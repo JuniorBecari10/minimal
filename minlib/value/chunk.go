@@ -11,7 +11,7 @@ type Chunk struct {
 
 type ChunkMetadata struct {
 	Position token.Position
-	Length int
+	Length uint32
 }
 
 func NewMetaLen1(pos token.Position) ChunkMetadata {

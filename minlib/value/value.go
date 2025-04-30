@@ -30,7 +30,7 @@ type ValueNil struct {}
 type ValueVoid struct {}
 
 type ValueFunction struct {
-	Arity int
+	Arity uint32
 	Chunk Chunk
 	Name *string // optional
 }
@@ -41,7 +41,7 @@ type ValueClosure struct {
 }
 
 type ValueNativeFn struct {
-	Arity int
+	Arity uint32
 	Fn NativeFn
 }
 

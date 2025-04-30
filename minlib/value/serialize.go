@@ -8,10 +8,18 @@ import (
 
 /*
 	File Structure (parts aren't separated by newlines):
-	
+
+	[header]
 	[code len] [code]
 	[constants len] [constants]
 	[metadata len] [metadata]
+	[footer]
+
+	Where [header] is:
+	"MNML"
+
+	Where [footer] is:
+	<checksum of the entire file, including [header]>
 */
 func (c *Chunk) Serialize() []byte {
 	buf := new(bytes.Buffer)
@@ -26,19 +34,19 @@ func (c *Chunk) Serialize() []byte {
 // ---
 
 func writeCode(buf *bytes.Buffer, c *Chunk) {
-	binary.Write(buf, binary.LittleEndian, int32(len(c.Code)))
+	binary.Write(buf, binary.LittleEndian, uint32(len(c.Code)))
 	buf.Write(c.Code)
 }
 
 func writeConstants(buf *bytes.Buffer, c *Chunk) {
-	binary.Write(buf, binary.LittleEndian, int32(len(c.Constants)))
+	binary.Write(buf, binary.LittleEndian, uint32(len(c.Constants)))
 	for _, v := range c.Constants {
 		serializeValue(buf, v)
 	}
 }
 
 func writeMetadata(buf *bytes.Buffer, c *Chunk) {
-	binary.Write(buf, binary.LittleEndian, int32(len(c.Metadata)))
+	binary.Write(buf, binary.LittleEndian, uint32(len(c.Metadata)))
 	for _, m := range c.Metadata {
 		serializeMetadata(buf, m)
 	}
@@ -75,7 +83,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 
 		case ValueFunction: {
 			buf.WriteByte(6)
-			binary.Write(buf, binary.LittleEndian, int32(val.Arity))
+			binary.Write(buf, binary.LittleEndian, val.Arity)
 
 			if val.Name != nil {
 				buf.WriteByte(1)
@@ -91,7 +99,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			buf.WriteByte(7)
 			serializeValue(buf, val.Fn)
 			
-			binary.Write(buf, binary.LittleEndian, int32(len(val.Upvalues)))
+			binary.Write(buf, binary.LittleEndian, uint32(len(val.Upvalues)))
 			
 			for _, up := range val.Upvalues {
 				serializeUpvalue(buf, up)
@@ -116,13 +124,13 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			buf.WriteByte(9)
 			
 			serializeString(buf, val.Name)
-			binary.Write(buf, binary.LittleEndian, int32(len(val.FieldNames)))
+			binary.Write(buf, binary.LittleEndian, uint32(len(val.FieldNames)))
 			
 			for _, f := range val.FieldNames {
 				serializeString(buf, f)
 			}
 			
-			binary.Write(buf, binary.LittleEndian, int32(len(val.Methods)))
+			binary.Write(buf, binary.LittleEndian, uint32(len(val.Methods)))
 			for i := range val.Methods {
 				serializeValue(buf, &val.Methods[i])
 			}
@@ -130,7 +138,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 
 		case ValueInstance: {
 			buf.WriteByte(10)
-			binary.Write(buf, binary.LittleEndian, int32(len(val.Fields)))
+			binary.Write(buf, binary.LittleEndian, uint32(len(val.Fields)))
 			
 			for _, f := range val.Fields {
 				serializeValue(buf, f)
@@ -155,7 +163,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 }
 
 func serializeString(buf *bytes.Buffer, s string) {
-	err := binary.Write(buf, binary.LittleEndian, int32(len(s)))
+	err := binary.Write(buf, binary.LittleEndian, uint32(len(s)))
 	if err != nil {
 		panic(fmt.Sprintf("failed to write string length: %v", err))
 	}
@@ -163,11 +171,11 @@ func serializeString(buf *bytes.Buffer, s string) {
 }
 
 func serializeUpvalue(buf *bytes.Buffer, up Upvalue) {
-	err := binary.Write(buf, binary.LittleEndian, int32(up.LocalsIndex))
+	err := binary.Write(buf, binary.LittleEndian, uint32(up.LocalsIndex))
 	if err != nil {
 		panic(fmt.Sprintf("failed to write upvalue LocalsIndex: %v", err))
 	}
-	err = binary.Write(buf, binary.LittleEndian, int32(up.Index))
+	err = binary.Write(buf, binary.LittleEndian, uint32(up.Index))
 	if err != nil {
 		panic(fmt.Sprintf("failed to write upvalue Index: %v", err))
 	}
@@ -181,8 +189,8 @@ func serializeUpvalue(buf *bytes.Buffer, up Upvalue) {
 }
 
 func serializeMetadata(buf *bytes.Buffer, m ChunkMetadata) {
-	binary.Write(buf, binary.LittleEndian, int32(m.Position.Line))
-	binary.Write(buf, binary.LittleEndian, int32(m.Position.Col))
-	binary.Write(buf, binary.LittleEndian, int32(m.Length))
+	binary.Write(buf, binary.LittleEndian, uint32(m.Position.Line))
+	binary.Write(buf, binary.LittleEndian, uint32(m.Position.Col))
+	binary.Write(buf, binary.LittleEndian, uint32(m.Length))
 }
 

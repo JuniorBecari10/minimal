@@ -70,8 +70,8 @@ const (
 )
 
 type Position struct {
-	Line int
-	Col  int
+	Line uint32
+	Col  uint32
 }
 
 type Token struct {

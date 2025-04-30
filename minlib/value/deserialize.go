@@ -25,7 +25,7 @@ func readChunk(r io.Reader) Chunk {
 // ---
 
 func readCode(r io.Reader, chunk *Chunk) {
-	var codeLen int32
+	var codeLen uint32
 	
 	binary.Read(r, binary.LittleEndian, &codeLen)
 	chunk.Code = make([]byte, codeLen)
@@ -33,7 +33,7 @@ func readCode(r io.Reader, chunk *Chunk) {
 }
 
 func readConstants(r io.Reader, chunk *Chunk) {
-	var constCount int32
+	var constCount uint32
 	
 	binary.Read(r, binary.LittleEndian, &constCount)
 	chunk.Constants = make([]Value, constCount)
@@ -44,7 +44,7 @@ func readConstants(r io.Reader, chunk *Chunk) {
 }
 
 func readMetadata(r io.Reader, chunk *Chunk) {
-	var metaCount int32
+	var metaCount uint32
 	
 	binary.Read(r, binary.LittleEndian, &metaCount)
 	chunk.Metadata = make([]ChunkMetadata, metaCount)
@@ -85,7 +85,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueVoid{}
 		
 		case 6: { // Function
-			var arity int32
+			var arity uint32
 			binary.Read(buf, binary.LittleEndian, &arity)
 
 			hasName, _ := buf.ReadByte()
@@ -97,7 +97,7 @@ func deserializeValue(r io.Reader) Value {
 			}
 			
 			fchunk := readChunk(buf)
-			return ValueFunction{Arity: int(arity), Chunk: fchunk, Name: name}
+			return ValueFunction{Arity: arity, Chunk: fchunk, Name: name}
 		}
 
 		case 7: { // Closure
@@ -133,7 +133,7 @@ func deserializeValue(r io.Reader) Value {
 
 		case 8: { // Record
 			name := deserializeString(buf)
-			var fieldCount int32
+			var fieldCount uint32
 			
 			binary.Read(buf, binary.LittleEndian, &fieldCount)
 			fields := make([]string, fieldCount)
@@ -142,7 +142,7 @@ func deserializeValue(r io.Reader) Value {
 				fields[i] = deserializeString(buf)
 			}
 			
-			var methodCount int32
+			var methodCount uint32
 			
 			binary.Read(buf, binary.LittleEndian, &methodCount)
 			methods := make([]ValueClosure, methodCount)
@@ -169,7 +169,7 @@ func deserializeValue(r io.Reader) Value {
 
 		case 10: { // Instance
 			record := deserializeValue(buf).(ValueRecord)
-			var fieldCount int32
+			var fieldCount uint32
 			
 			binary.Read(buf, binary.LittleEndian, &fieldCount)
 			fields := make([]Value, fieldCount)
@@ -196,7 +196,7 @@ func deserializeValue(r io.Reader) Value {
 func deserializeString(r io.Reader) string {
 	buf := r.(*bytes.Buffer)
 
-	var strlen int32
+	var strlen uint32
 	binary.Read(buf, binary.LittleEndian, &strlen)
 	
 	strbytes := make([]byte, strlen)
@@ -207,11 +207,11 @@ func deserializeString(r io.Reader) string {
 
 func deserializeMetadata(r io.Reader) ChunkMetadata {
 	buf := r.(*bytes.Buffer)
-	var line, col, length int32
+	var line, col, length uint32
 
 	binary.Read(buf, binary.LittleEndian, &line)
 	binary.Read(buf, binary.LittleEndian, &col)
 	binary.Read(buf, binary.LittleEndian, &length)
 	
-	return ChunkMetadata{Position: token.Position{Line: int(line), Col: int(col)}, Length: int(length)}
+	return ChunkMetadata{Position: token.Position{Line: uint32(line), Col: uint32(col)}, Length: uint32(length)}
 }
