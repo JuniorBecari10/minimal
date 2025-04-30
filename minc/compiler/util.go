@@ -110,7 +110,7 @@ func (c *Compiler) compileFunctionCompiler(fnCompiler *Compiler, parameters []as
 	}
 
 	function := value.ValueFunction{
-		Arity: len(parameters),
+		Arity: uint32(len(parameters)),
 		Chunk: fnChunk,
 		Name: name,
 	}
@@ -141,8 +141,7 @@ func (c *Compiler) compileFnBody(pos token.Position) (value.Chunk, bool) {
 	if len(c.chunk.Code) > 0 && c.chunk.Code[len(c.chunk.Code) - 1] != instructions.RETURN {
 		c.endScope(pos)
 
-		c.writeBytePos(instructions.PUSH_VOID, value.NewMetaLen1(pos))
-		c.writeBytePos(instructions.RETURN, value.NewMetaLen1(pos))
+		c.writeBytePos(instructions.RETURN_VOID, value.NewMetaLen1(pos))
 	}
 
 	return c.chunk, c.hadError
@@ -157,7 +156,7 @@ func (c *Compiler) identifier(token token.Token, expr ast.Expression) {
 
 	c.writeBytePos(byte(opcode), value.ChunkMetadata{
 		Position: expr.Base.Pos,
-		Length: expr.Base.Length,
+		Length: uint32(expr.Base.Length),
 	})
 	c.writeBytes(util.IntToBytes(index))
 }

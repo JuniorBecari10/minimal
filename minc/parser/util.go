@@ -88,12 +88,12 @@ func (p *Parser) requireSemicolon() {
 		if p.isAtEnd(0) {
 			p.rawError("Expected ';' after statement, but reached end.", 1, token.Position{
 				Line: p.peek(-1).Pos.Line,
-				Col: p.peek(-1).Pos.Col + len(p.peek(-1).Lexeme),
+				Col: p.peek(-1).Pos.Col + uint32(len(p.peek(-1).Lexeme)),
 			})
 		} else {
 			p.rawError(fmt.Sprintf("Expected ';' after statement, but got '%s' instead.", p.peek(0).Kind), 1, token.Position{
 				Line: p.peek(-1).Pos.Line,
-				Col: p.peek(-1).Pos.Col + len(p.peek(-1).Lexeme),
+				Col: p.peek(-1).Pos.Col + uint32(len(p.peek(-1).Lexeme)),
 			})
 		}
 		return

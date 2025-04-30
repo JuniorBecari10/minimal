@@ -83,10 +83,10 @@ func computeChecksum(data []byte) uint32 {
 
 func Error(pos token.Position, length int, message string, fileData *FileData) {
 	fmt.Printf("[-] Error: %s\n", message)
-	fmt.Printf(" | %s [-] %s (%d, %d)\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))), fileData.Name, pos.Line + 1, pos.Col + 1)
+	fmt.Printf(" | %s [-] %s (%d, %d)\n", strings.Repeat(" ", len(strconv.Itoa(int(pos.Line + 1)))), fileData.Name, pos.Line + 1, pos.Col + 1)
 	fmt.Printf(" |  %d | %s\n", pos.Line+1, fileData.Lines[pos.Line])
-	fmt.Printf(" | %s  | %s%s\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line+1))), strings.Repeat(" ", pos.Col), strings.Repeat("^", length))
-	fmt.Printf(" | %s [-]\n", strings.Repeat(" ", len(strconv.Itoa(pos.Line + 1))))
+	fmt.Printf(" | %s  | %s%s\n", strings.Repeat(" ", len(strconv.Itoa(int(pos.Line + 1)))), strings.Repeat(" ", int(pos.Col)), strings.Repeat("^", length))
+	fmt.Printf(" | %s [-]\n", strings.Repeat(" ", len(strconv.Itoa(int(pos.Line + 1)))))
 	fmt.Printf("[-]\n\n")
 }
 

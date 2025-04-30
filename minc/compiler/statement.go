@@ -358,11 +358,10 @@ func (c *Compiler) statement(stmt ast.Statement) {
 		case ast.ReturnStatement: {
 			if s.Expression != nil {
 				c.expression(*s.Expression)
+				c.writeBytePos(instructions.RETURN, value.NewMetaLen1(stmt.Base.Pos))
 			} else {
-				c.writeBytePos(instructions.PUSH_VOID, value.NewMetaLen1(stmt.Base.Pos))
+				c.writeBytePos(instructions.RETURN_VOID, value.NewMetaLen1(stmt.Base.Pos))
 			}
-
-			c.writeBytePos(instructions.RETURN, value.NewMetaLen1(stmt.Base.Pos))
 		}
 
 		case ast.BlockStatement:

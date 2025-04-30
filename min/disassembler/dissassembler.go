@@ -69,10 +69,10 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		" %s | %s %s | %s | %s | ",
 		util.PadLeft(strconv.Itoa(ip), 6, " "),
 
-		util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Position.Line + 1), 4, " "),
-		util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Position.Col + 1), 4, " "),
+		util.PadRight(strconv.Itoa(int(d.chunk.Metadata[ip].Position.Line + 1)), 4, " "),
+		util.PadRight(strconv.Itoa(int(d.chunk.Metadata[ip].Position.Col + 1)), 4, " "),
 
-		util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Length), 6, " "),
+		util.PadRight(strconv.Itoa(int(d.chunk.Metadata[ip].Length)), 6, " "),
 
 		util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
 	)
@@ -146,10 +146,10 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 					" %s | %s %s | %s | |%s | %s | %s\n",
 					util.PadLeft(strconv.Itoa(ip + 5 * (i + 1)), 6, " "),
 			
-					util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Position.Line + 1), 4, " "),
-					util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Position.Col + 1), 4, " "),
+					util.PadRight(strconv.Itoa(int(d.chunk.Metadata[ip].Position.Line + 1)), 4, " "),
+					util.PadRight(strconv.Itoa(int(d.chunk.Metadata[ip].Position.Col + 1)), 4, " "),
 
-					util.PadRight(strconv.Itoa(d.chunk.Metadata[ip].Length), 6, " "),
+					util.PadRight(strconv.Itoa(int(d.chunk.Metadata[ip].Length)), 6, " "),
 			
 					strings.Repeat(" ", MAX_INSTRUCTION_LENGTH - 1),
 
@@ -164,7 +164,8 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			instructions.GET_LOCAL, instructions.SET_LOCAL,
 			instructions.GET_UPVALUE, instructions.SET_UPVALUE,
 			instructions.GET_GLOBAL, instructions.SET_GLOBAL,
-			instructions.CALL, instructions.APPEND_METHODS: {
+			instructions.CALL, instructions.APPEND_METHODS,
+			instructions.EXIT: {
 			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 

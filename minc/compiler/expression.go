@@ -20,7 +20,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.writeBytePos(instructions.PUSH_CONST, value.ChunkMetadata{
 				Position: expr.Base.Pos,
-				Length: expr.Base.Length,
+				Length: uint32(expr.Base.Length),
 			})
 			c.writeBytes(util.IntToBytes(index))
 		}
@@ -36,12 +36,12 @@ func (c *Compiler) expression(expr ast.Expression) {
 			if e.Literal {
 				c.writeBytePos(instructions.PUSH_TRUE, value.ChunkMetadata{
 					Position: expr.Base.Pos,
-					Length: expr.Base.Length,
+					Length: uint32(expr.Base.Length),
 				})
 			} else {
 				c.writeBytePos(instructions.PUSH_FALSE, value.ChunkMetadata{
 					Position: expr.Base.Pos,
-					Length: expr.Base.Length,
+					Length: uint32(expr.Base.Length),
 				})
 			}
 		}
@@ -49,7 +49,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.NilExpression: {
 			c.writeBytePos(instructions.PUSH_NIL, value.ChunkMetadata{
 				Position: expr.Base.Pos,
-				Length: expr.Base.Length,
+				Length: uint32(expr.Base.Length),
 			})
 		}
 
@@ -59,13 +59,13 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 				c.writeBytePos(instructions.POP, value.ChunkMetadata{
 					Position: expr.Base.Pos,
-					Length: expr.Base.Length,
+					Length: uint32(expr.Base.Length),
 				})
 			}
 
 			c.writeBytePos(instructions.PUSH_VOID, value.ChunkMetadata{
 				Position: expr.Base.Pos,
-				Length: expr.Base.Length,
+				Length: uint32(expr.Base.Length),
 			})
 		}
 
@@ -105,20 +105,20 @@ func (c *Compiler) expression(expr ast.Expression) {
 				c.expression(e.Left)
 				c.writeBytePos(operation, value.ChunkMetadata{
 					Position: expr.Base.Pos,
-					Length: expr.Base.Length,
+					Length: uint32(expr.Base.Length),
 				})
 
 				jumpOffsetIndex := len(c.chunk.Code)
 				c.writeBytes(util.IntToBytes(0)) // dummy
 				c.writeBytePos(instructions.POP, value.ChunkMetadata{
 					Position: expr.Base.Pos,
-					Length: expr.Base.Length,
+					Length: uint32(expr.Base.Length),
 				})
 
 				c.expression(e.Right)
 				c.writeBytePos(instructions.ASSERT_BOOL, value.ChunkMetadata{
 					Position: expr.Base.Pos,
-					Length: expr.Base.Length,
+					Length: uint32(expr.Base.Length),
 				})
 
 				c.backpatch(jumpOffsetIndex, util.IntToBytes(len(c.chunk.Code) - jumpOffsetIndex - 4)) // index
@@ -128,7 +128,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 				c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
 					Position: e.Operator.Pos,
-					Length: len(e.Operator.Lexeme),
+					Length: uint32(len(e.Operator.Lexeme)),
 				})
 
 				switch e.Operator.Kind {
@@ -149,7 +149,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
 				Position: e.Operator.Pos,
-				Length: len(e.Operator.Lexeme),
+				Length: uint32(len(e.Operator.Lexeme)),
 			})
 
 			switch e.Operator.Kind {
@@ -195,7 +195,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
 				Position: e.Operator.Pos,
-				Length: len(e.Operator.Lexeme),
+				Length: uint32(len(e.Operator.Lexeme)),
 			})
 
 			switch e.Operator.Kind {
@@ -225,7 +225,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 					c.writeBytePos(instructions.CALL_PROPERTY, value.ChunkMetadata{
 						Position: callee.Property.Pos,
-						Length: len(callee.Property.Lexeme),
+						Length: uint32(len(callee.Property.Lexeme)),
 					})
 					c.writeBytes(util.IntToBytes(index))
 					c.writeBytes(util.IntToBytes(len(e.Arguments)))
@@ -240,7 +240,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 					c.writeBytePos(instructions.CALL, value.ChunkMetadata{
 						Position: expr.Base.Pos,
-						Length: expr.Base.Length,
+						Length: uint32(expr.Base.Length),
 					})
 					c.writeBytes(util.IntToBytes(len(e.Arguments)))
 				}
@@ -261,7 +261,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.writeBytePos(byte(opcode), value.ChunkMetadata{
 				Position: expr.Base.Pos,
-				Length: expr.Base.Length,
+				Length: uint32(expr.Base.Length),
 			})
 			c.writeBytes(util.IntToBytes(index))
 		}
@@ -309,7 +309,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.writeBytePos(instructions.GET_PROPERTY, value.ChunkMetadata{
 				Position: e.Property.Pos,
-				Length: len(e.Property.Lexeme),
+				Length: uint32(len(e.Property.Lexeme)),
 			})
 			c.writeBytes(util.IntToBytes(index))
 		}
@@ -324,7 +324,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.writeBytePos(instructions.SET_PROPERTY, value.ChunkMetadata{
 				Position: e.Property.Pos,
-				Length: len(e.Property.Lexeme),
+				Length: uint32(len(e.Property.Lexeme)),
 			})
 			c.writeBytes(util.IntToBytes(index))
 		}

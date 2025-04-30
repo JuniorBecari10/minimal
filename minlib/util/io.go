@@ -2,6 +2,8 @@ package util
 
 import (
 	"bytes"
+	"encoding/binary"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -44,12 +46,32 @@ func ReadBytecodeFile(path string) ([]byte, error) {
 	data, err := ReadSourceFile(path)
 
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
-	// TODO: add checks
+	if len(data) < 8 {
+		return nil, fmt.Errorf("File is too small to contain header and checksum")
+	}
 
-	return data, nil
+	// check header "MNML"
+	header := binary.LittleEndian.Uint32(data[:4])
+	expectedHeader := binary.LittleEndian.Uint32([]byte(BYTECODE_HEADER))
+
+	if header != expectedHeader {
+		return nil, fmt.Errorf("Invalid bytecode header")
+	}
+
+	// check checksum
+	content := data[:len(data) - 4]
+
+	checksum := binary.LittleEndian.Uint32(data[len(data) - 4:])
+	expectedChecksum := computeChecksum(content)
+
+	if checksum != expectedChecksum {
+		return nil, fmt.Errorf("Incorrect checksum")
+	}
+
+	return data[4:len(data) - 4], nil
 }
 
 // writes 'data' into 'out'.

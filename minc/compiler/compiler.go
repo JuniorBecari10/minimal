@@ -88,13 +88,14 @@ func (c *Compiler) Compile() (value.Chunk, bool) {
 
 	c.statements(c.ast)
 	c.callMain()
+	c.exitSuccess()
 
 	return c.chunk, c.hadError
 }
 
 // ---
 
-func (c *Compiler) statements(stmts []ast.Statement){
+func (c *Compiler) statements(stmts []ast.Statement) {
 	for _, stmt := range stmts {
 		if c.panicMode {
 			c.panicMode = false
@@ -116,7 +117,7 @@ func (c *Compiler) hoistTopLevel() {
 					initialized: false,
 				})
 			}
-			
+
 			case ast.FnStatement: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
@@ -188,21 +189,25 @@ func (c *Compiler) callMain() {
 
 			c.writeBytePos(instructions.GET_GLOBAL, value.ChunkMetadata{
 				Position: global.name.Pos,
-				Length: len(global.name.Lexeme),
+				Length: uint32(len(global.name.Lexeme)),
 			})
 
 			c.writeBytes(util.IntToBytes(i))
 
 			c.writeBytePos(instructions.CALL, value.ChunkMetadata{
 				Position: global.name.Pos,
-				Length: len(global.name.Lexeme),
+				Length: uint32(len(global.name.Lexeme)),
 			})
 			
 			c.writeBytes(util.IntToBytes(0))
-
 			return
 		}
 	}
 
 	c.errorNoBody("A main function wasn't found.")
 }
+
+func (c *Compiler) exitSuccess() {
+	c.writeBytePos(instructions.EXIT_SUCCESS, value.NewMetaLen1(token.Position{Line: 0, Col: 0}))
+}
+

@@ -55,8 +55,10 @@ const (
 	NEGATE
 
 	CALL
-	CALL_PROPERTY
+	CALL_PROPERTY // GET_PROPERTY + CALL
+
 	RETURN
+	RETURN_VOID // PUSH_VOID + RETURN
 
 	PUSH_TRUE
 	PUSH_FALSE
@@ -70,6 +72,9 @@ const (
 
     GET_NEXT
     ADVANCE
+
+	EXIT_SUCCESS
+	EXIT
 
 	// TODO: extend this to accept more types, if necessary
 	ASSERT_BOOL

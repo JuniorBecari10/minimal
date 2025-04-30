@@ -113,8 +113,11 @@ func getInstructionName(inst byte) string {
 			return "CALL"
 		case instructions.CALL_PROPERTY:
 			return "CALL_PROPERTY"
+		
 		case instructions.RETURN:
 			return "RETURN"
+		case instructions.RETURN_VOID:
+			return "RETURN_VOID"
 
 		case instructions.PUSH_TRUE:
 			return "PUSH_TRUE"
@@ -125,18 +128,11 @@ func getInstructionName(inst byte) string {
 			return "PUSH_NIL"
 		case instructions.PUSH_VOID:
 			return "PUSH_VOID"
-
-		case instructions.MAKE_RANGE:
-			return "MAKE_RANGE"
-		case instructions.MAKE_INCL_RANGE:
-			return "MAKE_INCL_RANGE"
-		case instructions.MAKE_ITERATOR:
-			return "MAKE_ITERATOR"
-
-        case instructions.GET_NEXT:
-            return "GET_NEXT"
-        case instructions.ADVANCE:
-            return "ADVANCE"
+		
+		case instructions.EXIT_SUCCESS:
+			return "EXIT_SUCCESS"
+		case instructions.EXIT:
+			return "EXIT"
 
 		case instructions.ASSERT_BOOL:
 			return "ASSERT_BOOL"

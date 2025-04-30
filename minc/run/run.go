@@ -31,7 +31,7 @@ func Compile(sourcePath, outputPath string) {
 		os.Exit(1)
 	}
 
-	if err := util.WriteOutputFile(outputPath, chunk.Serialize()); err != nil {
+	if err := util.WriteBytecodeFile(outputPath, chunk.Serialize()); err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing to output file '%s': %v\n", outputPath, err)
 		os.Exit(1)
 	}
