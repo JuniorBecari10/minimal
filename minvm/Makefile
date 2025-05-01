@@ -5,10 +5,10 @@ OUT := ../bin/minvm
 all: debug release
 
 debug:
-	gcc $(FILES) $(FLAGS) -o $(OUT)-debug -g -pedantic
+	gcc $(FILES) $(FLAGS) -o $(OUT)d -g -pedantic
 
 release:
-	gcc $(FILES) $(FLAGS) -o $(OUT)-release -Werror -O3 -pedantic-errors
+	gcc $(FILES) $(FLAGS) -o $(OUT)r -Werror -O3 -pedantic-errors
 
 clean:
 	-@rm -f $(OUT)-debug $(OUT)-release

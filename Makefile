@@ -36,13 +36,13 @@ clean:
 
 min: $(OUT)/min
 minc: $(OUT)/minc
-minvm: minvm-debug minvm-release
+minvm: minvmd minvmr
 
-minvm-debug:
+minvmd:
 	$(MAKE) -C minvm debug
 
-minvm-release:
+minvmr:
 	$(MAKE) -C minvm release
 
-.PHONY: all clean min minc minvm-debug minvm-release
+.PHONY: all clean min minc minvmd minvmr
 
