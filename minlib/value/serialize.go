@@ -188,7 +188,7 @@ func serializeUpvalue(buf *bytes.Buffer, up Upvalue) {
 	}
 }
 
-func serializeMetadata(buf *bytes.Buffer, m ChunkMetadata) {
+func serializeMetadata(buf *bytes.Buffer, m Metadata) {
 	binary.Write(buf, binary.LittleEndian, uint32(m.Position.Line))
 	binary.Write(buf, binary.LittleEndian, uint32(m.Position.Col))
 	binary.Write(buf, binary.LittleEndian, uint32(m.Length))

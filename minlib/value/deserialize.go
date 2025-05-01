@@ -47,7 +47,7 @@ func readMetadata(r io.Reader, chunk *Chunk) {
 	var metaCount uint32
 	
 	binary.Read(r, binary.LittleEndian, &metaCount)
-	chunk.Metadata = make([]ChunkMetadata, metaCount)
+	chunk.Metadata = make([]Metadata, metaCount)
 	
 	for i := range chunk.Metadata {
 		chunk.Metadata[i] = deserializeMetadata(r)
@@ -205,7 +205,7 @@ func deserializeString(r io.Reader) string {
 	return string(strbytes)
 }
 
-func deserializeMetadata(r io.Reader) ChunkMetadata {
+func deserializeMetadata(r io.Reader) Metadata {
 	buf := r.(*bytes.Buffer)
 	var line, col, length uint32
 
@@ -213,5 +213,5 @@ func deserializeMetadata(r io.Reader) ChunkMetadata {
 	binary.Read(buf, binary.LittleEndian, &col)
 	binary.Read(buf, binary.LittleEndian, &length)
 	
-	return ChunkMetadata{Position: token.Position{Line: uint32(line), Col: uint32(col)}, Length: uint32(length)}
+	return Metadata{Position: token.Position{Line: uint32(line), Col: uint32(col)}, Length: uint32(length)}
 }

@@ -18,7 +18,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.NumberExpression: {
 			index := c.addConstant(value.ValueNumber{ Value: e.Literal })
 
-			c.writeBytePos(instructions.PUSH_CONST, value.ChunkMetadata{
+			c.writeBytePos(instructions.PUSH_CONST, value.Metadata{
 				Position: expr.Base.Pos,
 				Length: uint32(expr.Base.Length),
 			})
@@ -34,12 +34,12 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 		case ast.BoolExpression: {
 			if e.Literal {
-				c.writeBytePos(instructions.PUSH_TRUE, value.ChunkMetadata{
+				c.writeBytePos(instructions.PUSH_TRUE, value.Metadata{
 					Position: expr.Base.Pos,
 					Length: uint32(expr.Base.Length),
 				})
 			} else {
-				c.writeBytePos(instructions.PUSH_FALSE, value.ChunkMetadata{
+				c.writeBytePos(instructions.PUSH_FALSE, value.Metadata{
 					Position: expr.Base.Pos,
 					Length: uint32(expr.Base.Length),
 				})
@@ -47,7 +47,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		}
 
 		case ast.NilExpression: {
-			c.writeBytePos(instructions.PUSH_NIL, value.ChunkMetadata{
+			c.writeBytePos(instructions.PUSH_NIL, value.Metadata{
 				Position: expr.Base.Pos,
 				Length: uint32(expr.Base.Length),
 			})
@@ -57,13 +57,13 @@ func (c *Compiler) expression(expr ast.Expression) {
 			if e.Expr != nil {
 				c.expression(*e.Expr)
 
-				c.writeBytePos(instructions.POP, value.ChunkMetadata{
+				c.writeBytePos(instructions.POP, value.Metadata{
 					Position: expr.Base.Pos,
 					Length: uint32(expr.Base.Length),
 				})
 			}
 
-			c.writeBytePos(instructions.PUSH_VOID, value.ChunkMetadata{
+			c.writeBytePos(instructions.PUSH_VOID, value.Metadata{
 				Position: expr.Base.Pos,
 				Length: uint32(expr.Base.Length),
 			})
@@ -103,20 +103,20 @@ func (c *Compiler) expression(expr ast.Expression) {
 				}
 
 				c.expression(e.Left)
-				c.writeBytePos(operation, value.ChunkMetadata{
+				c.writeBytePos(operation, value.Metadata{
 					Position: expr.Base.Pos,
 					Length: uint32(expr.Base.Length),
 				})
 
 				jumpOffsetIndex := len(c.chunk.Code)
 				c.writeBytes(util.IntToBytes(0)) // dummy
-				c.writeBytePos(instructions.POP, value.ChunkMetadata{
+				c.writeBytePos(instructions.POP, value.Metadata{
 					Position: expr.Base.Pos,
 					Length: uint32(expr.Base.Length),
 				})
 
 				c.expression(e.Right)
-				c.writeBytePos(instructions.ASSERT_BOOL, value.ChunkMetadata{
+				c.writeBytePos(instructions.ASSERT_BOOL, value.Metadata{
 					Position: expr.Base.Pos,
 					Length: uint32(expr.Base.Length),
 				})
@@ -126,7 +126,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 				c.expression(e.Left)
 				c.expression(e.Right)
 
-				c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
+				c.chunk.Metadata = append(c.chunk.Metadata, value.Metadata{
 					Position: e.Operator.Pos,
 					Length: uint32(len(e.Operator.Lexeme)),
 				})
@@ -147,7 +147,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			c.expression(e.Left)
 			c.expression(e.Right)
 
-			c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
+			c.chunk.Metadata = append(c.chunk.Metadata, value.Metadata{
 				Position: e.Operator.Pos,
 				Length: uint32(len(e.Operator.Lexeme)),
 			})
@@ -193,7 +193,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 		case ast.UnaryExpression: {
 			c.expression(e.Operand)
 
-			c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{
+			c.chunk.Metadata = append(c.chunk.Metadata, value.Metadata{
 				Position: e.Operator.Pos,
 				Length: uint32(len(e.Operator.Lexeme)),
 			})
@@ -223,7 +223,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 					// Store the name as a string in the constant table and retrieve it later.
 					index := c.addConstant(value.ValueString{ Value: callee.Property.Lexeme })
 
-					c.writeBytePos(instructions.CALL_PROPERTY, value.ChunkMetadata{
+					c.writeBytePos(instructions.CALL_PROPERTY, value.Metadata{
 						Position: callee.Property.Pos,
 						Length: uint32(len(callee.Property.Lexeme)),
 					})
@@ -238,7 +238,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 						c.expression(arg)
 					}
 
-					c.writeBytePos(instructions.CALL, value.ChunkMetadata{
+					c.writeBytePos(instructions.CALL, value.Metadata{
 						Position: expr.Base.Pos,
 						Length: uint32(expr.Base.Length),
 					})
@@ -259,7 +259,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 			c.expression(e.Expr)
 
-			c.writeBytePos(byte(opcode), value.ChunkMetadata{
+			c.writeBytePos(byte(opcode), value.Metadata{
 				Position: expr.Base.Pos,
 				Length: uint32(expr.Base.Length),
 			})
@@ -295,7 +295,7 @@ func (c *Compiler) expression(expr ast.Expression) {
                 opcode = instructions.MAKE_INCL_RANGE
             }
 
-			c.writeBytePos(opcode, value.ChunkMetadata{
+			c.writeBytePos(opcode, value.Metadata{
                 Position: expr.Base.Pos,
                 Length: 2,
             })
@@ -307,7 +307,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			// Store the name as a string in the constant table and retrieve it later.
 			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
 
-			c.writeBytePos(instructions.GET_PROPERTY, value.ChunkMetadata{
+			c.writeBytePos(instructions.GET_PROPERTY, value.Metadata{
 				Position: e.Property.Pos,
 				Length: uint32(len(e.Property.Lexeme)),
 			})
@@ -322,7 +322,7 @@ func (c *Compiler) expression(expr ast.Expression) {
 			// The value to be assigned will be on top of the object we'll assign it to.
 			index := c.addConstant(value.ValueString{ Value: e.Property.Lexeme })
 
-			c.writeBytePos(instructions.SET_PROPERTY, value.ChunkMetadata{
+			c.writeBytePos(instructions.SET_PROPERTY, value.Metadata{
 				Position: e.Property.Pos,
 				Length: uint32(len(e.Property.Lexeme)),
 			})

@@ -10,8 +10,7 @@ int main(int argc, char **argv) {
 
     size_t size;
     char *file = read_file(argv[1], &size);
-    printf("%d, %.*s\n", (int) size, (int) size, file);
-    
+	
     free(file);
     return 0;
 }

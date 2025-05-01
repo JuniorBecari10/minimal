@@ -187,14 +187,14 @@ func (c *Compiler) callMain() {
 			// check if it's a function
 			// in the meanwhile, this error will be caught at runtime
 
-			c.writeBytePos(instructions.GET_GLOBAL, value.ChunkMetadata{
+			c.writeBytePos(instructions.GET_GLOBAL, value.Metadata{
 				Position: global.name.Pos,
 				Length: uint32(len(global.name.Lexeme)),
 			})
 
 			c.writeBytes(util.IntToBytes(i))
 
-			c.writeBytePos(instructions.CALL, value.ChunkMetadata{
+			c.writeBytePos(instructions.CALL, value.Metadata{
 				Position: global.name.Pos,
 				Length: uint32(len(global.name.Lexeme)),
 			})

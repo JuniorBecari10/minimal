@@ -154,7 +154,7 @@ func (c *Compiler) identifier(token token.Token, expr ast.Expression) {
 		return
 	}
 
-	c.writeBytePos(byte(opcode), value.ChunkMetadata{
+	c.writeBytePos(byte(opcode), value.Metadata{
 		Position: expr.Base.Pos,
 		Length: uint32(expr.Base.Length),
 	})
@@ -165,7 +165,7 @@ func (c *Compiler) writeByte(b byte) {
 	c.chunk.Code = append(c.chunk.Code, b)
 }
 
-func (c *Compiler) writeBytePos(b byte, meta value.ChunkMetadata) {
+func (c *Compiler) writeBytePos(b byte, meta value.Metadata) {
 	c.chunk.Metadata = append(c.chunk.Metadata, meta)
 	c.chunk.Code = append(c.chunk.Code, b)
 }
@@ -175,7 +175,7 @@ func (c *Compiler) writeBytes(bytes []byte) {
 
 	// append dummy positions in the positions array
 	for range len(bytes) {
-		c.chunk.Metadata = append(c.chunk.Metadata, value.ChunkMetadata{})
+		c.chunk.Metadata = append(c.chunk.Metadata, value.Metadata{})
 	}
 }
 

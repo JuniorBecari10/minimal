@@ -15,5 +15,7 @@
         return x;                                   \
     } while (0)
 
+#define MACRO_CONCAT(X, Y) X ## Y
+
 #endif
 

@@ -6,16 +6,16 @@ type Chunk struct {
 	Code      []byte
 	Constants []Value
 
-	Metadata []ChunkMetadata
+	Metadata []Metadata
 }
 
-type ChunkMetadata struct {
+type Metadata struct {
 	Position token.Position
 	Length uint32
 }
 
-func NewMetaLen1(pos token.Position) ChunkMetadata {
-	return ChunkMetadata{
+func NewMetaLen1(pos token.Position) Metadata {
+	return Metadata{
 		Position: pos,
 		Length: 1,
 	}

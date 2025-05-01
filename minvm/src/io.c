@@ -20,31 +20,10 @@ char *read_file(const char *path, size_t *size) {
             ERROR_RET_X("Cannot read file.", NULL);
     }
 
-    // Determine if file is seekable (not stdin)
-    bool is_seekable = (file != stdin);
-
     size_t file_size = 0;
     char *buffer = NULL;
 
-    if (is_seekable) {
-        fseek(file, 0L, SEEK_END);
-        file_size = ftell(file);
-        rewind(file);
-
-        buffer = (char *) malloc(file_size + 1);
-        
-        if (!buffer)
-            ERROR_RET_X("Memory allocation failed.", NULL);
-
-        size_t bytes_read = fread(buffer, 1, file_size, file);
-        buffer[bytes_read] = '\0';
-
-        *size = bytes_read;
-        fclose(file);
-    }
-
-    else {
-        // Read from non-seekable stream (stdin or stdout)
+	if (file == stdin) {
         size_t capacity = 1024;
         size_t length = 0;
         
@@ -74,6 +53,23 @@ char *read_file(const char *path, size_t *size) {
         
         buffer[length] = '\0';
         *size = length;
+	} 
+	
+	else {
+        fseek(file, 0L, SEEK_END);
+        file_size = ftell(file);
+        rewind(file);
+
+        buffer = (char *) malloc(file_size + 1);
+        
+        if (!buffer)
+            ERROR_RET_X("Memory allocation failed.", NULL);
+
+        size_t bytes_read = fread(buffer, 1, file_size, file);
+        buffer[bytes_read] = '\0';
+
+        *size = bytes_read;
+        fclose(file);
     }
 
     return buffer;

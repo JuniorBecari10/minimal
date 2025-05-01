@@ -5,7 +5,6 @@ typedef double float64;
 
 typedef enum {
 	VALUE_NUMBER,
-	VALUE_STRING,
 	VALUE_BOOL,
 	VALUE_NIL,
 	VALUE_VOID,
@@ -16,7 +15,7 @@ typedef struct {
 	union {
 		float64 number;
 		bool boolean;
-
+		
 	} as;
 } Value;
 
