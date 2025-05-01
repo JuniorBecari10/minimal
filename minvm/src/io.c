@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 // returns NULL if error.
-char *read_file(const char *path) {
+char *read_file(const char *path, size_t *size) {
     FILE *file = NULL;
 
     if (strcasecmp(path, "*stdin") == 0)
@@ -39,6 +39,7 @@ char *read_file(const char *path) {
         size_t bytes_read = fread(buffer, 1, file_size, file);
         buffer[bytes_read] = '\0';
 
+        *size = bytes_read;
         fclose(file);
     }
 
@@ -69,9 +70,10 @@ char *read_file(const char *path) {
             buffer[length++] = (char) c;
         }
 
+        // Don't close stdin.
+        
         buffer[length] = '\0';
-
-        // Don't close stdin or stdout
+        *size = length;
     }
 
     return buffer;
