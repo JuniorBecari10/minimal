@@ -3,11 +3,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <stdbool.h>
 
+#define HEADER "MNML"
+#define HEADER_LEN 4
+#define CHECKSUM_LEN HEADER_LEN
+
 // returns NULL if error.
-char *read_file(const char *path, size_t *size) {
+char *read_file(const char *path, size_t *output_len) {
     FILE *file = NULL;
 
     if (strcasecmp(path, "*stdin") == 0)
@@ -52,7 +57,7 @@ char *read_file(const char *path, size_t *size) {
         // Don't close stdin.
         
         buffer[length] = '\0';
-        *size = length;
+        *output_len = length;
 	} 
 	
 	else {
@@ -68,10 +73,24 @@ char *read_file(const char *path, size_t *size) {
         size_t bytes_read = fread(buffer, 1, file_size, file);
         buffer[bytes_read] = '\0';
 
-        *size = bytes_read;
+        *output_len = bytes_read;
         fclose(file);
     }
 
     return buffer;
+}
+
+bool check_validity(char *file, size_t len) {
+	uint32_t checksum = compute_checksum((uint8_t *) file, len - HEADER_LEN);
+	char checksum_bytes[4] = {
+		checksum       & 0xFF,
+		checksum >> 8  & 0xFF,
+		checksum >> 16 & 0xFF,
+		checksum >> 24 & 0xFF,
+	};
+
+	return len > HEADER_LEN + CHECKSUM_LEN
+		&& strncmp(file, HEADER, HEADER_LEN) == 0
+		&& strncmp(file + len - CHECKSUM_LEN, checksum_bytes, CHECKSUM_LEN);
 }
 

@@ -2,12 +2,12 @@
 #define LISTS_H
 
 #include "token.h"
-
-#define INTERNAL_TYPE Position
 #include "list.h"
+#include "value.h"
 
-#define INTERNAL_TYPE Metadata
-#include "list.h"
+DEFINE_LIST(Position);
+DEFINE_LIST(Metadata);
+DEFINE_LIST(Value);
 
 #endif
 
