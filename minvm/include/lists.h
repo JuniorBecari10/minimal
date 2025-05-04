@@ -10,4 +10,3 @@ DEFINE_LIST(Metadata);
 DEFINE_LIST(Value);
 
 #endif
-

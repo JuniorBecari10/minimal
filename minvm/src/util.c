@@ -28,4 +28,3 @@ inline static void make_crc32_table(uint32_t *table) {
         table[i] = crc;
     }
 }
-

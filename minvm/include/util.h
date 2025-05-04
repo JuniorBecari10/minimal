@@ -23,4 +23,3 @@
 uint32_t compute_checksum(uint8_t *data, size_t length);
 
 #endif
-

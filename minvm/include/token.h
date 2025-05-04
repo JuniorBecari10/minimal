@@ -9,4 +9,3 @@ typedef struct {
 	Position position;
 	uint32_t length;
 } Metadata;
-

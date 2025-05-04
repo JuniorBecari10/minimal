@@ -93,4 +93,3 @@ bool check_validity(char *file, size_t len) {
 		&& strncmp(file, HEADER, HEADER_LEN) == 0
 		&& strncmp(file + len - CHECKSUM_LEN, checksum_bytes, CHECKSUM_LEN);
 }
-

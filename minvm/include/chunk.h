@@ -2,8 +2,7 @@
 #include <stdint.h>
 
 typedef struct {
-	char *code;
+	uint8_t *code;
 	List_Value constants;
 	List_Metadata metadata;
 } Chunk;
-

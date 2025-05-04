@@ -19,7 +19,7 @@ typedef struct {
 	} as;
 } Value;
 
-#define NUMBER_VAL(value) ((Value){VALUE_NUMBER, {.number = value}})
+#define NEW_NUMBER(value) ((Value){VALUE_NUMBER, {.number = value}})
+#define NEW_BOOL(value) ((Value){VALUE_BOOL, {.boolean = value}})
 
 #endif
-
