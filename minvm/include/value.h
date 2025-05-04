@@ -35,10 +35,10 @@ typedef struct {
 #define AS_VOID NEW_VOID
 #define AS_OBJECT(value) ((value).as.obj)
 
-#define NEW_NUMBER(value) ((Value){VALUE_NUMBER, {.number = value}})
-#define NEW_BOOL(value) ((Value){VALUE_BOOL, {.boolean = value}})
-#define NEW_NIL ((Value){VALUE_NIL})
-#define NEW_VOID ((Value){VALUE_VOID})
-#define NEW_OBJECT(value) ((Value){VALUE_OBJ, {.obj = (Object *) value}})
+#define NEW_NUMBER(value) ((Value) {VALUE_NUMBER, {.number = value}})
+#define NEW_BOOL(value) ((Value) {VALUE_BOOL, {.boolean = value}})
+#define NEW_NIL ((Value) {VALUE_NIL})
+#define NEW_VOID ((Value) {VALUE_VOID})
+#define NEW_OBJECT(value) ((Value) {VALUE_OBJ, {.obj = (Object *) value}})
 
 #endif
