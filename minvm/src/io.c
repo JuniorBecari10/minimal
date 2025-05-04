@@ -12,7 +12,7 @@
 #define CHECKSUM_LEN HEADER_LEN
 
 // returns NULL if error.
-char *read_file(const char *path, size_t *output_len) {
+uint8_t *read_file(const uint8_t *path, size_t *output_len) {
     FILE *file = NULL;
 
     if (strcasecmp(path, "*stdin") == 0)
@@ -26,22 +26,22 @@ char *read_file(const char *path, size_t *output_len) {
     }
 
     size_t file_size = 0;
-    char *buffer = NULL;
+    uint8_t *buffer = NULL;
 
 	if (file == stdin) {
         size_t capacity = 1024;
         size_t length = 0;
         
-        buffer = (char *) malloc(capacity);
+        buffer = (uint8_t *) malloc(capacity);
         
         if (!buffer)
             ERROR_RET_X("Memory allocation failed.", NULL);
 
-        char c;
+        uint8_t c;
         while ((c = fgetc(file)) != EOF) {
             if (length + 1 >= capacity) {
                 capacity *= 2;
-                char *newBuffer = realloc(buffer, capacity);
+                uint8_t *newBuffer = realloc(buffer, capacity);
                 
                 if (!newBuffer) {
                     free(buffer);
@@ -51,7 +51,7 @@ char *read_file(const char *path, size_t *output_len) {
                 buffer = newBuffer;
             }
 
-            buffer[length++] = (char) c;
+            buffer[length++] = (uint8_t) c;
         }
 
         // Don't close stdin.
@@ -65,7 +65,7 @@ char *read_file(const char *path, size_t *output_len) {
         file_size = ftell(file);
         rewind(file);
 
-        buffer = (char *) malloc(file_size + 1);
+        buffer = (uint8_t *) malloc(file_size + 1);
         
         if (!buffer)
             ERROR_RET_X("Memory allocation failed.", NULL);
@@ -80,9 +80,9 @@ char *read_file(const char *path, size_t *output_len) {
     return buffer;
 }
 
-bool check_validity(char *file, size_t len) {
+bool check_validity(uint8_t *file, size_t len) {
 	uint32_t checksum = compute_checksum((uint8_t *) file, len - HEADER_LEN);
-	char checksum_bytes[4] = {
+	uint8_t checksum_bytes[4] = {
 		checksum       & 0xFF,
 		checksum >> 8  & 0xFF,
 		checksum >> 16 & 0xFF,
