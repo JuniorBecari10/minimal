@@ -20,6 +20,6 @@
 
 #define MACRO_CONCAT(X, Y) X ## Y
 
-uint32_t compute_checksum(uint8_t *data, size_t length);
+uint32_t compute_checksum(const uint8_t *data, size_t length);
 
 #endif

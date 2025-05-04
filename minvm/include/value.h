@@ -1,9 +1,13 @@
 #ifndef VALUE_H
 #define VALUE_H
 
-#include "object.h"
+#include <stdbool.h>
 
 typedef double float64;
+
+// defined in 'object.h', but cannot import it because of cyclic references
+struct Object;
+typedef struct Object Object;
 
 typedef enum {
 	VALUE_NUMBER,
@@ -40,5 +44,7 @@ typedef struct {
 #define NEW_NIL ((Value) {VALUE_NIL})
 #define NEW_VOID ((Value) {VALUE_VOID})
 #define NEW_OBJECT(value) ((Value) {VALUE_OBJ, {.obj = (Object *) value}})
+
+void free_value(Value *v);
 
 #endif

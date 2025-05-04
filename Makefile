@@ -38,10 +38,10 @@ min: $(OUT)/min
 minc: $(OUT)/minc
 minvm: minvmd minvmr
 
-minvmd:
+minvmd: $(OUT)
 	$(MAKE) -C minvm debug
 
-minvmr:
+minvmr: $(OUT)
 	$(MAKE) -C minvm release
 
 .PHONY: all clean min minc minvmd minvmr

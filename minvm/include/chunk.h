@@ -6,3 +6,5 @@ typedef struct {
 	List_Value constants;
 	List_Metadata metadata;
 } Chunk;
+
+void free_chunk(Chunk *c);

@@ -1,7 +1,10 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-inline bool is_obj_type(Value value, ObjType type);
+#include "value.h"
+
+#include <stdbool.h>
+#include <stddef.h>
 
 typedef enum {
     OBJ_STRING,
@@ -11,6 +14,8 @@ typedef struct Object {
     ObjType type;
     struct Object *next;
 } Object;
+
+inline bool is_obj_type(Value value, ObjType type);
 
 typedef struct {
     Object obj;

@@ -7,12 +7,8 @@
 #include <strings.h>
 #include <stdbool.h>
 
-#define HEADER "MNML"
-#define HEADER_LEN 4
-#define CHECKSUM_LEN HEADER_LEN
-
 // returns NULL if error.
-uint8_t *read_file(const uint8_t *path, size_t *output_len) {
+uint8_t *read_file(const char *path, size_t *output_len) {
     FILE *file = NULL;
 
     if (strcasecmp(path, "*stdin") == 0)
@@ -37,7 +33,7 @@ uint8_t *read_file(const uint8_t *path, size_t *output_len) {
         if (!buffer)
             ERROR_RET_X("Memory allocation failed.", NULL);
 
-        uint8_t c;
+        char c;
         while ((c = fgetc(file)) != EOF) {
             if (length + 1 >= capacity) {
                 capacity *= 2;
@@ -80,8 +76,8 @@ uint8_t *read_file(const uint8_t *path, size_t *output_len) {
     return buffer;
 }
 
-bool check_validity(uint8_t *file, size_t len) {
-	uint32_t checksum = compute_checksum((uint8_t *) file, len - HEADER_LEN);
+bool check_validity(const uint8_t *buffer, size_t len) {
+	uint32_t checksum = compute_checksum(buffer, len - HEADER_LEN);
 	uint8_t checksum_bytes[4] = {
 		checksum       & 0xFF,
 		checksum >> 8  & 0xFF,
@@ -90,6 +86,6 @@ bool check_validity(uint8_t *file, size_t len) {
 	};
 
 	return len > HEADER_LEN + CHECKSUM_LEN
-		&& strncmp(file, HEADER, HEADER_LEN) == 0
-		&& strncmp(file + len - CHECKSUM_LEN, checksum_bytes, CHECKSUM_LEN);
+		&& strncmp((char *) buffer, HEADER, HEADER_LEN) == 0
+		&& strncmp(((char *) buffer) + len - CHECKSUM_LEN, (char *) checksum_bytes, CHECKSUM_LEN) == 0;
 }

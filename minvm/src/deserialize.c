@@ -1,4 +1,6 @@
-#include "../include/deserialize.h"
+#include "deserialize.h"
+#include "value.h"
+#include "io.h"
 
 #include <stdio.h>
 
@@ -14,13 +16,12 @@ static bool read_uint32(const uint8_t *buffer, size_t len, size_t *counter, uint
 static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, float64 *out);
 
 bool deserialize(const uint8_t *buffer, size_t len, Chunk *out) {
-    Chunk chunk;
-    size_t counter = 0;
+    size_t counter = HEADER_LEN; // to skip the header
 
     TRY(read_code(buffer, len, out, &counter));
     TRY(read_constants(buffer, len, out, &counter));
+    printf("constants ok\n");
 
-    *out = chunk;
     return true;
 }
 
@@ -112,7 +113,7 @@ static bool read_uint32(const uint8_t *buffer, size_t len, size_t *counter, uint
     if (*counter + 4 > len) return false;
 
     *out = ((uint32_t)buffer[*counter])           |
-           ((uint32_t)buffer[*counter + 1] << 8 ) |
+           ((uint32_t)buffer[*counter + 1] << 8)  |
            ((uint32_t)buffer[*counter + 2] << 16) |
            ((uint32_t)buffer[*counter + 3] << 24);
     
@@ -124,14 +125,14 @@ static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, flo
     if (*counter + 8 > len) return false;
 
     uint64_t temp = 
-        ((uint64_t)(uint8_t)buffer[(*counter)])           |
-        ((uint64_t)(uint8_t)buffer[(*counter) + 1] << 8)  |
-        ((uint64_t)(uint8_t)buffer[(*counter) + 2] << 16) |
-        ((uint64_t)(uint8_t)buffer[(*counter) + 3] << 24) |
-        ((uint64_t)(uint8_t)buffer[(*counter) + 4] << 32) |
-        ((uint64_t)(uint8_t)buffer[(*counter) + 5] << 40) |
-        ((uint64_t)(uint8_t)buffer[(*counter) + 6] << 48) |
-        ((uint64_t)(uint8_t)buffer[(*counter) + 7] << 56);
+        ((uint64_t) (uint8_t) buffer[(*counter)])           |
+        ((uint64_t) (uint8_t) buffer[(*counter) + 1] << 8)  |
+        ((uint64_t) (uint8_t) buffer[(*counter) + 2] << 16) |
+        ((uint64_t) (uint8_t) buffer[(*counter) + 3] << 24) |
+        ((uint64_t) (uint8_t) buffer[(*counter) + 4] << 32) |
+        ((uint64_t) (uint8_t) buffer[(*counter) + 5] << 40) |
+        ((uint64_t) (uint8_t) buffer[(*counter) + 6] << 48) |
+        ((uint64_t) (uint8_t) buffer[(*counter) + 7] << 56);
 
     memcpy(out, &temp, sizeof(float64));
     *counter += 8;

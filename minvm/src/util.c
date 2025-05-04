@@ -2,7 +2,7 @@
 
 inline static void make_crc32_table(uint32_t *table);
 
-uint32_t compute_checksum(uint8_t *data, size_t length) {
+uint32_t compute_checksum(const uint8_t *data, size_t length) {
 	uint32_t table[256];
     make_crc32_table(table);
 
