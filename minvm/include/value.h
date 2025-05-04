@@ -41,8 +41,8 @@ typedef struct {
 
 #define NEW_NUMBER(value) ((Value) {VALUE_NUMBER, {.number = value}})
 #define NEW_BOOL(value) ((Value) {VALUE_BOOL, {.boolean = value}})
-#define NEW_NIL ((Value) {VALUE_NIL})
-#define NEW_VOID ((Value) {VALUE_VOID})
+#define NEW_NIL ((Value) {VALUE_NIL, {0}})
+#define NEW_VOID ((Value) {VALUE_VOID, {0}})
 #define NEW_OBJECT(value) ((Value) {VALUE_OBJ, {.obj = (Object *) value}})
 
 void free_value(Value *v);

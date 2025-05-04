@@ -8,8 +8,10 @@
 
 static bool read_code(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
 static bool read_constants(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
+static bool read_metadata(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
 
 static bool read_value(const uint8_t *buffer, size_t len, Value *out, size_t *counter);
+static bool read_meta(const uint8_t *buffer, size_t len, Metadata *out, size_t *counter);
 
 static bool read_uint8(const uint8_t *buffer, size_t len, size_t *counter, uint8_t *out);
 static bool read_uint32(const uint8_t *buffer, size_t len, size_t *counter, uint32_t *out);
@@ -21,6 +23,7 @@ bool deserialize(const uint8_t *buffer, size_t len, Chunk *out) {
     TRY(read_code(buffer, len, out, &counter));
     TRY(read_constants(buffer, len, out, &counter));
     printf("constants ok\n");
+    TRY(read_metadata(buffer, len, out, &counter));
 
     return true;
 }
@@ -51,6 +54,22 @@ static bool read_constants(const uint8_t *buffer, size_t len, Chunk *out, size_t
 
         TRY(read_value(buffer, len, &value, counter));
         List_Value_push(&out->constants, value);
+    }
+
+    return true;
+}
+
+static bool read_metadata(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter) {
+    uint32_t metadata_len;
+    TRY(read_uint32(buffer, len, counter, &metadata_len));
+
+    out->metadata = List_Metadata_new_with_capacity(metadata_len);
+
+    for (size_t i = 0; i < metadata_len; i++) {
+        Metadata metadata;
+
+        TRY(read_meta(buffer, len, &metadata, counter));
+        List_Metadata_push(&out->metadata, metadata);
     }
 
     return true;
@@ -98,6 +117,24 @@ static bool read_value(const uint8_t *buffer, size_t len, Value *out, size_t *co
             return false;
         }
     }
+}
+
+static bool read_meta(const uint8_t *buffer, size_t len, Metadata *out, size_t *counter) {
+    uint32_t line, col, length;
+
+    TRY(read_uint32(buffer, len, counter, &line));
+    TRY(read_uint32(buffer, len, counter, &col));
+    TRY(read_uint32(buffer, len, counter, &length));
+
+    *out = (Metadata) {
+        .position = {
+            .line = line,
+            .col = col,
+        },
+        .length = length,
+    };
+
+    return true;
 }
 
 // ---
