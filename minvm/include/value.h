@@ -5,7 +5,7 @@
 
 typedef double float64;
 
-// defined in 'object.h', but cannot import it because of cyclic references
+// defined in 'object.h', but cannot import it because of import cycle
 struct Object;
 typedef struct Object Object;
 

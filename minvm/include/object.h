@@ -12,7 +12,6 @@ typedef enum {
 
 typedef struct Object {
     ObjType type;
-    struct Object *next;
 } Object;
 
 inline bool is_obj_type(Value value, ObjType type);
