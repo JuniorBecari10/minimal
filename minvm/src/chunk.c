@@ -1,5 +1,7 @@
 #include "chunk.h"
 
+#include <stdlib.h>
+
 void free_chunk(Chunk *c) {
     free(c->code);
     

@@ -18,7 +18,7 @@ uint8_t *read_file(const char *path, size_t *output_len) {
         file = fopen(path, "rb");
         
         if (file == NULL)
-            ERROR_RET_X("Cannot read file.", NULL);
+            ERROR_RET_X("Cannot read file; file was not found.", NULL);
     }
 
     size_t file_size = 0;

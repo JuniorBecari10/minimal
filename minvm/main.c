@@ -12,6 +12,8 @@ int main(int argc, char **argv) {
     size_t len;
     uint8_t *buffer = read_file(argv[1], &len);
 
+	if (!buffer) return 1;
+
 	if (!check_validity(buffer, len)) {
 		free(buffer);
 		ERROR_RET_1("Invalid bytecode file.");
