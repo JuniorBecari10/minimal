@@ -2,6 +2,7 @@
 #define OBJECT_H
 
 #include "value.h"
+#include "string.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -14,12 +15,6 @@ typedef struct Object {
     ObjType type;
 	struct Object *next;
 } Object;
-
-// the object that will be interned
-typedef struct {
-    char *chars;
-    size_t length;
-} String;
 
 // the object that will be used as Value
 typedef struct {

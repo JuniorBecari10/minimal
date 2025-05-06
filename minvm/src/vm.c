@@ -11,7 +11,7 @@ VM init_vm(Chunk *chunk) {
 }
 
 void free_vm(VM *vm) {
-	// don't free chunk since it's not owned
+	// don't free chunk since it's not owned by the VM
 
 	Object *obj = vm->objects;
 	while (obj != NULL) {
