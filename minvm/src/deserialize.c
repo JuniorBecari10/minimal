@@ -1,29 +1,29 @@
 #include "deserialize.h"
 #include "value.h"
 #include "io.h"
+#include "vm.h"
 
 #include <stdio.h>
 
 #define TRY(e) if (!e) return false
 
 static bool read_code(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
-static bool read_constants(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
+static bool read_constants(const uint8_t *buffer, size_t len, VM *vm, size_t *counter);
 static bool read_metadata(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
 
-static bool read_value(const uint8_t *buffer, size_t len, Value *out, size_t *counter);
+static bool read_value(const uint8_t *buffer, size_t len, Value *out, VM *vm, size_t *counter);
 static bool read_meta(const uint8_t *buffer, size_t len, Metadata *out, size_t *counter);
 
 static bool read_uint8(const uint8_t *buffer, size_t len, size_t *counter, uint8_t *out);
 static bool read_uint32(const uint8_t *buffer, size_t len, size_t *counter, uint32_t *out);
 static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, float64 *out);
 
-bool deserialize(const uint8_t *buffer, size_t len, Chunk *out) {
+bool deserialize(const uint8_t *buffer, size_t len, VM *vm) {
     size_t counter = HEADER_LEN; // to skip the header
 
-    TRY(read_code(buffer, len, out, &counter));
-    TRY(read_constants(buffer, len, out, &counter));
-    printf("constants ok\n");
-    TRY(read_metadata(buffer, len, out, &counter));
+    TRY(read_code(buffer, len, vm->chunk, &counter));
+    TRY(read_constants(buffer, len, vm, &counter));
+    TRY(read_metadata(buffer, len, vm->chunk, &counter));
 
     return true;
 }
@@ -43,11 +43,11 @@ static bool read_code(const uint8_t *buffer, size_t len, Chunk *out, size_t *cou
     return true;
 }
 
-static bool read_constants(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter) {
+static bool read_constants(const uint8_t *buffer, size_t len, VM *vm, size_t *counter) {
     uint32_t const_len;
     TRY(read_uint32(buffer, len, counter, &const_len));
 
-    out->constants = List_Value_new_with_capacity(const_len);
+    vm->chunk->constants = List_Value_new_with_capacity(const_len);
 
     for (size_t i = 0; i < const_len; i++) {
         Value value;
@@ -77,7 +77,7 @@ static bool read_metadata(const uint8_t *buffer, size_t len, Chunk *out, size_t 
 
 // ---
 
-static bool read_value(const uint8_t *buffer, size_t len, Value *out, size_t *counter) {
+static bool read_value(const uint8_t *buffer, size_t len, Value *out, VM *vm, size_t *counter) {
     uint8_t tag;
     TRY(read_uint8(buffer, len, counter, &tag));
 
@@ -91,7 +91,7 @@ static bool read_value(const uint8_t *buffer, size_t len, Value *out, size_t *co
         }
 
         case 2: { // String
-
+			
         }
 
         case 3: { // Bool

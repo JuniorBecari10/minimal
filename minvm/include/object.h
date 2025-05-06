@@ -12,16 +12,23 @@ typedef enum {
 
 typedef struct Object {
     ObjType type;
+	struct Object *next;
 } Object;
 
-inline bool is_obj_type(Value value, ObjType type);
-
+// the object that will be interned
 typedef struct {
-    Object obj;
-
     char *chars;
     size_t length;
+} String;
+
+// the object that will be used as Value
+typedef struct {
+    Object obj;
+	String *str;
 } ObjString;
+
+inline bool is_obj_type(Value value, ObjType type);
+void free_object(Object *obj);
 
 #define IS_STRING(value) is_obj_type(value, OBJ_STRING)
 

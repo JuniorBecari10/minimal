@@ -4,6 +4,7 @@
 #include "util.h"
 #include "io.h"
 #include "deserialize.h"
+#include "vm.h"
 
 int main(int argc, char **argv) {
     if (argc != 2)
@@ -19,14 +20,16 @@ int main(int argc, char **argv) {
 		ERROR_RET_1("Invalid bytecode file.");
 	}
 
-	Chunk out = {0}; // initialize everything to 0
-	if (!deserialize(buffer, len, &out)) {
+	Chunk out = {0};
+	VM vm = init_vm(&out);
+	if (!deserialize(buffer, len, &vm)) {
 		free(buffer);
 		free_chunk(&out);
 
 		ERROR_RET_1("Cannot read file.");
 	}
 	
+	free_vm(&vm);
 	free_chunk(&out);
     free(buffer);
     return 0;
