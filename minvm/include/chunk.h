@@ -1,3 +1,6 @@
+#ifndef CHUNK_H
+#define CHUNK_H
+
 #include "lists.h"
 #include <stdint.h>
 
@@ -8,3 +11,5 @@ typedef struct {
 } Chunk;
 
 void free_chunk(Chunk *c);
+
+#endif

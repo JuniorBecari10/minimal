@@ -1,5 +1,5 @@
-#include "vm.h"
-#include "object.h"
+#include "../include/vm.h"
+#include "../include/object.h"
 
 #include <stdlib.h>
 
@@ -33,4 +33,8 @@ void* allocate_object(VM* vm, size_t size, ObjType type) {
 
 	// TODO: increment bytes_allocated in VM
 	return object;
+}
+
+bool interpret(VM *vm) {
+	register uint8_t* ip = vm->chunk->code;
 }

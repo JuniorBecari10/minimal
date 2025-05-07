@@ -1,7 +1,7 @@
-#include "deserialize.h"
-#include "value.h"
-#include "io.h"
-#include "vm.h"
+#include "../include/deserialize.h"
+#include "../include/value.h"
+#include "../include/io.h"
+#include "../include/vm.h"
 
 #include <stdio.h>
 
@@ -52,8 +52,8 @@ static bool read_constants(const uint8_t *buffer, size_t len, VM *vm, size_t *co
     for (size_t i = 0; i < const_len; i++) {
         Value value;
 
-        TRY(read_value(buffer, len, &value, counter));
-        List_Value_push(&out->constants, value);
+        TRY(read_value(buffer, len, &value, vm, counter));
+        List_Value_push(&vm->chunk->constants, value);
     }
 
     return true;

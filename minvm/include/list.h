@@ -1,3 +1,6 @@
+#ifndef LIST_H
+#define LIST_H
+
 #include "util.h"
 
 #include <stdlib.h>
@@ -75,3 +78,5 @@ static void List_##INTERNAL_TYPE##_set(List_##INTERNAL_TYPE *list, size_t index,
     if (index < list->length)                                                                               \
         list->data[index] = value;                                                                          \
 }
+
+#endif

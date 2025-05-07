@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "util.h"
-#include "io.h"
-#include "deserialize.h"
-#include "vm.h"
+#include "include/vm.h"
+#include "include/util.h"
+#include "include/io.h"
+#include "include/deserialize.h"
+#include "include/vm.h"
 
 int main(int argc, char **argv) {
     if (argc != 2)
@@ -28,6 +29,8 @@ int main(int argc, char **argv) {
 
 		ERROR_RET_1("Cannot read file.");
 	}
+
+	interpret(&vm);
 	
 	free_vm(&vm);
 	free_chunk(&out);

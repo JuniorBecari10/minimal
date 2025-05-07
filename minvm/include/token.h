@@ -1,3 +1,6 @@
+#ifndef TOKEN_H
+#define TOKEN_H
+
 #include <stdint.h>
 
 typedef struct {
@@ -9,3 +12,5 @@ typedef struct {
 	Position position;
 	uint32_t length;
 } Metadata;
+
+#endif
