@@ -1,0 +1,5 @@
+-iquote
+include
+-std=c11
+-Wall
+-Wextra

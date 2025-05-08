@@ -1,5 +1,5 @@
-#include "../include/io.h"
-#include "../include/util.h"
+#include "io.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-#include "../include/set.h"
+#include "set.h"
 
 #include <stdlib.h>
 #include <stdbool.h>

@@ -1,7 +1,7 @@
-#include "../include/deserialize.h"
-#include "../include/value.h"
-#include "../include/io.h"
-#include "../include/vm.h"
+#include "deserialize.h"
+#include "value.h"
+#include "io.h"
+#include "vm.h"
 
 #include <stdio.h>
 

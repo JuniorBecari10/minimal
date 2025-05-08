@@ -1,5 +1,5 @@
-#include "../include/vm.h"
-#include "../include/object.h"
+#include "vm.h"
+#include "object.h"
 
 #include <stdlib.h>
 

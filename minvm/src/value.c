@@ -1,5 +1,5 @@
-#include "../include/value.h"
-#include "../include/object.h"
+#include "value.h"
+#include "object.h"
 
 void free_value(Value *v) {
     if (IS_OBJ(*v))

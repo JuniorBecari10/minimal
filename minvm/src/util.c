@@ -1,4 +1,4 @@
-#include "../include/util.h"
+#include "util.h"
 
 inline static void make_crc32_table(uint32_t *table);
 

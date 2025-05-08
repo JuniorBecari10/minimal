@@ -1,4 +1,4 @@
-#include "../include/chunk.h"
+#include "chunk.h"
 
 #include <stdlib.h>
 
