@@ -1,8 +1,11 @@
 #include "../include/set.h"
 
+#include <stdlib.h>
+#include <stdbool.h>
+
 StringSet string_set_new() {
 	return (StringSet) {
-		.entries = malloc()
+		.entries = malloc(),
 	};
 }
 

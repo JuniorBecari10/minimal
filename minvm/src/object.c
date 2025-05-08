@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-inline bool is_obj_type(Value value, ObjType type) {
+bool is_obj_type(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJECT(value)->type == type;
 }
 

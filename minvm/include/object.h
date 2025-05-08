@@ -22,7 +22,7 @@ typedef struct {
 	String *str;
 } ObjString;
 
-inline bool is_obj_type(Value value, ObjType type);
+bool is_obj_type(Value value, ObjType type);
 void free_object(Object *obj);
 
 #define IS_STRING(value) is_obj_type(value, OBJ_STRING)

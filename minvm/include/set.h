@@ -3,6 +3,8 @@
 
 #include "string.h"
 
+#include <stdbool.h>
+
 #define INITIAL_CAP 10
 
 typedef struct {
