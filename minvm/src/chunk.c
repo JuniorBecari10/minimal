@@ -8,6 +8,6 @@ void free_chunk(Chunk *c) {
     for (size_t i = 0; i < c->constants.length; i++)
         free_value(&c->constants.data[i]);
 
-    List_Value_free(&c->constants);
+    // don't free constants, because they are objects in the VM, and it frees them
     List_Metadata_free(&c->metadata);
 }

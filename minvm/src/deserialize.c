@@ -1,4 +1,5 @@
 #include "deserialize.h"
+#include "object.h"
 #include "value.h"
 #include "io.h"
 #include "vm.h"
@@ -91,7 +92,11 @@ static bool read_value(const uint8_t *buffer, size_t len, Value *out, VM *vm, si
         }
 
         case 2: { // String
-			
+			ObjString *str = allocate_object(vm, sizeof(ObjString), OBJ_STRING);
+            
+            
+            *out = NEW_OBJECT(str);
+            return true;
         }
 
         case 3: { // Bool
@@ -175,4 +180,8 @@ static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, flo
     *counter += 8;
 
     return true;
+}
+
+static bool read_string(const uint8_t buffer, size_t len, size_t *counter, char *out) {
+
 }

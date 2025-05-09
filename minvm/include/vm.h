@@ -3,10 +3,12 @@
 
 #include "chunk.h"
 #include "object.h"
+#include "set.h"
 
 typedef struct {
 	Chunk *chunk; // doesn't own (currently executing Chunk)
-	Object *objects; // own (currently live objects; not necessarily from the executing Chunk)
+	Object *objects; // own (currently live objects; not necessarily from the executing Chunk - it's a linked list)
+    StringSet strings;
 } VM;
 
 VM init_vm(Chunk *chunk);
