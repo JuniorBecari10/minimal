@@ -1,4 +1,4 @@
-#include "set.h"
+#include "map.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -11,25 +11,25 @@
 static size_t hash(size_t key, size_t capacity);
 static uint32_t hash_string(const char* key, size_t length);
 
-StringSet string_set_new() {
-	return (StringSet) {
-		.entries = malloc(sizeof(String) * INITIAL_CAP),
+StringMap string_map_new() {
+	return (StringMap) {
+		.entries = malloc(sizeof(Entry) * INITIAL_CAP),
         .length = 0,
         .capacity = INITIAL_CAP,
 	};
 }
 
-void string_set_free(StringSet *set) {
-    free(set->entries);
-    memset(set, 0, sizeof(*set));
+void string_map_free(StringMap *map) {
+    free(map->entries);
+    memset(map, 0, sizeof(*map));
 }
 
-bool string_set_add(StringSet* set, String str) {
+Entry *string_map_add(StringMap* map, String str, Value value) {
 
 }
 
-String string_set_get(StringSet *set, String str) {
-    
+Entry *string_map_get(StringMap *map, String str) {
+
 }
 
 // ---

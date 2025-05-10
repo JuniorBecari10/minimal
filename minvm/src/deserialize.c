@@ -1,10 +1,12 @@
 #include "deserialize.h"
 #include "object.h"
+#include "string.h"
 #include "value.h"
 #include "io.h"
 #include "vm.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #define TRY(e) if (!e) return false
 
@@ -18,6 +20,7 @@ static bool read_meta(const uint8_t *buffer, size_t len, Metadata *out, size_t *
 static bool read_uint8(const uint8_t *buffer, size_t len, size_t *counter, uint8_t *out);
 static bool read_uint32(const uint8_t *buffer, size_t len, size_t *counter, uint32_t *out);
 static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, float64 *out);
+static bool read_string(const uint8_t *buffer, size_t len, size_t *counter, String *out);
 
 bool deserialize(const uint8_t *buffer, size_t len, VM *vm) {
     size_t counter = HEADER_LEN; // to skip the header
@@ -92,9 +95,13 @@ static bool read_value(const uint8_t *buffer, size_t len, Value *out, VM *vm, si
         }
 
         case 2: { // String
-			ObjString *str = allocate_object(vm, sizeof(ObjString), OBJ_STRING);
+            String string;
+            TRY(read_string(buffer, len, counter, &string));
             
-            
+            String *ptr = intern_string(vm, string);
+            ObjString *str = allocate_object(vm, sizeof(ObjString), OBJ_STRING);
+            str->str = ptr;
+
             *out = NEW_OBJECT(str);
             return true;
         }
@@ -166,15 +173,15 @@ static bool read_uint32(const uint8_t *buffer, size_t len, size_t *counter, uint
 static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, float64 *out) {
     if (*counter + 8 > len) return false;
 
-    uint64_t temp = 
-        ((uint64_t) (uint8_t) buffer[(*counter)])           |
-        ((uint64_t) (uint8_t) buffer[(*counter) + 1] << 8)  |
-        ((uint64_t) (uint8_t) buffer[(*counter) + 2] << 16) |
-        ((uint64_t) (uint8_t) buffer[(*counter) + 3] << 24) |
-        ((uint64_t) (uint8_t) buffer[(*counter) + 4] << 32) |
-        ((uint64_t) (uint8_t) buffer[(*counter) + 5] << 40) |
-        ((uint64_t) (uint8_t) buffer[(*counter) + 6] << 48) |
-        ((uint64_t) (uint8_t) buffer[(*counter) + 7] << 56);
+    uint64_t temp =
+        ((uint64_t) buffer[(*counter)])           |
+        ((uint64_t) buffer[(*counter) + 1] << 8)  |
+        ((uint64_t) buffer[(*counter) + 2] << 16) |
+        ((uint64_t) buffer[(*counter) + 3] << 24) |
+        ((uint64_t) buffer[(*counter) + 4] << 32) |
+        ((uint64_t) buffer[(*counter) + 5] << 40) |
+        ((uint64_t) buffer[(*counter) + 6] << 48) |
+        ((uint64_t) buffer[(*counter) + 7] << 56);
 
     memcpy(out, &temp, sizeof(float64));
     *counter += 8;
@@ -182,6 +189,27 @@ static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, flo
     return true;
 }
 
-static bool read_string(const uint8_t buffer, size_t len, size_t *counter, char *out) {
+static bool read_string(const uint8_t *buffer, size_t len, size_t *counter, String *out) {
+    uint32_t string_len;
+    TRY(read_uint32(buffer, len, counter, &string_len));
 
+    // Check for buffer overflow
+    if (*counter + string_len > len)
+        return false;
+
+    // String + null terminator
+    char *s = malloc(string_len + 1);
+    if (s == NULL)
+        return false;
+
+    memcpy(s, buffer + *counter, string_len);
+    s[string_len] = '\0';
+
+    *counter += string_len;
+    *out = (String) {
+        .chars = s,
+        .length = string_len,
+    };
+
+    return true;
 }
