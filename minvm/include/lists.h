@@ -9,4 +9,7 @@ DEFINE_LIST(Position)
 DEFINE_LIST(Metadata)
 DEFINE_LIST(Value)
 
+DEFINE_LIST(ObjString)
+DEFINE_LIST(ObjClosure)
+
 #endif

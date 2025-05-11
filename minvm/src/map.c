@@ -35,6 +35,8 @@ void string_map_free(StringMap *map) {
 void entry_free(Entry *entry) {
     string_free(&entry->key);
     value_free(&entry->value);
+
+    memset(entry, 0, sizeof(*entry));
 }
 
 // this takes ownership of str and value
@@ -92,6 +94,7 @@ Entry *string_map_get(StringMap *map, String *str) {
     }
 }
 
+// 'size' must be greater than 'map->capacity'
 static void string_map_resize(StringMap *map, size_t size) {
     map->entries = realloc(map->entries, size);
 }

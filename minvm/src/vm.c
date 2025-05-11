@@ -8,6 +8,7 @@
 
 static inline uint8_t next_byte(VM *vm);
 static inline uint32_t next_uint32(VM *vm);
+
 static inline void push(VM *vm, Value e);
 
 VM init_vm(Chunk *chunk) {
@@ -34,6 +35,8 @@ void free_vm(VM *vm) {
 		object_free(obj);
 		obj = obj->next;
 	}
+
+    memset(vm, 0, sizeof(*vm));
 }
 
 // this will only be freed through garbage collection or VM shutdown
@@ -67,6 +70,15 @@ bool interpret(VM *vm) {
                 Value constant = vm->chunk->constants.data[index];
 
                 push(vm, constant);
+                break;
+            }
+
+            case INST_PUSH_CLOSURE: {
+                uint32_t index = next_uint32(vm);
+                Value constant = vm->chunk->constants.data[index];
+                ObjFunction *fn = (ObjFunction *) AS_OBJECT(constant); // guaranteed
+
+                break;
             }
         }
     }

@@ -10,4 +10,5 @@ void chunk_free(Chunk *c) {
 
     // don't free constants, because they are objects in the VM, and it frees them
     List_Metadata_free(&c->metadata);
+    memset(c, 0, sizeof(*c));
 }

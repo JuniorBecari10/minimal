@@ -10,6 +10,8 @@
 
 #define TRY(e) if (!e) return false
 
+static bool read_chunk(const uint8_t *buffer, size_t len, VM *vm, Chunk *out, size_t *counter);
+
 static bool read_code(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
 static bool read_constants(const uint8_t *buffer, size_t len, VM *vm, size_t *counter);
 static bool read_metadata(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
@@ -24,10 +26,13 @@ static bool read_string(const uint8_t *buffer, size_t len, size_t *counter, Stri
 
 bool deserialize(const uint8_t *buffer, size_t len, VM *vm) {
     size_t counter = HEADER_LEN; // to skip the header
+    return read_chunk(buffer, len, vm, &vm->chunk, &counter); // reads directly to the vm's field
+}
 
-    TRY(read_code(buffer, len, vm->chunk, &counter));
-    TRY(read_constants(buffer, len, vm, &counter));
-    TRY(read_metadata(buffer, len, vm->chunk, &counter));
+static bool read_chunk(const uint8_t *buffer, size_t len, VM *vm, Chunk *out, size_t *counter) {
+    TRY(read_code(buffer, len, out, counter));
+    TRY(read_constants(buffer, len, vm, counter));
+    TRY(read_metadata(buffer, len, out, counter));
 
     return true;
 }
@@ -121,6 +126,34 @@ static bool read_value(const uint8_t *buffer, size_t len, Value *out, VM *vm, si
 
         case 5: { // Void
             *out = NEW_VOID;
+            return true;
+        }
+
+        case 6: { // Function
+            uint32_t arity;
+            TRY(read_uint32(buffer, len, counter, &arity));
+
+            uint8_t has_name;
+            TRY(read_uint8(buffer, len, counter, &has_name));
+
+            char *name = NULL;
+            if (has_name == 1) {
+                String name_str;
+                TRY(read_string(buffer, len, counter, &name_str));
+
+                name = name_str.chars; // it is zero-terminated, so ok
+            }
+
+            Chunk chunk;
+            TRY(read_chunk(buffer, len, vm, &chunk, counter));
+
+            ObjFunction *fn = allocate_object(vm, sizeof(ObjFunction), OBJ_FUNCTION);
+
+            fn->arity = (size_t) arity;
+            fn->chunk = chunk;
+            fn->name = name;
+
+            *out = NEW_OBJECT(fn);
             return true;
         }
 
