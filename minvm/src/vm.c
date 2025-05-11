@@ -31,7 +31,7 @@ void free_vm(VM *vm) {
 
 	Object *obj = vm->objects;
 	while (obj != NULL) {
-		free_object(obj);
+		object_free(obj);
 		obj = obj->next;
 	}
 }

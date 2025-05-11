@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	VM vm = init_vm(&out);
 	if (!deserialize(buffer, len, &vm)) {
 		free(buffer);
-		free_chunk(&out);
+		chunk_free(&out);
 
 		ERROR_RET_1("Cannot read file.");
 	}
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 	interpret(&vm);
 	
 	free_vm(&vm);
-	free_chunk(&out);
+	chunk_free(&out);
     free(buffer);
     return 0;
 }

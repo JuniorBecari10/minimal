@@ -45,6 +45,6 @@ typedef struct {
 #define NEW_VOID ((Value) {VALUE_VOID, {0}})
 #define NEW_OBJECT(value) ((Value) {VALUE_OBJ, {.obj = (Object *) value}})
 
-void free_value(Value *v);
+void value_free(Value *v);
 
 #endif

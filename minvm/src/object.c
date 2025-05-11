@@ -8,7 +8,7 @@ bool is_obj_type(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJECT(value)->type == type;
 }
 
-void free_object(Object *obj) {
+void object_free(Object *obj) {
 	switch (obj->type) {
         case OBJ_STRING: {
             ObjString *s = (ObjString *) obj;

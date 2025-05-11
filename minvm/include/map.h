@@ -21,9 +21,10 @@ typedef struct {
 
 StringMap string_map_new();
 void string_map_free(StringMap *map);
+void entry_free(Entry *entry);
 
 Entry *string_map_add(StringMap* map, String str, Value value);
-Entry *string_map_get(StringMap *map, String str);
+Entry *string_map_get(StringMap *map, String *str);
 
 #endif
 

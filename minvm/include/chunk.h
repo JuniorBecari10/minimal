@@ -10,6 +10,6 @@ typedef struct {
 	List_Metadata metadata;
 } Chunk;
 
-void free_chunk(Chunk *c);
+void chunk_free(Chunk *c);
 
 #endif
