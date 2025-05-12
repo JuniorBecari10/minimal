@@ -19,5 +19,4 @@ min
 Some arguments have special values used to refer to the _standard input_, _standard output_ and _standard error_.
 
 - `<source>` and `<bytecode>`: can be replaced with `*stdin` to refer to the _standard input_;
-- `<output>`: can be replaced with `*stdout` to refer to the _standard output_, or `*stderr` to refer to the _standard error_;
-
+- `<output>`: can be replaced with `*stdout` to refer to the _standard output_, or `*stderr` to refer to the _standard error_.

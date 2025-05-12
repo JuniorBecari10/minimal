@@ -1,15 +1,21 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "lists.h"
-#include <stdint.h>
+#include "extra.h"
 
-typedef struct {
-	uint8_t *code;
-	List_Value constants;
-	List_Metadata metadata;
-} Chunk;
+#include <stddef.h>
+#include <inttypes.h>
 
-void chunk_free(Chunk *c);
+struct chunk {
+    uint8_t *code;
+
+    struct value *constants;
+    size_t constants_len;
+
+    struct metadata *metadata;
+    size_t metadata_len;
+};
+
+void chunk_free(struct chunk *c);
 
 #endif

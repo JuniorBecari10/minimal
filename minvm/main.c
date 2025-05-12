@@ -1,39 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "vm.h"
-#include "util.h"
 #include "io.h"
-#include "deserialize.h"
-#include "vm.h"
+#include <stdio.h>
+
+#define TRY(e) if (!e) return 1
 
 int main(int argc, char **argv) {
-    if (argc != 2)
-        ERROR_RET_1("Usage: minvm <bytecode>");
+    if (argc != 2) {
+        fprintf(stderr, "Usage: minvm <bytecode>\n");
+        return 1;
+    }
+ 
+    const char *filename = argv[1];
 
-    size_t len;
-    uint8_t *buffer = read_file(argv[1], &len);
+    struct chunk chunk;
+    struct object *obj_list;
+    TRY(read_bytecode(filename, &chunk, &obj_list));
 
-	if (!buffer) return 1;
-
-	if (!check_validity(buffer, len)) {
-		free(buffer);
-		ERROR_RET_1("Invalid bytecode file.");
-	}
-
-	Chunk out = {0};
-	VM vm = init_vm(&out);
-	if (!deserialize(buffer, len, &vm)) {
-		free(buffer);
-		chunk_free(&out);
-
-		ERROR_RET_1("Cannot read file.");
-	}
-
-	interpret(&vm);
-	
-	free_vm(&vm);
-	chunk_free(&out);
-    free(buffer);
     return 0;
 }
