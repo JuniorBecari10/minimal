@@ -49,8 +49,10 @@ func NewParser(tokens []token.Token, fileData *util.FileData) *Parser {
 	}
 
 	p.prefixMap = map[token.TokenKind] func() ast.Expression {
-		token.TokenNumber: p.parseNumber,
+		token.TokenInt: p.parseInt,
+		token.TokenFloat: p.parseFloat,
 		token.TokenString: p.parseString,
+		token.TokenChar: p.parseChar,
 		token.TokenIdentifier: p.parseIdentifier,
 		token.TokenSelfKw: p.parseSelf,
 

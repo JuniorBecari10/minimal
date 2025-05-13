@@ -33,7 +33,22 @@ func (p *Parser) expression(precedence int) ast.Expression {
 
 // ---
 
-func (p *Parser) parseNumber() ast.Expression {
+func (p *Parser) parseInt() ast.Expression {
+	tok := p.advance()
+	value, _ := strconv.Atoi(tok.Lexeme)
+
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos: tok.Pos,
+			Length: len(tok.Lexeme),
+		},
+		Data: ast.IntExpression{
+			Literal: int32(value),
+		},
+	}
+}
+
+func (p *Parser) parseFloat() ast.Expression {
 	tok := p.advance()
 	value, _ := strconv.ParseFloat(tok.Lexeme, 64)
 
@@ -42,7 +57,7 @@ func (p *Parser) parseNumber() ast.Expression {
 			Pos: tok.Pos,
 			Length: len(tok.Lexeme),
 		},
-		Data: ast.NumberExpression{
+		Data: ast.FloatExpression{
 			Literal: value,
 		},
 	}
@@ -58,6 +73,20 @@ func (p *Parser) parseString() ast.Expression {
 		},
 		Data: ast.StringExpression{
 			Literal: tok.Lexeme,
+		},
+	}
+}
+
+func (p *Parser) parseChar() ast.Expression {
+	tok := p.advance()
+
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos: tok.Pos,
+			Length: len(tok.Lexeme) + 2,
+		},
+		Data: ast.CharExpression{
+			Literal: uint8(tok.Lexeme[0]), // guaranteed to be one character long
 		},
 	}
 }

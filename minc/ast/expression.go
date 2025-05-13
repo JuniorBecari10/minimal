@@ -13,12 +13,20 @@ type ExprData interface {
 	expr()
 }
 
-type NumberExpression struct {
+type IntExpression struct {
+	Literal int32
+}
+
+type FloatExpression struct {
 	Literal float64
 }
 
 type StringExpression struct {
 	Literal string
+}
+
+type CharExpression struct {
+	Literal uint8
 }
 
 type BoolExpression struct {
@@ -104,7 +112,9 @@ type SetPropertyExpression struct {
 
 // ---
 
-func (x NumberExpression) expr()               {}
+func (x IntExpression) expr()                  {}
+func (x FloatExpression) expr()                {}
+func (x CharExpression) expr()                 {}
 func (x StringExpression) expr()               {}
 func (x BoolExpression) expr()                 {}
 func (x NilExpression) expr()                  {}

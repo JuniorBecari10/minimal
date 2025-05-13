@@ -3,7 +3,9 @@ package token
 type TokenKind string
 
 const (
-	TokenNumber     = "number"
+	TokenInt        = "int"
+	TokenFloat      = "float"
+	TokenChar       = "char"
 	TokenString     = "string"
 	TokenIdentifier = "identifier"
 

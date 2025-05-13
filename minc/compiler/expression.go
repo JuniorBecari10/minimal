@@ -15,8 +15,18 @@ func (c *Compiler) expression(expr ast.Expression) {
 	}
 
 	switch e := expr.Data.(type) {
-		case ast.NumberExpression: {
-			index := c.addConstant(value.ValueNumber{ Value: e.Literal })
+		case ast.IntExpression: {
+			index := c.addConstant(value.ValueInt{ Value: e.Literal })
+
+			c.writeBytePos(instructions.PUSH_CONST, value.Metadata{
+				Position: expr.Base.Pos,
+				Length: uint32(expr.Base.Length),
+			})
+			c.writeBytes(util.IntToBytes(index))
+		}
+
+		case ast.FloatExpression: {
+			index := c.addConstant(value.ValueFloat{ Value: e.Literal })
 
 			c.writeBytePos(instructions.PUSH_CONST, value.Metadata{
 				Position: expr.Base.Pos,
@@ -27,6 +37,13 @@ func (c *Compiler) expression(expr ast.Expression) {
 
 		case ast.StringExpression: {
 			index := c.addConstant(value.ValueString{ Value: e.Literal })
+
+			c.writeBytePos(instructions.PUSH_CONST, value.NewMetaLen1(expr.Base.Pos))
+			c.writeBytes(util.IntToBytes(index))
+		}
+		
+		case ast.CharExpression: {
+			index := c.addConstant(value.ValueChar{ Value: e.Literal })
 
 			c.writeBytePos(instructions.PUSH_CONST, value.NewMetaLen1(expr.Base.Pos))
 			c.writeBytes(util.IntToBytes(index))

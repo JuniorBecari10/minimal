@@ -6,11 +6,14 @@ import (
 )
 
 func (l *Lexer) number() {
+	tokenType := token.TokenKind(token.TokenInt)
+
 	for unicode.IsDigit(rune(l.peek(0))) {
 		l.advance()
 	}
 
 	if l.peek(0) == '.' && unicode.IsDigit(rune(l.peek(1))) {
+		tokenType = token.TokenFloat
 		l.advance()
 
 		for unicode.IsDigit(rune(l.peek(0))) {
@@ -18,7 +21,7 @@ func (l *Lexer) number() {
 		}
 	}
 
-	l.addToken(token.TokenNumber)
+	l.addToken(tokenType)
 }
 
 func (l *Lexer) string() {
@@ -33,6 +36,25 @@ func (l *Lexer) string() {
 
 	l.advance() // the closing '"'
 	l.addTokenLexeme(token.TokenString, l.source[l.start + 1 : l.current - 1])
+}
+
+func (l *Lexer) char() {
+	for l.peek(0) != '\'' && !l.isAtEnd(0) {
+		l.advance()
+	}
+
+	if l.isAtEnd(0) {
+		l.error("Unterminated character literal")
+		return
+	}
+
+	if l.current - l.start - 2 > 1 {
+		l.error("Character literal too long")
+		return
+	}
+
+	l.advance() // the closing '\''
+	l.addTokenLexeme(token.TokenChar, l.source[l.start + 1 : l.current - 1])
 }
 
 func (l *Lexer) identifier() {
