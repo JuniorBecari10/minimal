@@ -6,6 +6,22 @@ import (
 	"fmt"
 )
 
+const (
+	IntCode = iota
+	FloatCode
+	StringCode
+	CharCode
+	BoolCode
+	NilCode
+	VoidCode
+	FunctionCode
+	ClosureCode
+	RangeCode
+	RecordCode
+	InstanceCode
+	BoundMethodCode
+)
+
 /*
 	File Structure (parts aren't separated by newlines):
 
@@ -56,18 +72,28 @@ func writeMetadata(buf *bytes.Buffer, c *Chunk) {
 
 func serializeValue(buf *bytes.Buffer, v Value) {
 	switch val := v.(type) {
-		case ValueNumber: {
-			buf.WriteByte(1)
+		case ValueInt: {
+			buf.WriteByte(IntCode)
+			binary.Write(buf, binary.LittleEndian, val.Value)
+		}
+		
+		case ValueFloat: {
+			buf.WriteByte(FloatCode)
 			binary.Write(buf, binary.LittleEndian, val.Value)
 		}
 
 		case ValueString: {
-			buf.WriteByte(2)
+			buf.WriteByte(StringCode)
 			serializeString(buf, val.Value)
+		}
+		
+		case ValueChar: {
+			buf.WriteByte(CharCode)
+			binary.Write(buf, binary.LittleEndian, val.Value)
 		}
 
 		case ValueBool: {
-			buf.WriteByte(3)
+			buf.WriteByte(BoolCode)
 			if val.Value {
 				buf.WriteByte(1)
 			} else {
@@ -76,13 +102,13 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueNil:
-			buf.WriteByte(4)
+			buf.WriteByte(NilCode)
 
 		case ValueVoid:
-			buf.WriteByte(5)
+			buf.WriteByte(VoidCode)
 
 		case ValueFunction: {
-			buf.WriteByte(6)
+			buf.WriteByte(FunctionCode)
 			binary.Write(buf, binary.LittleEndian, val.Arity)
 
 			if val.Name != nil {
@@ -96,7 +122,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueClosure: {
-			buf.WriteByte(7)
+			buf.WriteByte(ClosureCode)
 			serializeValue(buf, val.Fn)
 			
 			binary.Write(buf, binary.LittleEndian, uint32(len(val.Upvalues)))
@@ -107,7 +133,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueRange: {
-			buf.WriteByte(8)
+			buf.WriteByte(RangeCode)
 			
 			binary.Write(buf, binary.LittleEndian, val.Start)
 			binary.Write(buf, binary.LittleEndian, val.End)
@@ -121,7 +147,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueRecord: {
-			buf.WriteByte(9)
+			buf.WriteByte(RecordCode)
 			
 			serializeString(buf, val.Name)
 			binary.Write(buf, binary.LittleEndian, uint32(len(val.FieldNames)))
@@ -137,7 +163,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueInstance: {
-			buf.WriteByte(10)
+			buf.WriteByte(InstanceCode)
 			binary.Write(buf, binary.LittleEndian, uint32(len(val.Fields)))
 			
 			for _, f := range val.Fields {
@@ -148,7 +174,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueBoundMethod: {
-			buf.WriteByte(11)
+			buf.WriteByte(BoundMethodCode)
 			
 			serializeValue(buf, val.Receiver)
 			serializeValue(buf, &val.Method)

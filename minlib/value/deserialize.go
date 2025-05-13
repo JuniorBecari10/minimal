@@ -61,30 +61,44 @@ func deserializeValue(r io.Reader) Value {
 	tag, _ := buf.ReadByte()
 
 	switch tag {
-		case 1: { // Number
+		case IntCode: {
+			var i int32
+			binary.Read(buf, binary.LittleEndian, &i)
+
+			return ValueInt{Value: i}
+		}
+		
+		case FloatCode: {
 			var f float64
 			binary.Read(buf, binary.LittleEndian, &f)
 
-			return ValueNumber{Value: f}
+			return ValueFloat{Value: f}
 		}
 		
-		case 2: // String
+		case StringCode:
 			return ValueString{Value: deserializeString(buf)}
 		
-		case 3: { // Bool
+		case CharCode: {
+			var c uint8
+			binary.Read(buf, binary.LittleEndian, &c)
+
+			return ValueChar{Value: c}
+		}
+		
+		case BoolCode: {
 			var b bool
 			binary.Read(buf, binary.LittleEndian, &b)
 			
 			return ValueBool{Value: b}
 		}
 		
-		case 4:
+		case NilCode:
 			return ValueNil{}
 		
-		case 5:
+		case VoidCode:
 			return ValueVoid{}
 		
-		case 6: { // Function
+		case FunctionCode: {
 			var arity uint32
 			binary.Read(buf, binary.LittleEndian, &arity)
 
@@ -100,7 +114,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueFunction{Arity: arity, Chunk: fchunk, Name: name}
 		}
 
-		case 7: { // Closure
+		case ClosureCode: {
 			fn := deserializeValue(buf).(ValueFunction)
 			
 			var upcount int32
@@ -131,7 +145,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueClosure{Fn: &fn, Upvalues: upvalues}
 		}
 
-		case 8: { // Record
+		case RecordCode: {
 			name := deserializeString(buf)
 			var fieldCount uint32
 			
@@ -154,7 +168,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueRecord{Name: name, FieldNames: fields, Methods: methods}
 		}
 
-		case 9: { // Range
+		case RangeCode: {
 			var start, end, step float64
 			
 			binary.Read(buf, binary.LittleEndian, &start)
@@ -167,7 +181,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueRange{Start: start, End: end, Step: step, Inclusive: inclusive}
 		}
 
-		case 10: { // Instance
+		case InstanceCode: {
 			record := deserializeValue(buf).(ValueRecord)
 			var fieldCount uint32
 			
@@ -181,7 +195,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueInstance{Fields: fields, Record: &record}
 		}
 
-		case 11: { // BoundMethod
+		case BoundMethodCode: {
 			receiver := deserializeValue(buf)
 			method := deserializeValue(buf).(ValueClosure)
 			

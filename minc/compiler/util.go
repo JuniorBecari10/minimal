@@ -478,8 +478,9 @@ func (c *Compiler) addConstant(v value.Value) int {
 func reduceToSideEffect(expr ast.Expression) *ast.Expression {
 	switch e := expr.Data.(type) {
 		// These are terminal expressions and have no side effects.
-		case ast.NumberExpression, ast.StringExpression, ast.BoolExpression, ast.FnExpression,
-			ast.NilExpression, ast.VoidExpression, ast.SelfExpression, ast.IdentifierExpression:
+		case ast.IntExpression, ast.FloatExpression, ast.StringExpression, ast.CharExpression,
+			ast.BoolExpression, ast.FnExpression, ast.NilExpression, ast.VoidExpression,
+			ast.SelfExpression, ast.IdentifierExpression:
 			return nil
 		
 		// Remove the operator.
