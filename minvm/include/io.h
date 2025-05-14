@@ -6,6 +6,6 @@
 
 #include <stdbool.h>
 
-bool read_bytecode(const char *filename, struct chunk *out, struct object **obj_list);
+bool read_bytecode(const char *file_path, struct chunk *out, struct object **obj_list);
 
 #endif

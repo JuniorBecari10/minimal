@@ -1,9 +1,12 @@
 #include "io.h"
+#include "deserialize.h"
 #include "object.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+
+#define TRY(e) if (!e) return false
 
 #define ERROR_RET(message, x)        \
     do {                               \
@@ -11,10 +14,33 @@
         return x;                      \
     } while (0)
 
+#define HEADER "MNML"
+#define HEADER_LEN 4
+
 static char *read_file(const char *path, size_t *output_len);
 
-bool read_bytecode(const char *filename, struct chunk *out, struct object **obj_list) {
-    
+static bool check_validity(const char *buffer, size_t len);
+
+static bool check_header(const char *buffer, size_t file_len);
+static bool check_checksum(const char *buffer, size_t file_len);
+
+// TODO: use goto?
+bool read_bytecode(const char *file_path, struct chunk *out, struct object **obj_list) {
+    size_t buffer_len;
+    char *buffer = read_file(file_path, &buffer_len);
+
+    if (buffer == NULL)
+        return false;
+
+    if (!check_validity(buffer, buffer_len)) {
+        free(buffer);
+        return false;
+    }
+
+    bool res = deserialize(buffer, buffer_len, out, obj_list);
+    free(buffer); // free the read file content unconditionally of the result of deserialize
+
+    return res;
 }
 
 
@@ -85,4 +111,16 @@ static char *read_file(const char *path, size_t *output_len) {
     }
 
     return buffer;
+}
+
+static bool check_validity(const char *buffer, size_t len) {
+    return check_header(buffer, len) && check_checksum(buffer, len);
+}
+
+static bool check_header(const char *buffer, size_t file_len) {
+    
+}
+
+static bool check_checksum(const char *buffer, size_t file_len) {
+
 }
