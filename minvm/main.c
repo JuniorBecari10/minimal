@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
     struct object *obj_list = NULL;
 
     TRY(read_bytecode(filename, &chunk, &obj_list));
+    // VM vm = vm_new(chunk, obj_list);
 
     return 0;
 }
