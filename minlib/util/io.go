@@ -48,6 +48,12 @@ func ReadBytecodeFile(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	
+	return ReadBytecode(*bytes.NewBuffer(data))
+}
+
+func ReadBytecode(buffer bytes.Buffer) ([]byte, error) {
+	data := buffer.Bytes()
 
 	if len(data) < 8 {
 		return nil, fmt.Errorf("File is too small to contain header and checksum")
