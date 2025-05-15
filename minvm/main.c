@@ -15,9 +15,13 @@ int main(int argc, char **argv) {
 
     struct chunk chunk = {0};
     struct object *obj_list = NULL;
+    struct string_set strings = string_set_new();
 
-    TRY(read_bytecode(filename, &chunk, &obj_list));
-    // VM vm = vm_new(chunk, obj_list);
+    TRY(read_bytecode(filename, &chunk, &obj_list, &strings));
+
+    // the VM will take ownership of every argument passed to it.
+    // VM vm = vm_new(chunk, obj_list, strings);
+    // vm_free(&vm);
 
     return 0;
 }

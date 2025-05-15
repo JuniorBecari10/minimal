@@ -1,31 +1,29 @@
 #include "io.h"
 #include "deserialize.h"
 #include "object.h"
+#include "checksum.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 
-#define TRY(e) if (!e) return false
-
-#define ERROR_RET(message, x)        \
+#define ERROR_RET(message, x)          \
     do {                               \
         fprintf(stderr, message "\n"); \
         return x;                      \
     } while (0)
 
-#define HEADER "MNML"
-#define HEADER_LEN 4
-
 static char *read_file(const char *path, size_t *output_len);
 
-static bool check_validity(const char *buffer, size_t len);
+static bool check_validity(const char *buffer, size_t file_len);
 
-static bool check_header(const char *buffer, size_t file_len);
+static bool check_header(const char *buffer);
 static bool check_checksum(const char *buffer, size_t file_len);
 
 // TODO: use goto?
-bool read_bytecode(const char *file_path, struct chunk *out, struct object **obj_list) {
+bool read_bytecode(const char *file_path,
+                   struct chunk *out, struct object **obj_list, struct string_set *strings) {
     size_t buffer_len;
     char *buffer = read_file(file_path, &buffer_len);
 
@@ -33,12 +31,14 @@ bool read_bytecode(const char *file_path, struct chunk *out, struct object **obj
         return false;
 
     if (!check_validity(buffer, buffer_len)) {
+        fprintf(stderr, "Provided bytecode is not valid.\n");
+
         free(buffer);
         return false;
     }
 
-    bool res = deserialize(buffer, buffer_len, out, obj_list);
-    free(buffer); // free the read file content unconditionally of the result of deserialize
+    bool res = deserialize(buffer, buffer_len, out, obj_list, strings);
+    free(buffer); // free the read file content unconditionally of the result of 'deserialize'.
 
     return res;
 }
@@ -113,14 +113,27 @@ static char *read_file(const char *path, size_t *output_len) {
     return buffer;
 }
 
-static bool check_validity(const char *buffer, size_t len) {
-    return check_header(buffer, len) && check_checksum(buffer, len);
+static bool check_validity(const char *buffer, size_t file_len) {
+    return file_len > HEADER_LEN + CHECKSUM_LEN &&
+           check_header(buffer) &&
+           check_checksum(buffer, file_len);
 }
 
-static bool check_header(const char *buffer, size_t file_len) {
-    
+// 'len' is not needed, since we only need 4 bytes (defined by the macro)
+// and 'check_validity' already checks it
+static bool check_header(const char *buffer) {
+    return strncmp(buffer, HEADER, HEADER_LEN) == 0;
 }
 
 static bool check_checksum(const char *buffer, size_t file_len) {
+    uint32_t checksum = compute_checksum(buffer, file_len - HEADER_LEN);
+	
+    char checksum_bytes[4] = {
+		checksum       & 0xFF,
+		checksum >> 8  & 0xFF,
+		checksum >> 16 & 0xFF,
+		checksum >> 24 & 0xFF,
+	};
 
+    return strncmp(buffer + file_len - CHECKSUM_LEN, checksum_bytes, CHECKSUM_LEN) == 0;
 }
