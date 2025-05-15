@@ -3,83 +3,106 @@ package commands
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"min/disassembler"
 	"minlib/util"
 	"minlib/value"
 	"os"
 	"os/exec"
-	"time"
 )
 
 func Build(source, output string) {
 	// just run the compiler
-	minc := getMinc()
-	
-	cmd := exec.Command(minc, source, output)
-	
-	cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
+	measure("Compiling", func() {
+		minc := getMinc()
+		
+		cmd := exec.Command(minc, source, output)
+		
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		
+		err := cmd.Run()
 
-	fmt.Print(" [..] Compiling... ")
-	start := time.Now()
-
-    err := cmd.Run()
-
-	fmt.Printf("completed in %d ms.\n", time.Since(start).Milliseconds())
-    
-	if err != nil {
-        os.Exit(1)
-    }
+		if err != nil {
+			os.Exit(1)
+		}
+	})
 }
 
 func Disasm(source string) {
 	// run compiler and disassemble
-	minc := getMinc()
-	
-	cmd := exec.Command(minc, source, "*stdout")
-    stdout, err := cmd.Output()
-    
-	if err != nil {
-        os.Exit(1)
-    }
+	var data []byte
 
-	data, err := util.ReadBytecode(*bytes.NewBuffer(stdout))
+	measure("Compiling", func() {
+		minc := getMinc()
+		
+		cmd := exec.Command(minc, source, "*stdout")
 
-	if err != nil {
-		os.Exit(1)
-	}
+		stdoutPipe, _ := cmd.StdoutPipe()
+		cmd.Stderr = os.Stderr
 
-	chunk := value.Deserialize(data)
-	disassembler.NewDisassembler(chunk).Disassemble()
+		var stdoutBuf bytes.Buffer
+
+		stdoutReader := io.TeeReader(stdoutPipe, os.Stdout)
+
+		if err := cmd.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error while running compiler: %s\n", err.Error())
+			os.Exit(1)
+		}
+
+		io.Copy(&stdoutBuf, stdoutReader)
+
+		if err := cmd.Wait(); err != nil {
+			os.Exit(1)
+		}
+
+		stdout := stdoutBuf.Bytes()
+		
+		var err error
+		data, err = util.ReadBytecode(*bytes.NewBuffer(stdout))
+
+		if err != nil {
+			os.Exit(1)
+		}
+	})
+
+	measureNewline("Disassembling", func() {
+		chunk := value.Deserialize(data)
+		disassembler.NewDisassembler(chunk).Disassemble()
+	})
 }
 
 func Disasmb(bytecodePath string) {
 	// just disassemble
-	bytecode, err := util.ReadBytecodeFile(bytecodePath)
+	measureNewline("Disassembling", func() {
+		bytecode, err := util.ReadBytecodeFile(bytecodePath)
 
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot read bytecode file '%s': %s\n", bytecodePath, err.Error())
-		os.Exit(1)
-	}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Cannot read bytecode file '%s': %s\n", bytecodePath, err.Error())
+			os.Exit(1)
+		}
 
-	chunk := value.Deserialize([]byte(bytecode))
-	disassembler.NewDisassembler(chunk).Disassemble()
+		chunk := value.Deserialize([]byte(bytecode))
+		disassembler.NewDisassembler(chunk).Disassemble()
+	})
 }
 
 func Execute(bytecode string) {
 	// just run the bytecode
-	minvm := getMinvm()
-	
-	cmd := exec.Command(minvm, bytecode)
-	
-	cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
+	measureNewline("Running", func() {
+		minvm := getMinvm()
+		
+		cmd := exec.Command(minvm, bytecode)
+		
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
-    err := cmd.Run()
-    
-	if err != nil {
-        os.Exit(1)
-    }
+		err := cmd.Run()
+		
+		if err != nil {
+			os.Exit(1)
+		}
+	})
 }
 
 func Run(source string) {
