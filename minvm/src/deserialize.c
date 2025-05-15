@@ -17,6 +17,8 @@ static bool read_constants(const char *buffer, size_t buffer_len, size_t *counte
 
 static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out);
 
+static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out);
+
 // ---
 
 bool deserialize(const char *buffer, size_t buffer_len,
@@ -59,5 +61,21 @@ static bool read_constants(const char *buffer, size_t buffer_len, size_t *counte
 }
 
 static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out) {
+    uint32_t metadata_len;
+    TRY(read_uint32(buffer, buffer_len, counter, &metadata_len));
+
+    out->metadata = malloc(metadata_len);
+
+    for (size_t i = 0; i < metadata_len; i++) {
+        struct metadata metadata;
+
+        TRY(read_meta(buffer, buffer_len, counter, &metadata));
+        out->metadata[i] = metadata;
+    }
+
+    return true;
+}
+
+static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out) {
 
 }
