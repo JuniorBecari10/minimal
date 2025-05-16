@@ -77,5 +77,19 @@ static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter
 }
 
 static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out) {
+    uint32_t line, col, length;
 
+    TRY(read_uint32(buffer, buffer_len, counter, &line));
+    TRY(read_uint32(buffer, buffer_len, counter, &col));
+    TRY(read_uint32(buffer, buffer_len, counter, &length));
+
+    *out = (struct metadata) {
+        .position = {
+            .line = line,
+            .col = col,
+        },
+        .length = length,
+    };
+
+    return true;
 }

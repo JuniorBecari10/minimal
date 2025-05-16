@@ -38,10 +38,10 @@ struct value {
 #define AS_VOID NEW_VOID
 #define AS_OBJECT(value)  ((value).as.obj)
 
-#define NEW_NUMBER(value) ((struct value) { VALUE_NUMBER, { .number = value } })
-#define NEW_BOOL(value)   ((struct value) { VALUE_BOOL, { .boolean = value } })
-#define NEW_NIL(value)    ((struct value) { VALUE_NIL, { 0 } })
-#define NEW_VOID(value)   ((struct value) { VALUE_VOID, { 0 } })
-#define NEW_OBJECT(value) ((struct value) { VALUE_OBJ, { .obj = (struct object *) value } })
+#define NEW_NUMBER(_value) ((struct value) { VALUE_NUMBER, { .number = _value } })
+#define NEW_BOOL(_value)   ((struct value) { VALUE_BOOL, { .boolean = _value } })
+#define NEW_NIL            ((struct value) { VALUE_NIL, { 0 } })
+#define NEW_VOID           ((struct value) { VALUE_VOID, { 0 } })
+#define NEW_OBJECT(_value) ((struct value) { VALUE_OBJ, { .obj = (struct object *) _value } })
 
 #endif
