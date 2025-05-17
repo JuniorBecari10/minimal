@@ -9,6 +9,18 @@ bool read_uint8(const char *buffer, size_t buffer_len, size_t *counter, uint8_t 
         return true;
 }
 
+bool read_int32(const char *buffer, size_t buffer_len, size_t *counter, int32_t *out) {
+    if (*counter + 4 > buffer_len) return false;
+
+    *out = ((int32_t) buffer[*counter])           |
+           ((int32_t) buffer[*counter + 1] << 8)  |
+           ((int32_t) buffer[*counter + 2] << 16) |
+           ((int32_t) buffer[*counter + 3] << 24);
+    
+    *counter += 4;
+    return true;
+}
+
 bool read_uint32(const char *buffer, size_t buffer_len, size_t *counter, uint32_t *out) {
     if (*counter + 4 > buffer_len) return false;
 

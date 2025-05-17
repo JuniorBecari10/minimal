@@ -1,6 +1,9 @@
 #include "deserialize.h"
 #include "chunk.h"
 #include "input.h"
+#include "codes.h"
+#include "object.h"
+#include "value.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +25,8 @@ static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter
 // ---
 
 static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
-                       struct chunk *out, struct object **obj_list, struct string_set *strings, struct value *value_out);
+                       struct chunk *out, struct object **obj_list,
+                       struct string_set *strings, struct value *value_out);
 
 static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out);
 
@@ -116,12 +120,84 @@ static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter
 // ---
 
 static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
-                       struct chunk *out, struct object **obj_list, struct string_set *strings, struct value *value_out) {
+                       struct chunk *out, struct object **obj_list,
+                       struct string_set *strings, struct value *value_out) {
     uint8_t tag;
     TRY(read_uint8(buffer, buffer_len, counter, &tag));
 
     switch (tag) {
-        case 
+        case INT_CODE: {
+            int32_t num;
+            TRY(read_int32(buffer, buffer_len, counter, &num));
+
+            *value_out = NEW_INT(num);
+            return true;
+        }
+
+        case FLOAT_CODE: {
+            float64 num;
+            TRY(read_float64(buffer, buffer_len, counter, &num));
+
+            *value_out = NEW_FLOAT(num);
+            return true;
+        }
+
+        case STRING_CODE: {
+            struct string str;
+            TRY(read_string(buffer, buffer_len, counter, &str));
+
+            struct string *interned = intern_string(str, strings);
+            struct obj_string *obj_str = new_string(interned);
+
+            *value_out = NEW_OBJECT((struct object *) obj_str);
+            return true;
+        }
+
+        case BOOL_CODE: {
+            uint8_t boolean;
+            TRY(read_uint8(buffer, buffer_len, counter, &boolean));
+
+            *value_out = NEW_BOOL(boolean);
+            return true;
+        }
+
+        case NIL_CODE: {
+            *value_out = NEW_NIL;
+            return true;
+        }
+        
+        case VOID_CODE: {
+            *value_out = NEW_VOID;
+            return true;
+        }
+
+        case FUNCTION_CODE: {
+            uint32_t arity;
+            TRY(read_uint32(buffer, buffer_len, counter, &arity));
+
+            uint8_t has_name;
+            TRY(read_uint8(buffer, buffer_len, counter, &has_name));
+
+            char *name = NULL;
+            if (has_name != 0) {
+                struct string str;
+                TRY(read_string(buffer, buffer_len, counter, &str));
+
+                // safe, because it is zero-terminated and now 'name' will own the allocation.
+                name = str.chars;
+            }
+            
+            struct chunk c;
+            TRY(read_chunk(buffer, buffer_len, counter, &c, obj_list, strings));
+
+            struct obj_function *function = new_function(c, arity, name);
+            struct object *obj = (struct object *) function;
+
+            add_object_to_list(obj, obj_list);
+
+            *value_out = NEW_OBJECT(obj);
+            return true;
+        }
     }
 }
 
