@@ -2,6 +2,8 @@ package instructions
 
 type Opcode int
 
+const MAX_INSTRUCTION_LENGTH = 16
+
 const (
 	PUSH_CONST = iota
 	PUSH_CLOSURE
