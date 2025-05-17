@@ -70,7 +70,7 @@ func readMetadata(r io.Reader, chunk *Chunk) {
 func deserializeValue(r io.Reader) Value {
 	buf := r.(*bytes.Buffer)
 	tag, _ := buf.ReadByte()
-
+	
 	switch tag {
 		case IntCode: {
 			var i int32

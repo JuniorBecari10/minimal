@@ -2,19 +2,19 @@
 #define CODES_H
 
 enum code {
-	IntCode,
-	FloatCode,
-	StringCode,
-	CharCode,
-	BoolCode,
-	NilCode,
-	VoidCode,
-	FunctionCode,
-	ClosureCode,
-	RangeCode,
-	RecordCode,
-	InstanceCode,
-	BoundMethodCode,
+    INT_CODE,
+    FLOAT_CODE,
+    STRING_CODE,
+    CHAR_CODE,
+    BOOL_CODE,
+    NIL_CODE,
+    VOID_CODE,
+    FUNCTION_CODE,
+    CLOSURE_CODE,
+    RANGE_CODE,
+    RECORD_CODE,
+    INSTANCE_CODE,
+    BOUND_METHOD_CODE,
 };
 
 #endif

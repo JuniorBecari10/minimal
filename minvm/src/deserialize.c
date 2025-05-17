@@ -19,6 +19,11 @@ static bool read_constants(const char *buffer, size_t buffer_len, size_t *counte
 
 static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out);
 
+// ---
+
+static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
+                       struct chunk *out, struct object **obj_list, struct string_set *strings, struct value *value_out);
+
 static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out);
 
 // ---
@@ -78,7 +83,18 @@ static bool read_code(const char *buffer, size_t buffer_len, size_t *counter, st
 
 static bool read_constants(const char *buffer, size_t buffer_len, size_t *counter,
                            struct chunk *out, struct object **obj_list, struct string_set *strings) {
+    uint32_t const_len;
+    TRY(read_uint32(buffer, buffer_len, counter, &const_len));
 
+    out->constants = malloc(const_len);
+    if (!out->constants)
+        return false;
+
+    for (struct value *v = out->constants; v < out->constants + const_len; v++) {
+        TRY(read_value(buffer, buffer_len, counter, out, obj_list, strings, v));
+    }
+
+    return true;
 }
 
 static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out) {
@@ -96,6 +112,20 @@ static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter
 
     return true;
 }
+
+// ---
+
+static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
+                       struct chunk *out, struct object **obj_list, struct string_set *strings, struct value *value_out) {
+    uint8_t tag;
+    TRY(read_uint8(buffer, buffer_len, counter, &tag));
+
+    switch (tag) {
+        case 
+    }
+}
+
+// ---
 
 static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out) {
     uint32_t line, col, length;
