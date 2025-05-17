@@ -67,17 +67,17 @@ func (p *Parser) parseExpression() ast.Expression {
 }
 
 func (p *Parser) expect(kind token.TokenKind) bool {
-	return !p.expectToken(kind).IsAbsent()
+	return !p.expectToken(kind).IsEnd()
 }
 
 func (p *Parser) expectToken(kind token.TokenKind) token.Token {
 	if !p.check(kind) {
 		if p.isAtEnd(0) {
-			p.error(fmt.Sprintf("Expected '%s', but reached end.", kind))
+			p.error(fmt.Sprintf("Expected %s after %s, but reached end.", kind, p.peek(-1).FormatError()))
 		} else {
-			p.error(fmt.Sprintf("Expected '%s', but got '%s' instead.", kind, p.peek(0).Kind))
+			p.error(fmt.Sprintf("Expected %s after %s, but found %s instead.", kind, p.peek(-1).FormatError(), p.peek(0).FormatError()))
 		}
-		return token.AbsentToken()
+		return token.EndToken()
 	}
 
 	return p.advance()
@@ -86,15 +86,19 @@ func (p *Parser) expectToken(kind token.TokenKind) token.Token {
 func (p *Parser) requireSemicolon() {
 	if !p.check(token.TokenSemicolon) {
 		if p.isAtEnd(0) {
-			p.rawError("Expected ';' after statement, but reached end.", 1, token.Position{
-				Line: p.peek(-1).Pos.Line,
-				Col: p.peek(-1).Pos.Col + uint32(len(p.peek(-1).Lexeme)),
-			})
+			p.printErrorHelp("Expected ';' after statement, but reached end.",
+				"Insert a semicolon where the arrow is pointing.", 1, token.Position{
+					Line: p.peek(-1).Pos.Line,
+					Col: p.peek(-1).Pos.Col + uint32(len(p.peek(-1).Lexeme)),
+				})
 		} else {
-			p.rawError(fmt.Sprintf("Expected ';' after statement, but got '%s' instead.", p.peek(0).Kind), 1, token.Position{
-				Line: p.peek(-1).Pos.Line,
-				Col: p.peek(-1).Pos.Col + uint32(len(p.peek(-1).Lexeme)),
-			})
+			p.printErrorHelp(
+				fmt.Sprintf("Expected ';' after statement, but found %s instead.",
+					p.peek(0).FormatError()),
+					"Insert a semicolon where the arrow is pointing.", 1, token.Position{
+						Line: p.peek(-1).Pos.Line,
+						Col: p.peek(-1).Pos.Col + uint32(len(p.peek(-1).Lexeme)),
+					})
 		}
 		return
 	}
@@ -157,11 +161,17 @@ func (p *Parser) makeAssignment(left ast.Expression, right ast.Expression, opera
 }
 
 func (p *Parser) peek(offset int) token.Token {
-	if p.isAtEnd(offset) {
-		return token.AbsentToken()
+	if p.isAtStart(offset) {
+		return token.StartToken()
+	} else if p.isAtEnd(offset) {
+		return token.EndToken()
 	}
 
 	return p.tokens[p.current + offset]
+}
+
+func (p *Parser) isAtStart(offset int) bool {
+	return p.current + offset < 0
 }
 
 func (p *Parser) isAtEnd(offset int) bool {
@@ -188,26 +198,32 @@ func (p *Parser) synchronize() {
     }
 }
 
-
 func (p *Parser) error(message string) {
 	last := p.peek(0)
 
-	if last.IsAbsent() {
+	if last.IsEnd() {
 		last = p.tokens[len(p.tokens)-1]
 	}
 
 	pos := last.Pos
-
-	p.rawError(message, len(last.Lexeme), pos)
+	p.printError(message, len(last.Lexeme), pos)
 }
 
-func (p *Parser) rawError(message string, len int, pos token.Position) {
+func (p *Parser) reportError(pos token.Position, length int, message string, help *string) {
 	if p.panicMode {
 		return
 	}
-	
-	util.Error(pos, len, message, p.fileData)
+
+	util.PrintError(pos, length, message, help, p.fileData)
 
 	p.hadError = true
 	p.panicMode = true
+}
+
+func (p *Parser) printError(message string, length int, pos token.Position) {
+	p.reportError(pos, length, message, nil)
+}
+
+func (p *Parser) printErrorHelp(message, help string, length int, pos token.Position) {
+	p.reportError(pos, length, message, &help)
 }

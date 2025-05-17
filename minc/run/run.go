@@ -15,7 +15,7 @@ import (
 func Compile(sourcePath, outputPath string) {
 	sourceContent, err := util.ReadSourceFile(sourcePath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading source file '%s': %v\n", sourcePath, err)
+		fmt.Fprintf(os.Stderr, "Error reading source file '%s'.\n", sourcePath)
 		os.Exit(1)
 	}
 

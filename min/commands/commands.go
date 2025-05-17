@@ -3,7 +3,6 @@ package commands
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"min/disassembler"
 	"minlib/util"
 	"minlib/value"
@@ -13,7 +12,7 @@ import (
 
 func Build(source, output string) {
 	// just run the compiler
-	measure("Compiling", func() {
+	logMeasure("Compiling", func() {
 		minc := getMinc()
 		
 		cmd := exec.Command(minc, source, output)
@@ -24,6 +23,7 @@ func Build(source, output string) {
 		err := cmd.Run()
 
 		if err != nil {
+			log("Compiling phase failed.")
 			os.Exit(1)
 		}
 	})
@@ -33,40 +33,28 @@ func Disasm(source string) {
 	// run compiler and disassemble
 	var data []byte
 
-	measure("Compiling", func() {
+	logMeasure("Compiling", func() {
 		minc := getMinc()
 		
 		cmd := exec.Command(minc, source, "*stdout")
-
-		stdoutPipe, _ := cmd.StdoutPipe()
 		cmd.Stderr = os.Stderr
 
-		var stdoutBuf bytes.Buffer
+		stdout, err := cmd.Output()
 
-		stdoutReader := io.TeeReader(stdoutPipe, os.Stdout)
-
-		if err := cmd.Start(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error while running compiler: %s\n", err.Error())
+		if err != nil {
+			log("Compiling phase failed.")
 			os.Exit(1)
 		}
 
-		io.Copy(&stdoutBuf, stdoutReader)
-
-		if err := cmd.Wait(); err != nil {
-			os.Exit(1)
-		}
-
-		stdout := stdoutBuf.Bytes()
-		
-		var err error
 		data, err = util.ReadBytecode(*bytes.NewBuffer(stdout))
 
 		if err != nil {
+			log("Compiling phase failed.")
 			os.Exit(1)
 		}
 	})
 
-	measureNewline("Disassembling", func() {
+	logNewline("Disassembling", func() {
 		chunk := value.Deserialize(data)
 		disassembler.NewDisassembler(chunk).Disassemble()
 	})
@@ -74,11 +62,13 @@ func Disasm(source string) {
 
 func Disasmb(bytecodePath string) {
 	// just disassemble
-	measureNewline("Disassembling", func() {
+	logNewline("Disassembling", func() {
 		bytecode, err := util.ReadBytecodeFile(bytecodePath)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Cannot read bytecode file '%s': %s\n", bytecodePath, err.Error())
+			fmt.Fprintf(os.Stderr, "Cannot read bytecode file '%s'.\n", bytecodePath)
+			log("Disassembling phase failed.")
+			
 			os.Exit(1)
 		}
 
@@ -89,7 +79,7 @@ func Disasmb(bytecodePath string) {
 
 func Execute(bytecode string) {
 	// just run the bytecode
-	measureNewline("Running", func() {
+	logNewline("Running", func() {
 		minvm := getMinvm()
 		
 		cmd := exec.Command(minvm, bytecode)
@@ -100,6 +90,7 @@ func Execute(bytecode string) {
 		err := cmd.Run()
 		
 		if err != nil {
+			log("Running phase failed.")
 			os.Exit(1)
 		}
 	})
@@ -130,7 +121,6 @@ func Run(source string) {
 func getCommand(command string) string {
 	path, err := exec.LookPath(command)
 	if err != nil {
-		fmt.Println(err.Error())
 		fmt.Fprintf(os.Stderr, "The desired command requires '%s' to be in path.\n", command)
 		fmt.Fprintln(os.Stderr, "Please place it in path before running this command again.")
 		os.Exit(1)

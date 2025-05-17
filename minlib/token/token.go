@@ -9,66 +9,67 @@ const (
 	TokenString     = "string"
 	TokenIdentifier = "identifier"
 
-	TokenPlus    = "+"
-	TokenMinus   = "-"
-	TokenStar  	 = "*"
-	TokenSlash   = "/"
-	TokenPercent = "%"
+	TokenPlus    = "'+'"
+	TokenMinus   = "'-'"
+	TokenStar    = "'*'"
+	TokenSlash   = "'/'"
+	TokenPercent = "'%'"
 
-	TokenPlusEqual    = "+="
-	TokenMinusEqual   = "-="
-	TokenStarEqual    = "*="
-	TokenSlashEqual   = "/="
-	TokenPercentEqual = "%="
+	TokenPlusEqual    = "'+='"
+	TokenMinusEqual   = "'-='"
+	TokenStarEqual    = "'*='"
+	TokenSlashEqual   = "'/='"
+	TokenPercentEqual = "'%='"
 
-	TokenLeftParen  = "("
-	TokenRightParen = ")"
+	TokenLeftParen  = "'('"
+	TokenRightParen = "')'"
 
-	TokenLeftBrace  = "{"
-	TokenRightBrace = "}"
+	TokenLeftBrace  = "'{'"
+	TokenRightBrace = "'}'"
 
-	TokenEqual       = "="
-	TokenDoubleEqual = "=="
-	TokenBangEqual   = "!="
+	TokenEqual       = "'='"
+	TokenDoubleEqual = "'=='"
+	TokenBangEqual   = "'!='" 
 
-	TokenSemicolon = ";"
-	TokenComma     = ","
-	TokenColon     = ":"
-	TokenDot       = "."
-	TokenDoubleDot = ".."
+	TokenSemicolon = "';'"
+	TokenComma     = "','"
+	TokenColon     = "':'"
+	TokenDot       = "'.'"
+	TokenDoubleDot = "'..'"
 
-	TokenArrow = "->"
+	TokenArrow = "'->'"
 
-	TokenGreater      = ">"
-	TokenGreaterEqual = ">="
+	TokenGreater      = "'>'"
+	TokenGreaterEqual = "'>='"
 
-	TokenLess      = "<"
-	TokenLessEqual = "<="
+	TokenLess      = "'<'"
+	TokenLessEqual = "'<='"
 
-	TokenIfKw       = "if keyword"
-	TokenElseKw     = "else keyword"
-	TokenWhileKw    = "while keyword"
-	TokenForKw      = "for keyword"
-	TokenLoopKw     = "loop keyword"
-	TokenVarKw      = "var keyword"
-	TokenFnKw       = "fn keyword"
-	TokenBreakKw    = "break keyword"
-	TokenContinueKw = "continue keyword"
-	TokenInKw       = "in keyword"
-	TokenSelfKw     = "self keyword"
-	TokenRecordKw   = "record keyword"
-	TokenReturnKw   = "return keyword"
+	TokenIfKw       = "'if' keyword"
+	TokenElseKw     = "'else' keyword"
+	TokenWhileKw    = "'while' keyword"
+	TokenForKw      = "'for' keyword"
+	TokenLoopKw     = "'loop' keyword"
+	TokenVarKw      = "'var' keyword"
+	TokenFnKw       = "'fn' keyword"
+	TokenBreakKw    = "'break' keyword"
+	TokenContinueKw = "'continue' keyword"
+	TokenInKw       = "'in' keyword"
+	TokenSelfKw     = "'self' keyword"
+	TokenRecordKw   = "'record' keyword"
+	TokenReturnKw   = "'return' keyword"
 
-	TokenAndKw = "and keyword"
-	TokenOrKw  = "or keyword"
-	TokenNotKw = "not keyword"
+	TokenAndKw = "'and' keyword"
+	TokenOrKw  = "'or' keyword"
+	TokenNotKw = "'not' keyword"
 
-	TokenTrueKw  = "true keyword"
-	TokenFalseKw = "false keyword"
-	TokenNilKw   = "nil keyword"
-	TokenVoidKw  = "void keyword"
+	TokenTrueKw  = "'true' keyword"
+	TokenFalseKw = "'false' keyword"
+	TokenNilKw   = "'nil' keyword"
+	TokenVoidKw  = "'void' keyword"
 
-	TokenAbsent = "Absent"
+	TokenStart = "start"
+	TokenEnd = "end"
 )
 
 type Position struct {
@@ -80,14 +81,4 @@ type Token struct {
 	Kind   TokenKind
 	Lexeme string
 	Pos    Position
-}
-
-func (t Token) IsAbsent() bool {
-	return t.Kind == TokenAbsent
-}
-
-func AbsentToken() Token {
-	return Token{
-		Kind: TokenAbsent,
-	}
 }

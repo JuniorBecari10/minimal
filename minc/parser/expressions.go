@@ -8,11 +8,16 @@ import (
 )
 
 func (p *Parser) expression(precedence int) ast.Expression {
-	pos := p.peek(0).Pos
-	prefixFn, ok := p.prefixMap[p.peek(0).Kind]
+	peek := p.peek(0)
+
+	pos := peek.Pos
+	prefixFn, ok := p.prefixMap[peek.Kind]
 
 	if !ok {
-		p.error(fmt.Sprintf("Expected expression, but found token: '%s'.", p.peek(0).Lexeme))
+		p.error(fmt.Sprintf("Expected expression after %s, but found %s instead.",
+			p.peek(-1).FormatError(),
+			p.peek(0).FormatError()))
+
 		return ast.Expression{}
 	}
 
@@ -168,6 +173,7 @@ func (p *Parser) parseVoid() ast.Expression {
 	}
 }
 
+// disambuguation between parenthesized expression and lambda expression.
 func (p *Parser) lParen() ast.Expression {
 	// lambda: ')' | ( ident ',' | ')' )
 	if p.peek(1).Kind == token.TokenRightParen ||

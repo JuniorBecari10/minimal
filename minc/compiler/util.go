@@ -563,7 +563,7 @@ func (c *Compiler) error(pos token.Position, length int, message string) {
 		return
 	}
 
-	util.Error(pos, length, message, c.fileData)
+	util.PrintError(pos, length, message, nil, c.fileData)
 
 	c.hadError = true
 	c.panicMode = true

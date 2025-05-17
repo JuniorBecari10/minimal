@@ -5,18 +5,22 @@ import (
 	"time"
 )
 
-func measure(message string, operation func()) {
-	fmt.Printf(" [..] %s... \n", message)
+func logMeasure(message string, operation func()) {
+	fmt.Printf("[..] %s... \n", message)
 	
 	start := time.Now()
 	operation()
 	
 	timeAmount := time.Since(start).Milliseconds()
-	fmt.Printf("      completed in %d ms.\n", timeAmount)
+	fmt.Printf("     completed in %d ms.\n", timeAmount)
 }
 
-func measureNewline(message string, operation func()) {
-	fmt.Printf(" [..] %s...\n", message)
+func logNewline(message string, operation func()) {
+	fmt.Printf("\n[..] %s...\n", message)
 	operation()
+}
+
+func log(message string) {
+	fmt.Printf("\n[..] %s\n", message)
 }
 
