@@ -10,6 +10,8 @@ static bool read_chunk(const char *buffer, size_t buffer_len, size_t *counter,
 
 // ---
 
+static bool read_name(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out);
+
 static bool read_code(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out);
 
 static bool read_constants(const char *buffer, size_t buffer_len, size_t *counter,
@@ -29,6 +31,7 @@ bool deserialize(const char *buffer, size_t buffer_len,
 
 static bool read_chunk(const char *buffer, size_t buffer_len, size_t *counter,
                        struct chunk *out, struct object **obj_list, struct string_set *strings) {
+    TRY(read_name(buffer, buffer_len, counter, out));
     TRY(read_code(buffer, buffer_len, counter, out));
     TRY(read_constants(buffer, buffer_len, counter, out, obj_list, strings));
     TRY(read_metadata(buffer, buffer_len, counter, out));
@@ -36,6 +39,24 @@ static bool read_chunk(const char *buffer, size_t buffer_len, size_t *counter,
     return true;
 }
 // ---
+
+static bool read_name(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out) {
+    uint32_t name_len;
+    TRY(read_uint32(buffer, buffer_len, counter, &name_len));
+
+    // see if the buffer can contain all the code
+    if (*counter + name_len > buffer_len)
+        return false;
+
+    out->name = malloc(name_len);
+    if (!out->name)
+        return false;
+
+    memcpy(out->name, buffer + *counter, name_len);
+    *counter += name_len;
+
+    return true;
+}
 
 static bool read_code(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out) {
     uint32_t code_len;

@@ -6,7 +6,9 @@
 #include <stddef.h>
 #include <inttypes.h>
 
+// TODO: store the length of the name?
 struct chunk {
+    char *name;
     uint8_t *code;
 
     struct value *constants;

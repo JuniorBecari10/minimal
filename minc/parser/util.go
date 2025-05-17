@@ -179,23 +179,47 @@ func (p *Parser) isAtEnd(offset int) bool {
 }
 
 func (p *Parser) synchronize() {
-    p.panicMode = false
+	p.panicMode = false
 
-    for !p.isAtEnd(0) {
-        kind := p.peek(0).Kind
+	for !p.isAtEnd(0) {
+		kind := p.peek(0).Kind
 
-        // Return if a synchronization point is found
-        switch kind {
-			case token.TokenVarKw, token.TokenLeftBrace, token.TokenRightBrace,
-				token.TokenIfKw, token.TokenElseKw, token.TokenWhileKw, token.TokenBreakKw, token.TokenContinueKw,
-				token.TokenForKw, token.TokenFnKw, token.TokenReturnKw, token.TokenRecordKw,
+		switch kind {
+			case
+				// Declarations and control flow
+				token.TokenVarKw,
+				token.TokenFnKw,
+				token.TokenRecordKw,
+				token.TokenIfKw,
+				token.TokenElseKw,
+				token.TokenWhileKw,
+				token.TokenForKw,
+				token.TokenLoopKw,
+				token.TokenBreakKw,
+				token.TokenContinueKw,
+				token.TokenReturnKw,
+
+				// Block start/end
+				token.TokenLeftBrace,
+				token.TokenRightBrace,
+
+				// Expression starters
+				token.TokenIdentifier,
+				token.TokenInt,
+				token.TokenFloat,
+				token.TokenChar,
+				token.TokenString,
+				token.TokenMinus,
+				token.TokenNotKw,
+				token.TokenLeftParen,
+
+				// Soft sync point
 				token.TokenSemicolon:
-				return
-        }
+					return
+		}
 
-        // Advance to the next token if no synchronization point is found
-        p.advance()
-    }
+		p.advance()
+	}
 }
 
 func (p *Parser) error(message string) {

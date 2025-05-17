@@ -15,6 +15,7 @@ func Deserialize(data []byte) Chunk {
 func readChunk(r io.Reader) Chunk {
 	chunk := Chunk{}
 
+	readName(r, &chunk)
 	readCode(r, &chunk)
 	readConstants(r, &chunk)
 	readMetadata(r, &chunk)
@@ -24,10 +25,20 @@ func readChunk(r io.Reader) Chunk {
 
 // ---
 
+func readName(r io.Reader, chunk *Chunk) {
+	var nameLen uint32
+	binary.Read(r, binary.LittleEndian, &nameLen)
+	
+	name := make([]byte, nameLen)
+	r.Read(name)
+
+	chunk.Name = string(name)
+}
+
 func readCode(r io.Reader, chunk *Chunk) {
 	var codeLen uint32
-	
 	binary.Read(r, binary.LittleEndian, &codeLen)
+
 	chunk.Code = make([]byte, codeLen)
 	r.Read(chunk.Code)
 }

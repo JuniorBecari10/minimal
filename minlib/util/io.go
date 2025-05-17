@@ -20,6 +20,7 @@ const (
 )
 
 // reads the source file, which also treats '*stdin' as a special value for stdin.
+// TODO: check for the bytecode header here, because the user may get confused and call the wrong function.
 func ReadSourceFile(path string) ([]byte, error) {
 	// check for special '*stdin'
 	if path == STDIN {

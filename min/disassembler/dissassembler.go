@@ -24,7 +24,7 @@ func NewDisassembler(chunk value.Chunk) *Disassembler {
 const MAX_INSTRUCTION_LENGTH = 16
 
 func (d *Disassembler) Disassemble() {
-	d.disassemble("top-level")
+	d.disassemble(fmt.Sprintf("top-level of %s", d.chunk.Name))
 }
 
 func (d *Disassembler) disassemble(name string) {

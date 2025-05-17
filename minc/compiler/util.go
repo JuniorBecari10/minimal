@@ -574,9 +574,9 @@ func (c *Compiler) errorNoBody(message string) {
 		return
 	}
 
-	fmt.Printf("[-] Error: %s\n", message)
-	fmt.Printf(" |   [-] %s\n", c.fileData.Name)
-	fmt.Print("[-]\n\n")
+	fmt.Printf("\n [-] Error: %s\n", message)
+	fmt.Printf("  |   [-] %s\n", c.fileData.Name)
+	fmt.Print(" [-]\n")
 
 	c.hadError = true
 	c.panicMode = true

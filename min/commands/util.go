@@ -12,15 +12,15 @@ func logMeasure(message string, operation func()) {
 	operation()
 	
 	timeAmount := time.Since(start).Milliseconds()
-	fmt.Printf("     completed in %d ms.\n", timeAmount)
+	fmt.Printf("     completed in %d ms.\n\n", timeAmount)
 }
 
 func logNewline(message string, operation func()) {
-	fmt.Printf("\n[..] %s...\n", message)
+	fmt.Printf("[..] %s...\n", message)
 	operation()
 }
 
 func log(message string) {
-	fmt.Printf("\n[..] %s\n", message)
+	fmt.Printf("[..] %s\n", message)
 }
 

@@ -26,6 +26,7 @@ const (
 	File Structure (parts aren't separated by newlines):
 
 	[header]
+	[name len] [name]
 	[code len] [code]
 	[constants len] [constants]
 	[metadata len] [metadata]
@@ -40,6 +41,7 @@ const (
 func (c *Chunk) Serialize() []byte {
 	buf := new(bytes.Buffer)
 
+	writeName(buf, c)
 	writeCode(buf, c)
 	writeConstants(buf, c)
 	writeMetadata(buf, c)
@@ -48,6 +50,11 @@ func (c *Chunk) Serialize() []byte {
 }
 
 // ---
+
+func writeName(buf *bytes.Buffer, c *Chunk) {
+	binary.Write(buf, binary.LittleEndian, uint32(len(c.Name)))
+	buf.Write([]byte(c.Name))
+}
 
 func writeCode(buf *bytes.Buffer, c *Chunk) {
 	binary.Write(buf, binary.LittleEndian, uint32(len(c.Code)))
