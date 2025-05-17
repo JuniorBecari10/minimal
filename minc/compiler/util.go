@@ -8,6 +8,7 @@ import (
 	"minlib/util"
 	"minlib/value"
 	"reflect"
+	"os"
 )
 
 /*
@@ -574,9 +575,9 @@ func (c *Compiler) errorNoBody(message string) {
 		return
 	}
 
-	fmt.Printf("\n [-] Error: %s\n", message)
-	fmt.Printf("  |   [-] %s\n", c.fileData.Name)
-	fmt.Print(" [-]\n")
+	fmt.Fprintf(os.Stderr, "\n [-] Error: %s\n", message)
+	fmt.Fprintf(os.Stderr, "  |   [-] %s\n", c.fileData.Name)
+	fmt.Fprintf(os.Stderr, " [-]\n")
 
 	c.hadError = true
 	c.panicMode = true
