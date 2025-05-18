@@ -1,6 +1,7 @@
 #include "io.h"
 #include "object.h"
 #include "set.h"
+#include "vm.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,22 +18,19 @@ int main(int argc, char **argv) {
     struct object *obj_list = NULL;
     struct string_set strings = string_set_new();
 
-    // for now, it will free unconditionally.
-    read_bytecode(filename, &chunk, &obj_list, &strings);
-
-    chunk_free(&chunk);
-    string_set_free(&strings);
-
-    struct object *obj = obj_list;
-    while (obj != NULL) {
-        object_free(obj);
-        obj = obj->next;
-    }
+    bool res = read_bytecode(filename, &chunk, &obj_list, &strings);
 
     // fill the open upvalues list when creating the VM.
     // the VM will take ownership of every argument passed to it.
-    // VM vm = vm_new(chunk, obj_list, strings);
-    // vm_free(&vm);
+    struct vm vm = vm_new(chunk, obj_list, strings);
 
+    // reuse the free code in the vm.
+    if (!res) {
+        vm_free(&vm);
+        return 1;
+    }
+
+    vm_run(&vm);
+    vm_free(&vm);
     return 0;
 }

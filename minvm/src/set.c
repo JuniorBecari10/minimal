@@ -21,7 +21,6 @@ void string_set_free(struct string_set *set) {
         string_free(s);
 
     free(set->strings);
-    memset(set, 0, sizeof(*set));
 }
 
 struct string *string_set_add(struct string_set *set, struct string str) {

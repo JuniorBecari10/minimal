@@ -30,8 +30,7 @@ void object_free(struct object *obj) {
     switch (obj->type) {
         case OBJ_STRING: {
             // this does not free the string itself because it doesn't own it. the VM set does.
-            struct obj_string *str = (struct obj_string *) obj;
-            memset(str, 0, sizeof(*str));
+            memset(obj, 0, sizeof(struct obj_string));
             break;
         }
 
@@ -47,7 +46,8 @@ void object_free(struct object *obj) {
 
         case OBJ_CLOSURE: {
             struct obj_closure *closure = (struct obj_closure *) obj;
-            object_free((struct object *) closure->fn);
+            // do not free the closure.
+
             // TODO: free upvalues
 
             memset(closure, 0, sizeof(*closure));
@@ -66,6 +66,8 @@ void object_free(struct object *obj) {
         // Native functions don't need to be freed.
         case OBJ_NATIVE_FN: break;
     }
+
+    free(obj);
 }
 
 // ---

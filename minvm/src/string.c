@@ -19,7 +19,6 @@ struct string string_new(const char *chars, size_t length) {
 
 void string_free(struct string *str) {
     free(str->chars);
-    memset(str, 0, sizeof(*str));
 }
 
 static uint32_t hash_string(const char *chars, size_t length) {
