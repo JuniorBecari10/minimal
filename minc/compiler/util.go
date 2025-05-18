@@ -8,6 +8,7 @@ import (
 	"minlib/util"
 	"minlib/value"
 	"reflect"
+	"os"
 )
 
 /*
@@ -478,8 +479,9 @@ func (c *Compiler) addConstant(v value.Value) int {
 func reduceToSideEffect(expr ast.Expression) *ast.Expression {
 	switch e := expr.Data.(type) {
 		// These are terminal expressions and have no side effects.
-		case ast.NumberExpression, ast.StringExpression, ast.BoolExpression, ast.FnExpression,
-			ast.NilExpression, ast.VoidExpression, ast.SelfExpression, ast.IdentifierExpression:
+		case ast.IntExpression, ast.FloatExpression, ast.StringExpression, ast.CharExpression,
+			ast.BoolExpression, ast.FnExpression, ast.NilExpression, ast.VoidExpression,
+			ast.SelfExpression, ast.IdentifierExpression:
 			return nil
 		
 		// Remove the operator.
@@ -562,7 +564,7 @@ func (c *Compiler) error(pos token.Position, length int, message string) {
 		return
 	}
 
-	util.Error(pos, length, message, c.fileData)
+	util.PrintError(pos, length, message, nil, c.fileData)
 
 	c.hadError = true
 	c.panicMode = true
@@ -573,9 +575,9 @@ func (c *Compiler) errorNoBody(message string) {
 		return
 	}
 
-	fmt.Printf("[-] Error: %s\n", message)
-	fmt.Printf(" |   [-] %s\n", c.fileData.Name)
-	fmt.Print("[-]\n\n")
+	fmt.Fprintf(os.Stderr, "\n [-] Error: %s\n", message)
+	fmt.Fprintf(os.Stderr, "  |   [-] %s\n", c.fileData.Name)
+	fmt.Fprintf(os.Stderr, " [-]\n")
 
 	c.hadError = true
 	c.panicMode = true

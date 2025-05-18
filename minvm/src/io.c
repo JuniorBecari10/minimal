@@ -1,14 +1,51 @@
 #include "io.h"
-#include "util.h"
+#include "deserialize.h"
+#include "object.h"
+#include "checksum.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <stdbool.h>
+
+#define ERROR_RET(message, x)          \
+    do {                               \
+        fprintf(stderr, message "\n"); \
+        return x;                      \
+    } while (0)
+
+static char *read_file(const char *path, size_t *output_len);
+
+static bool check_validity(const char *buffer, size_t file_len);
+
+static bool check_header(const char *buffer);
+static bool check_checksum(const char *buffer, size_t file_len);
+
+// TODO: use goto?
+bool read_bytecode(const char *file_path,
+                   struct chunk *out, struct object **obj_list, struct string_set *strings) {
+    size_t buffer_len;
+    char *buffer = read_file(file_path, &buffer_len);
+
+    if (buffer == NULL)
+        return false;
+
+    if (!check_validity(buffer, buffer_len)) {
+        fprintf(stderr, "Provided bytecode is not valid.\n");
+
+        free(buffer);
+        return false;
+    }
+
+    bool res = deserialize(buffer, buffer_len, out, obj_list, strings);
+    free(buffer); // free the read file content unconditionally of the result of 'deserialize'.
+
+    return res;
+}
+
 
 // returns NULL if error.
-uint8_t *read_file(const char *path, size_t *output_len) {
+static char *read_file(const char *path, size_t *output_len) {
     FILE *file = NULL;
 
     if (strcasecmp(path, "*stdin") == 0)
@@ -18,30 +55,30 @@ uint8_t *read_file(const char *path, size_t *output_len) {
         file = fopen(path, "rb");
         
         if (file == NULL)
-            ERROR_RET_X("Cannot read file; file was not found.", NULL);
+            ERROR_RET("Cannot read file; file was not found.", NULL);
     }
 
     size_t file_size = 0;
-    uint8_t *buffer = NULL;
+    char *buffer = NULL;
 
 	if (file == stdin) {
         size_t capacity = 1024;
         size_t length = 0;
         
-        buffer = (uint8_t *) malloc(capacity);
+        buffer = malloc(capacity);
         
         if (!buffer)
-            ERROR_RET_X("Memory allocation failed.", NULL);
+            ERROR_RET("Memory allocation failed.", NULL);
 
         char c;
         while ((c = fgetc(file)) != EOF) {
             if (length + 1 >= capacity) {
                 capacity *= 2;
-                uint8_t *newBuffer = realloc(buffer, capacity);
+                char *newBuffer = realloc(buffer, capacity);
                 
                 if (!newBuffer) {
                     free(buffer);
-                    ERROR_RET_X("Memory allocation failed during read.", NULL);
+                    ERROR_RET("Memory allocation failed during read.", NULL);
                 }
 
                 buffer = newBuffer;
@@ -61,10 +98,10 @@ uint8_t *read_file(const char *path, size_t *output_len) {
         file_size = ftell(file);
         rewind(file);
 
-        buffer = (uint8_t *) malloc(file_size + 1);
+        buffer = malloc(file_size + 1);
         
         if (!buffer)
-            ERROR_RET_X("Memory allocation failed.", NULL);
+            ERROR_RET("Memory allocation failed.", NULL);
 
         size_t bytes_read = fread(buffer, 1, file_size, file);
         buffer[bytes_read] = '\0';
@@ -76,16 +113,27 @@ uint8_t *read_file(const char *path, size_t *output_len) {
     return buffer;
 }
 
-bool check_validity(const uint8_t *buffer, size_t len) {
-	uint32_t checksum = compute_checksum(buffer, len - HEADER_LEN);
-	uint8_t checksum_bytes[4] = {
+static bool check_validity(const char *buffer, size_t file_len) {
+    return file_len > HEADER_LEN + CHECKSUM_LEN &&
+           check_header(buffer) &&
+           check_checksum(buffer, file_len);
+}
+
+// 'len' is not needed, since we only need 4 bytes (defined by the macro)
+// and 'check_validity' already checks it
+static bool check_header(const char *buffer) {
+    return strncmp(buffer, HEADER, HEADER_LEN) == 0;
+}
+
+static bool check_checksum(const char *buffer, size_t file_len) {
+    uint32_t checksum = compute_checksum(buffer, file_len - HEADER_LEN);
+	
+    char checksum_bytes[4] = {
 		checksum       & 0xFF,
 		checksum >> 8  & 0xFF,
 		checksum >> 16 & 0xFF,
 		checksum >> 24 & 0xFF,
 	};
 
-	return len > HEADER_LEN + CHECKSUM_LEN
-		&& strncmp((char *) buffer, HEADER, HEADER_LEN) == 0
-		&& strncmp(((char *) buffer) + len - CHECKSUM_LEN, (char *) checksum_bytes, CHECKSUM_LEN) == 0;
+    return strncmp(buffer + file_len - CHECKSUM_LEN, checksum_bytes, CHECKSUM_LEN) == 0;
 }

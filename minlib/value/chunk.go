@@ -7,6 +7,7 @@ type Chunk struct {
 	Constants []Value
 
 	Metadata []Metadata
+	Name     string
 }
 
 type Metadata struct {

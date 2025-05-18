@@ -14,12 +14,20 @@ type Value interface {
 
 // ---
 
-type ValueNumber struct {
+type ValueInt struct {
+	Value int32
+}
+
+type ValueFloat struct {
 	Value float64
 }
 
 type ValueString struct {
 	Value string
+}
+
+type ValueChar struct {
+	Value uint8
 }
 
 type ValueBool struct {
@@ -71,11 +79,16 @@ type ValueBoundMethod struct {
 
 // ---
 
-func (x ValueNumber) String() string {
+func (x ValueInt) String() string {
+	return fmt.Sprintf("%d", x.Value)
+}
+
+func (x ValueFloat) String() string {
 	return fmt.Sprintf("%.10g", x.Value)
 }
 
 func (x ValueString) String() string { return x.Value }
+func (x ValueChar) String() string { return fmt.Sprintf("%c", x.Value) }
 
 // '%t' is the built-in formatter for bools in Go.
 func (x ValueBool) String() string { return fmt.Sprintf("%t", x.Value) }
@@ -131,8 +144,10 @@ func (x ValueBoundMethod) String() string {
 
 // ---
 
-func (x ValueNumber) Type() string { return "num" }
+func (x ValueInt) Type() string { return "int" }
+func (x ValueFloat) Type() string { return "float" }
 func (x ValueString) Type() string { return "str" }
+func (x ValueChar) Type () string { return "char" }
 func (x ValueBool) Type() string { return "bool" }
 
 func (x ValueNil) Type() string { return "nil" }

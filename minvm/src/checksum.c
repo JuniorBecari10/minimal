@@ -1,10 +1,21 @@
-#include "util.h"
+#include "checksum.h"
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <inttypes.h>
+#include <stdint.h>
 
 inline static void make_crc32_table(uint32_t *table);
 
-uint32_t compute_checksum(const uint8_t *data, size_t length) {
-	uint32_t table[256];
-    make_crc32_table(table);
+uint32_t compute_checksum(const char *data, size_t length) {
+    // this makes the init process run only once lazily
+    static uint32_t table[256];
+    static bool defined = false;
+
+    if (!defined) {
+        defined = true;
+        make_crc32_table(table);
+    }
 
     uint32_t crc = 0xFFFFFFFF;
     for (size_t i = 0; i < length; i++) {
@@ -15,7 +26,6 @@ uint32_t compute_checksum(const uint8_t *data, size_t length) {
     return ~crc;
 }
 
-// to make it constant
 inline static void make_crc32_table(uint32_t *table) {
     for (uint32_t i = 0; i < 256; i++) {
         uint32_t crc = i;

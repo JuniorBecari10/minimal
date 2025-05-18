@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"os"
 )
 
 // It is little-endian
@@ -81,12 +82,23 @@ func computeChecksum(data []byte) uint32 {
     return crc32.Checksum(data, table)
 }
 
-func Error(pos token.Position, length int, message string, fileData *FileData) {
-	fmt.Printf("[-] Error: %s\n", message)
-	fmt.Printf(" | %s [-] %s (%d, %d)\n", strings.Repeat(" ", len(strconv.Itoa(int(pos.Line + 1)))), fileData.Name, pos.Line + 1, pos.Col + 1)
-	fmt.Printf(" |  %d | %s\n", pos.Line + 1, fileData.Lines[pos.Line])
-	fmt.Printf(" | %s  | %s%s\n", strings.Repeat(" ", len(strconv.Itoa(int(pos.Line + 1)))), strings.Repeat(" ", int(pos.Col)), strings.Repeat("^", length))
-	fmt.Printf(" | %s [-]\n", strings.Repeat(" ", len(strconv.Itoa(int(pos.Line + 1)))))
-	fmt.Printf("[-]\n\n")
-}
+func PrintError(pos token.Position, length int, message string, help *string, fileData *FileData) {
+	lineNum := int(pos.Line + 1)
+	lineStr := strconv.Itoa(lineNum)
+	pad := strings.Repeat(" ", len(lineStr))
 
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintf(os.Stderr, " [-] Error: %s\n", message)
+	fmt.Fprintf(os.Stderr, "  | %s [-] %s (line %d, col %d)\n", pad, fileData.Name, lineNum, pos.Col+1)
+	fmt.Fprintf(os.Stderr, "  |  %d | %s\n", lineNum, fileData.Lines[pos.Line])
+	fmt.Fprintf(os.Stderr, "  | %s  | %s%s\n", pad,
+		strings.Repeat(" ", int(pos.Col)), strings.Repeat("^", length))
+	fmt.Fprintf(os.Stderr, "  | %s [-]\n", pad)
+
+	if help != nil {
+		fmt.Fprintln(os.Stderr, "  |")
+		fmt.Fprintf(os.Stderr, "  | %s [-] Help: %s\n", pad, *help)
+	}
+
+	fmt.Fprintln(os.Stderr, " [-]")
+}

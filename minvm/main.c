@@ -1,39 +1,38 @@
+#include "io.h"
+#include "object.h"
+#include "set.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "vm.h"
-#include "util.h"
-#include "io.h"
-#include "deserialize.h"
-#include "vm.h"
-
 int main(int argc, char **argv) {
-    if (argc != 2)
-        ERROR_RET_1("Usage: minvm <bytecode>");
+    if (argc != 2) {
+        fprintf(stderr, "Usage: minvm <bytecode>\n");
+        return 1;
+    }
+ 
+    char *filename = argv[1];
 
-    size_t len;
-    uint8_t *buffer = read_file(argv[1], &len);
+    struct chunk chunk = {0};
+    struct object *obj_list = NULL;
+    struct string_set strings = string_set_new();
 
-	if (!buffer) return 1;
+    // for now, it will free unconditionally.
+    read_bytecode(filename, &chunk, &obj_list, &strings);
 
-	if (!check_validity(buffer, len)) {
-		free(buffer);
-		ERROR_RET_1("Invalid bytecode file.");
-	}
+    chunk_free(&chunk);
+    string_set_free(&strings);
 
-	Chunk out = {0};
-	VM vm = init_vm(&out);
-	if (!deserialize(buffer, len, &vm)) {
-		free(buffer);
-		chunk_free(&out);
+    struct object *obj = obj_list;
+    while (obj != NULL) {
+        object_free(obj);
+        obj = obj->next;
+    }
 
-		ERROR_RET_1("Cannot read file.");
-	}
+    // fill the open upvalues list when creating the VM.
+    // the VM will take ownership of every argument passed to it.
+    // VM vm = vm_new(chunk, obj_list, strings);
+    // vm_free(&vm);
 
-	interpret(&vm);
-	
-	free_vm(&vm);
-	chunk_free(&out);
-    free(buffer);
     return 0;
 }

@@ -2,9 +2,9 @@ package value
 
 import (
 	"bytes"
-	"io"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"minlib/token"
 )
 
@@ -15,6 +15,7 @@ func Deserialize(data []byte) Chunk {
 func readChunk(r io.Reader) Chunk {
 	chunk := Chunk{}
 
+	readName(r, &chunk)
 	readCode(r, &chunk)
 	readConstants(r, &chunk)
 	readMetadata(r, &chunk)
@@ -24,10 +25,20 @@ func readChunk(r io.Reader) Chunk {
 
 // ---
 
+func readName(r io.Reader, chunk *Chunk) {
+	var nameLen uint32
+	binary.Read(r, binary.LittleEndian, &nameLen)
+	
+	name := make([]byte, nameLen)
+	r.Read(name)
+
+	chunk.Name = string(name)
+}
+
 func readCode(r io.Reader, chunk *Chunk) {
 	var codeLen uint32
-	
 	binary.Read(r, binary.LittleEndian, &codeLen)
+
 	chunk.Code = make([]byte, codeLen)
 	r.Read(chunk.Code)
 }
@@ -59,32 +70,46 @@ func readMetadata(r io.Reader, chunk *Chunk) {
 func deserializeValue(r io.Reader) Value {
 	buf := r.(*bytes.Buffer)
 	tag, _ := buf.ReadByte()
-
+	
 	switch tag {
-		case 1: { // Number
+		case IntCode: {
+			var i int32
+			binary.Read(buf, binary.LittleEndian, &i)
+
+			return ValueInt{Value: i}
+		}
+		
+		case FloatCode: {
 			var f float64
 			binary.Read(buf, binary.LittleEndian, &f)
 
-			return ValueNumber{Value: f}
+			return ValueFloat{Value: f}
 		}
 		
-		case 2: // String
+		case StringCode:
 			return ValueString{Value: deserializeString(buf)}
 		
-		case 3: { // Bool
+		case CharCode: {
+			var c uint8
+			binary.Read(buf, binary.LittleEndian, &c)
+
+			return ValueChar{Value: c}
+		}
+		
+		case BoolCode: {
 			var b bool
 			binary.Read(buf, binary.LittleEndian, &b)
 			
 			return ValueBool{Value: b}
 		}
 		
-		case 4:
+		case NilCode:
 			return ValueNil{}
 		
-		case 5:
+		case VoidCode:
 			return ValueVoid{}
 		
-		case 6: { // Function
+		case FunctionCode: {
 			var arity uint32
 			binary.Read(buf, binary.LittleEndian, &arity)
 
@@ -100,38 +125,9 @@ func deserializeValue(r io.Reader) Value {
 			return ValueFunction{Arity: arity, Chunk: fchunk, Name: name}
 		}
 
-		case 7: { // Closure
-			fn := deserializeValue(buf).(ValueFunction)
-			
-			var upcount int32
-			binary.Read(buf, binary.LittleEndian, &upcount)
-			
-			upvalues := make([]Upvalue, upcount)
-			for i := range upvalues {
-				var li, idx int32
-				var closed bool
-				
-				binary.Read(buf, binary.LittleEndian, &li)
-				binary.Read(buf, binary.LittleEndian, &idx)
-				binary.Read(buf, binary.LittleEndian, &closed)
-				
-				up := Upvalue{
-					LocalsIndex: int(li),
-					Index:       int(idx),
-					IsClosed:    closed,
-				}
-				
-				if closed {
-					up.ClosedValue = deserializeValue(buf)
-				}
-				
-				upvalues[i] = up
-			}
-			
-			return ValueClosure{Fn: &fn, Upvalues: upvalues}
-		}
+		// we don't need to deserialize closures and upvalues, because they aren't generated at compile time.
 
-		case 8: { // Record
+		case RecordCode: {
 			name := deserializeString(buf)
 			var fieldCount uint32
 			
@@ -154,7 +150,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueRecord{Name: name, FieldNames: fields, Methods: methods}
 		}
 
-		case 9: { // Range
+		case RangeCode: {
 			var start, end, step float64
 			
 			binary.Read(buf, binary.LittleEndian, &start)
@@ -167,7 +163,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueRange{Start: start, End: end, Step: step, Inclusive: inclusive}
 		}
 
-		case 10: { // Instance
+		case InstanceCode: {
 			record := deserializeValue(buf).(ValueRecord)
 			var fieldCount uint32
 			
@@ -181,7 +177,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueInstance{Fields: fields, Record: &record}
 		}
 
-		case 11: { // BoundMethod
+		case BoundMethodCode: {
 			receiver := deserializeValue(buf)
 			method := deserializeValue(buf).(ValueClosure)
 			

@@ -151,7 +151,10 @@ func (l *Lexer) scanToken() {
 		}
 
 		case ';': l.addToken(token.TokenSemicolon)
+
 		case '"': l.string()
+		case '\'': l.char()
+
 		case ',': l.addToken(token.TokenComma)
 		case ':': l.addToken(token.TokenColon)
 

@@ -6,10 +6,27 @@ import (
 	"fmt"
 )
 
+// Upvalues do not need a code because they will only exist inside closures.
+const (
+	IntCode = iota
+	FloatCode
+	StringCode
+	CharCode
+	BoolCode
+	NilCode
+	VoidCode
+	FunctionCode
+	RangeCode
+	RecordCode
+	InstanceCode
+	BoundMethodCode
+)
+
 /*
 	File Structure (parts aren't separated by newlines):
 
 	[header]
+	[name len] [name]
 	[code len] [code]
 	[constants len] [constants]
 	[metadata len] [metadata]
@@ -24,6 +41,7 @@ import (
 func (c *Chunk) Serialize() []byte {
 	buf := new(bytes.Buffer)
 
+	writeName(buf, c)
 	writeCode(buf, c)
 	writeConstants(buf, c)
 	writeMetadata(buf, c)
@@ -32,6 +50,11 @@ func (c *Chunk) Serialize() []byte {
 }
 
 // ---
+
+func writeName(buf *bytes.Buffer, c *Chunk) {
+	binary.Write(buf, binary.LittleEndian, uint32(len(c.Name)))
+	buf.Write([]byte(c.Name))
+}
 
 func writeCode(buf *bytes.Buffer, c *Chunk) {
 	binary.Write(buf, binary.LittleEndian, uint32(len(c.Code)))
@@ -56,18 +79,28 @@ func writeMetadata(buf *bytes.Buffer, c *Chunk) {
 
 func serializeValue(buf *bytes.Buffer, v Value) {
 	switch val := v.(type) {
-		case ValueNumber: {
-			buf.WriteByte(1)
+		case ValueInt: {
+			buf.WriteByte(IntCode)
+			binary.Write(buf, binary.LittleEndian, val.Value)
+		}
+		
+		case ValueFloat: {
+			buf.WriteByte(FloatCode)
 			binary.Write(buf, binary.LittleEndian, val.Value)
 		}
 
 		case ValueString: {
-			buf.WriteByte(2)
+			buf.WriteByte(StringCode)
 			serializeString(buf, val.Value)
+		}
+		
+		case ValueChar: {
+			buf.WriteByte(CharCode)
+			binary.Write(buf, binary.LittleEndian, val.Value)
 		}
 
 		case ValueBool: {
-			buf.WriteByte(3)
+			buf.WriteByte(BoolCode)
 			if val.Value {
 				buf.WriteByte(1)
 			} else {
@@ -76,13 +109,13 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueNil:
-			buf.WriteByte(4)
+			buf.WriteByte(NilCode)
 
 		case ValueVoid:
-			buf.WriteByte(5)
+			buf.WriteByte(VoidCode)
 
 		case ValueFunction: {
-			buf.WriteByte(6)
+			buf.WriteByte(FunctionCode)
 			binary.Write(buf, binary.LittleEndian, val.Arity)
 
 			if val.Name != nil {
@@ -95,19 +128,10 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			buf.Write(val.Chunk.Serialize())
 		}
 
-		case ValueClosure: {
-			buf.WriteByte(7)
-			serializeValue(buf, val.Fn)
-			
-			binary.Write(buf, binary.LittleEndian, uint32(len(val.Upvalues)))
-			
-			for _, up := range val.Upvalues {
-				serializeUpvalue(buf, up)
-			}
-		}
+		// we don't need to serialize closures and upvalues, because they aren't generated at compile time.
 
 		case ValueRange: {
-			buf.WriteByte(8)
+			buf.WriteByte(RangeCode)
 			
 			binary.Write(buf, binary.LittleEndian, val.Start)
 			binary.Write(buf, binary.LittleEndian, val.End)
@@ -117,11 +141,12 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 				buf.WriteByte(1)
 			} else {
 				buf.WriteByte(0)
+				
 			}
 		}
 
 		case ValueRecord: {
-			buf.WriteByte(9)
+			buf.WriteByte(RecordCode)
 			
 			serializeString(buf, val.Name)
 			binary.Write(buf, binary.LittleEndian, uint32(len(val.FieldNames)))
@@ -137,7 +162,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueInstance: {
-			buf.WriteByte(10)
+			buf.WriteByte(InstanceCode)
 			binary.Write(buf, binary.LittleEndian, uint32(len(val.Fields)))
 			
 			for _, f := range val.Fields {
@@ -148,14 +173,15 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 		}
 
 		case ValueBoundMethod: {
-			buf.WriteByte(11)
+			buf.WriteByte(BoundMethodCode)
 			
 			serializeValue(buf, val.Receiver)
 			serializeValue(buf, &val.Method)
 		}
 
-		// ValueNativeFunction cannot be serialized,
-		// but that's not a problem, because the VM needs to reimplement them
+		// ValueNativeFn cannot be serialized,
+		// because it is implementation-dependent.
+		// in the VM we will create them.
 
 		default:
 			panic(fmt.Sprintf("Unknown type: %T\n", v))
@@ -168,24 +194,6 @@ func serializeString(buf *bytes.Buffer, s string) {
 		panic(fmt.Sprintf("failed to write string length: %v", err))
 	}
 	buf.WriteString(s)
-}
-
-func serializeUpvalue(buf *bytes.Buffer, up Upvalue) {
-	err := binary.Write(buf, binary.LittleEndian, uint32(up.LocalsIndex))
-	if err != nil {
-		panic(fmt.Sprintf("failed to write upvalue LocalsIndex: %v", err))
-	}
-	err = binary.Write(buf, binary.LittleEndian, uint32(up.Index))
-	if err != nil {
-		panic(fmt.Sprintf("failed to write upvalue Index: %v", err))
-	}
-
-	if up.IsClosed {
-		buf.WriteByte(1)
-		serializeValue(buf, up.ClosedValue)
-	} else {
-		buf.WriteByte(0)
-	}
 }
 
 func serializeMetadata(buf *bytes.Buffer, m Metadata) {

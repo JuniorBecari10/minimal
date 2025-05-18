@@ -8,11 +8,16 @@ import (
 )
 
 func (p *Parser) expression(precedence int) ast.Expression {
-	pos := p.peek(0).Pos
-	prefixFn, ok := p.prefixMap[p.peek(0).Kind]
+	peek := p.peek(0)
+
+	pos := peek.Pos
+	prefixFn, ok := p.prefixMap[peek.Kind]
 
 	if !ok {
-		p.error(fmt.Sprintf("Expected expression, but found token: '%s'.", p.peek(0).Lexeme))
+		p.error(fmt.Sprintf("Expected expression after %s, but found %s instead.",
+			p.peek(-1).FormatError(),
+			p.peek(0).FormatError()))
+
 		return ast.Expression{}
 	}
 
@@ -33,7 +38,22 @@ func (p *Parser) expression(precedence int) ast.Expression {
 
 // ---
 
-func (p *Parser) parseNumber() ast.Expression {
+func (p *Parser) parseInt() ast.Expression {
+	tok := p.advance()
+	value, _ := strconv.Atoi(tok.Lexeme)
+
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos: tok.Pos,
+			Length: len(tok.Lexeme),
+		},
+		Data: ast.IntExpression{
+			Literal: int32(value),
+		},
+	}
+}
+
+func (p *Parser) parseFloat() ast.Expression {
 	tok := p.advance()
 	value, _ := strconv.ParseFloat(tok.Lexeme, 64)
 
@@ -42,7 +62,7 @@ func (p *Parser) parseNumber() ast.Expression {
 			Pos: tok.Pos,
 			Length: len(tok.Lexeme),
 		},
-		Data: ast.NumberExpression{
+		Data: ast.FloatExpression{
 			Literal: value,
 		},
 	}
@@ -58,6 +78,20 @@ func (p *Parser) parseString() ast.Expression {
 		},
 		Data: ast.StringExpression{
 			Literal: tok.Lexeme,
+		},
+	}
+}
+
+func (p *Parser) parseChar() ast.Expression {
+	tok := p.advance()
+
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos: tok.Pos,
+			Length: len(tok.Lexeme) + 2,
+		},
+		Data: ast.CharExpression{
+			Literal: uint8(tok.Lexeme[0]), // guaranteed to be one character long
 		},
 	}
 }
@@ -139,6 +173,7 @@ func (p *Parser) parseVoid() ast.Expression {
 	}
 }
 
+// disambuguation between parenthesized expression and lambda expression.
 func (p *Parser) lParen() ast.Expression {
 	// lambda: ')' | ( ident ',' | ')' )
 	if p.peek(1).Kind == token.TokenRightParen ||

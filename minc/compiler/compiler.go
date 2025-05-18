@@ -6,6 +6,7 @@ import (
 	"minlib/token"
 	"minlib/util"
 	"minlib/value"
+	"path/filepath"
 )
 
 type Local struct {
@@ -50,7 +51,9 @@ func NewCompiler(ast []ast.Statement, fileData *util.FileData) *Compiler {
 		globals: []Global{},
 		upvalues: []Upvalue{},
 
-		chunk: value.Chunk{},
+		chunk: value.Chunk{
+			Name: filepath.Base(fileData.Name),
+		},
 		scopeDepth: 0,
 		loopFlowPos: []int{},
 

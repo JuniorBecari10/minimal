@@ -1,15 +1,17 @@
 #ifndef STRING_H
 #define STRING_H
 
+#include <inttypes.h>
 #include <stddef.h>
 
-// the object that will be interned
-// chars is heap-allocated and owned by the struct
-typedef struct {
+struct string {
     char *chars;
     size_t length;
-} String;
 
-void string_free(String *s);
+    uint32_t hash;
+};
+
+struct string string_new(const char *chars, size_t length);
+void string_free(struct string *str);
 
 #endif

@@ -21,10 +21,9 @@ func NewDisassembler(chunk value.Chunk) *Disassembler {
 	}
 }
 
-const MAX_INSTRUCTION_LENGTH = 16
 
 func (d *Disassembler) Disassemble() {
-	d.disassemble("top-level")
+	d.disassemble(fmt.Sprintf("top-level of %s", d.chunk.Name))
 }
 
 func (d *Disassembler) disassemble(name string) {
@@ -83,7 +82,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 		util.PadLeft(strconv.Itoa(int(d.chunk.Metadata[ip].Length)), 6, " "),
 
-		util.PadRight(getInstructionName(inst), MAX_INSTRUCTION_LENGTH, " "),
+		util.PadRight(getInstructionName(inst), instructions.MAX_INSTRUCTION_LENGTH, " "),
 	)
 
 	switch inst {
@@ -160,7 +159,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 					util.PadRight(strconv.Itoa(int(d.chunk.Metadata[ip].Length)), 6, " "),
 			
-					strings.Repeat(" ", MAX_INSTRUCTION_LENGTH - 1),
+					strings.Repeat(" ", instructions.MAX_INSTRUCTION_LENGTH - 1),
 
 					util.PadRight(strconv.Itoa(upvalueIndex), 6, " "),
 					text,

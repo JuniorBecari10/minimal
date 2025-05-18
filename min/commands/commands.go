@@ -1,45 +1,176 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
+	"min/disassembler"
 	"minlib/util"
 	"minlib/value"
-	"min/disassembler"
 	"os"
+	"os/exec"
+	"path/filepath"
 )
 
-func Build(source, output string) {
+// TODO: add a variant of these commands with no arguments to support projects (but they will require a special file at the root of the folder)
+// TODO: add flag silent to remove these 'min' log messages.
 
+func Build(source, output string) {
+	// just run the compiler
+	logMeasure("Compiling", func() {
+		minc := getMinc()
+		
+		cmd := exec.Command(minc, source, output)
+		
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		
+		err := cmd.Run()
+
+		if err != nil {
+			log("Compiling phase failed.")
+			os.Exit(1)
+		}
+	})
 }
 
-func Disasm(sourcePath string) {
-	source, err := util.ReadSourceFile(sourcePath)
+func Disasm(source string) {
+	// run compiler and disassemble
+	var data []byte
 
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot read source file '%s': %s\n", sourcePath, err.Error())
-		os.Exit(1)
-	}
+	logMeasure("Compiling", func() {
+		minc := getMinc()
+		
+		cmd := exec.Command(minc, source, "*stdout")
+		cmd.Stderr = os.Stderr
 
-	fmt.Println(source)
+		stdout, err := cmd.Output()
+
+		if err != nil {
+			log("Compiling phase failed.")
+			os.Exit(1)
+		}
+
+		data, err = util.ReadBytecode(*bytes.NewBuffer(stdout))
+
+		if err != nil {
+			log("Compiling phase failed.")
+			os.Exit(1)
+		}
+	})
+
+	logNewline("Disassembling", func() {
+		chunk := value.Deserialize(data)
+		disassembler.NewDisassembler(chunk).Disassemble()
+	})
 }
 
 func Disasmb(bytecodePath string) {
-	bytecode, err := util.ReadBytecodeFile(bytecodePath)
+	// just disassemble
+	logNewline("Disassembling", func() {
+		bytecode, err := util.ReadBytecodeFile(bytecodePath)
 
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot read bytecode file '%s': %s\n", bytecodePath, err.Error())
-		os.Exit(1)
-	}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Cannot read bytecode file '%s'.\n", bytecodePath)
+			log("Disassembling phase failed.")
+			
+			os.Exit(1)
+		}
 
-	chunk := value.Deserialize([]byte(bytecode))
-	disassembler.NewDisassembler(chunk).Disassemble()
+		chunk := value.Deserialize([]byte(bytecode))
+		disassembler.NewDisassembler(chunk).Disassemble()
+	})
 }
 
 func Execute(bytecode string) {
+	// just run the bytecode
+	logNewline("Running", func() {
+		minvm := getMinvm()
+		
+		cmd := exec.Command(minvm, bytecode)
+		
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
+		err := cmd.Run()
+		
+		if err != nil {
+			log("Running phase failed.")
+			os.Exit(1)
+		}
+	})
 }
 
 func Run(source string) {
+	tempFile, err := os.CreateTemp("", "temp_*.mnb")
+	
+	if err != nil {
+		log("Error generating temporary file for compilation.")
+		os.Exit(1)
+	}
 
+	defer tempFile.Close()
+	
+	tempFileName, err := filepath.Abs(tempFile.Name())
+	
+	if err != nil {
+		log("Error getting temporary file name for compilation.")
+		os.Exit(1)
+	}
+
+	// compile and run
+	logMeasure("Compiling", func() {
+		minc := getMinc()
+		
+		cmd := exec.Command(minc, source, tempFileName)
+		
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		
+		err := cmd.Run()
+
+		if err != nil {
+			log("Compiling phase failed.")
+			os.Exit(1)
+		}
+	})
+
+	logNewline("Running", func() {
+		minvm := getMinvm()
+		cmd := exec.Command(minvm, tempFileName)
+		
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err := cmd.Run()
+		
+		if err != nil {
+			log("Running phase failed.")
+			os.Exit(1)
+		}
+	})
+}
+
+// ---
+
+// These functions end the program if the executable is not found.
+// They also print a message.
+
+func getCommand(command string) string {
+	path, err := exec.LookPath(command)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "The desired command requires '%s' to be in path.\n", command)
+		fmt.Fprintln(os.Stderr, "Please place it in path before running this command again.")
+		os.Exit(1)
+	}
+
+	return path
+}
+
+func getMinc() string {
+	return getCommand("minc")
+}
+
+func getMinvm() string {
+	return getCommand("minvm")
 }
 

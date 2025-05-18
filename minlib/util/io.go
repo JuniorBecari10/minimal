@@ -20,6 +20,7 @@ const (
 )
 
 // reads the source file, which also treats '*stdin' as a special value for stdin.
+// TODO: check for the bytecode header here, because the user may get confused and call the wrong function.
 func ReadSourceFile(path string) ([]byte, error) {
 	// check for special '*stdin'
 	if path == STDIN {
@@ -48,6 +49,12 @@ func ReadBytecodeFile(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	
+	return ReadBytecode(*bytes.NewBuffer(data))
+}
+
+func ReadBytecode(buffer bytes.Buffer) ([]byte, error) {
+	data := buffer.Bytes()
 
 	if len(data) < 8 {
 		return nil, fmt.Errorf("File is too small to contain header and checksum")

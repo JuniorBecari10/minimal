@@ -1,11 +1,20 @@
 #ifndef DESERIALIZE_H
 #define DESERIALIZE_H
 
-#include "vm.h"
+#include "chunk.h"
+#include "object.h"
+#include "set.h"
 
-#include <inttypes.h>
 #include <stdbool.h>
+#include <stddef.h>
 
-bool deserialize(const uint8_t *buffer, size_t len, VM *vm);
+#define TRY(e) if (!(e)) return false
+
+#define HEADER "MNML"
+#define HEADER_LEN 4
+#define CHECKSUM_LEN HEADER_LEN
+
+bool deserialize(const char *buffer, size_t buffer_len,
+                 struct chunk *out, struct object **obj_list, struct string_set *strings);
 
 #endif

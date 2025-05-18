@@ -1,50 +1,75 @@
 #include "deserialize.h"
+#include "chunk.h"
+#include "input.h"
+#include "codes.h"
 #include "object.h"
-#include "string.h"
 #include "value.h"
-#include "io.h"
-#include "vm.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#define TRY(e) if (!e) return false
+static bool read_chunk(const char *buffer, size_t buffer_len, size_t *counter,
+                       struct chunk *out, struct object **obj_list, struct string_set *strings);
 
-static bool read_chunk(const uint8_t *buffer, size_t len, VM *vm, Chunk *out, size_t *counter);
+// ---
 
-static bool read_code(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
-static bool read_constants(const uint8_t *buffer, size_t len, VM *vm, size_t *counter);
-static bool read_metadata(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter);
+static bool read_name(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out);
 
-static bool read_value(const uint8_t *buffer, size_t len, Value *out, VM *vm, size_t *counter);
-static bool read_meta(const uint8_t *buffer, size_t len, Metadata *out, size_t *counter);
+static bool read_code(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out);
 
-static bool read_uint8(const uint8_t *buffer, size_t len, size_t *counter, uint8_t *out);
-static bool read_uint32(const uint8_t *buffer, size_t len, size_t *counter, uint32_t *out);
-static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, float64 *out);
-static bool read_string(const uint8_t *buffer, size_t len, size_t *counter, String *out);
+static bool read_constants(const char *buffer, size_t buffer_len, size_t *counter,
+                           struct chunk *out, struct object **obj_list, struct string_set *strings);
 
-bool deserialize(const uint8_t *buffer, size_t len, VM *vm) {
-    size_t counter = HEADER_LEN; // to skip the header
-    return read_chunk(buffer, len, vm, &vm->chunk, &counter); // reads directly to the vm's field
+static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out);
+
+// ---
+
+static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
+                       struct object **obj_list, struct string_set *strings, struct value *out);
+
+static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out);
+
+// ---
+
+bool deserialize(const char *buffer, size_t buffer_len,
+                 struct chunk *out, struct object **obj_list, struct string_set *strings) {
+    size_t counter = HEADER_LEN; // start after the header
+    return read_chunk(buffer, buffer_len, &counter, out, obj_list, strings);
 }
 
-static bool read_chunk(const uint8_t *buffer, size_t len, VM *vm, Chunk *out, size_t *counter) {
-    TRY(read_code(buffer, len, out, counter));
-    TRY(read_constants(buffer, len, vm, counter));
-    TRY(read_metadata(buffer, len, out, counter));
+static bool read_chunk(const char *buffer, size_t buffer_len, size_t *counter,
+                       struct chunk *out, struct object **obj_list, struct string_set *strings) {
+    TRY(read_name(buffer, buffer_len, counter, out));
+    TRY(read_code(buffer, buffer_len, counter, out));
+    TRY(read_constants(buffer, buffer_len, counter, out, obj_list, strings));
+    TRY(read_metadata(buffer, buffer_len, counter, out));
 
     return true;
 }
+// ---
 
-static bool read_code(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter) {
+static bool read_name(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out) {
+    struct string str;
+    TRY(read_string(buffer, buffer_len, counter, &str));
+
+    // safe. the chunk will own the allocation.
+    out->name = str.chars;
+    return true;
+}
+
+static bool read_code(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out) {
     uint32_t code_len;
-    TRY(read_uint32(buffer, len, counter, &code_len));
+    TRY(read_uint32(buffer, buffer_len, counter, &code_len));
 
-    if (*counter + code_len > len) return false;
-    
+    // see if the buffer can contain all the code
+    if (*counter + code_len > buffer_len)
+        return false;
+
     out->code = malloc(code_len);
-    if (!out->code) return false;
+    
+    if (!out->code)
+        return false;
 
     memcpy(out->code, buffer + *counter, code_len);
     *counter += code_len;
@@ -52,33 +77,34 @@ static bool read_code(const uint8_t *buffer, size_t len, Chunk *out, size_t *cou
     return true;
 }
 
-static bool read_constants(const uint8_t *buffer, size_t len, VM *vm, size_t *counter) {
+static bool read_constants(const char *buffer, size_t buffer_len, size_t *counter,
+                           struct chunk *out, struct object **obj_list, struct string_set *strings) {
     uint32_t const_len;
-    TRY(read_uint32(buffer, len, counter, &const_len));
+    TRY(read_uint32(buffer, buffer_len, counter, &const_len));
 
-    vm->chunk->constants = List_Value_new_with_capacity(const_len);
+    out->constants = malloc(const_len * sizeof(struct value));
+    
+    if (!out->constants)
+        return false;
 
-    for (size_t i = 0; i < const_len; i++) {
-        Value value;
-
-        TRY(read_value(buffer, len, &value, vm, counter));
-        List_Value_push(&vm->chunk->constants, value);
+    for (struct value *v = out->constants; v < out->constants + const_len; v++) {
+        TRY(read_value(buffer, buffer_len, counter, obj_list, strings, v));
     }
 
     return true;
 }
 
-static bool read_metadata(const uint8_t *buffer, size_t len, Chunk *out, size_t *counter) {
+static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out) {
     uint32_t metadata_len;
-    TRY(read_uint32(buffer, len, counter, &metadata_len));
+    TRY(read_uint32(buffer, buffer_len, counter, &metadata_len));
 
-    out->metadata = List_Metadata_new_with_capacity(metadata_len);
+    out->metadata = malloc(metadata_len * sizeof(struct metadata));
 
     for (size_t i = 0; i < metadata_len; i++) {
-        Metadata metadata;
+        struct metadata metadata;
+        TRY(read_meta(buffer, buffer_len, counter, &metadata));
 
-        TRY(read_meta(buffer, len, &metadata, counter));
-        List_Metadata_push(&out->metadata, metadata);
+        out->metadata[i] = metadata;
     }
 
     return true;
@@ -86,162 +112,113 @@ static bool read_metadata(const uint8_t *buffer, size_t len, Chunk *out, size_t 
 
 // ---
 
-static bool read_value(const uint8_t *buffer, size_t len, Value *out, VM *vm, size_t *counter) {
+static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
+                       struct object **obj_list, struct string_set *strings, struct value *out) {
     uint8_t tag;
-    TRY(read_uint8(buffer, len, counter, &tag));
+    TRY(read_uint8(buffer, buffer_len, counter, &tag));
 
     switch (tag) {
-        case 1: { // Number
+        case INT_CODE: {
+            int32_t num;
+            TRY(read_int32(buffer, buffer_len, counter, &num));
+
+            *out = NEW_INT(num);
+            return true;
+        }
+
+        case FLOAT_CODE: {
             float64 num;
-            TRY(read_float64(buffer, len, counter, &num));
+            TRY(read_float64(buffer, buffer_len, counter, &num));
 
-            *out = NEW_NUMBER(num);
+            *out = NEW_FLOAT(num);
             return true;
         }
 
-        case 2: { // String
-            String string;
-            TRY(read_string(buffer, len, counter, &string));
-            
-            String *ptr = intern_string(vm, string);
-            ObjString *str = allocate_object(vm, sizeof(ObjString), OBJ_STRING);
-            str->str = ptr;
+        case STRING_CODE: {
+            struct string str;
+            TRY(read_string(buffer, buffer_len, counter, &str));
 
-            *out = NEW_OBJECT(str);
+            struct string *interned = intern_string(strings, str);
+            TRY(interned);
+
+            struct obj_string *obj_str = obj_string_new(interned);
+            TRY(obj_str);
+
+            *out = NEW_OBJECT((struct object *) obj_str);
             return true;
         }
 
-        case 3: { // Bool
+        case BOOL_CODE: {
             uint8_t boolean;
-            TRY(read_uint8(buffer, len, counter, &boolean));
+            TRY(read_uint8(buffer, buffer_len, counter, &boolean));
 
             *out = NEW_BOOL(boolean);
             return true;
         }
 
-        case 4: { // Nil
+        case NIL_CODE: {
             *out = NEW_NIL;
             return true;
         }
-
-        case 5: { // Void
+        
+        case VOID_CODE: {
             *out = NEW_VOID;
             return true;
         }
 
-        case 6: { // Function
+        case FUNCTION_CODE: {
             uint32_t arity;
-            TRY(read_uint32(buffer, len, counter, &arity));
+            TRY(read_uint32(buffer, buffer_len, counter, &arity));
 
             uint8_t has_name;
-            TRY(read_uint8(buffer, len, counter, &has_name));
+            TRY(read_uint8(buffer, buffer_len, counter, &has_name));
 
             char *name = NULL;
-            if (has_name == 1) {
-                String name_str;
-                TRY(read_string(buffer, len, counter, &name_str));
+            if (has_name != 0) {
+                struct string str;
+                TRY(read_string(buffer, buffer_len, counter, &str));
 
-                name = name_str.chars; // it is zero-terminated, so ok
+                // safe, because it is zero-terminated and now 'name' will own the allocation.
+                name = str.chars;
             }
+            printf("ok until now\n");
+            struct chunk c;
+            TRY(read_chunk(buffer, buffer_len, counter, &c, obj_list, strings)); // here
 
-            Chunk chunk;
-            TRY(read_chunk(buffer, len, vm, &chunk, counter));
+            struct obj_function *function = obj_function_new(c, arity, name);
+            TRY(function);
 
-            ObjFunction *fn = allocate_object(vm, sizeof(ObjFunction), OBJ_FUNCTION);
+            struct object *obj = (struct object *) function;
+            add_object_to_list(obj, obj_list);
 
-            fn->arity = (size_t) arity;
-            fn->chunk = chunk;
-            fn->name = name;
-
-            *out = NEW_OBJECT(fn);
+            *out = NEW_OBJECT(obj);
             return true;
         }
 
+        // we don't need to deserialize closures and upvalues, because they aren't generated at compile time.
+
         default: {
-            fprintf(stderr, "Invalid tag: %u\n", tag);
+            fprintf(stderr, "Unknown type tag: %" PRIu8 ".", tag);
             return false;
         }
     }
 }
 
-static bool read_meta(const uint8_t *buffer, size_t len, Metadata *out, size_t *counter) {
+// ---
+
+static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out) {
     uint32_t line, col, length;
 
-    TRY(read_uint32(buffer, len, counter, &line));
-    TRY(read_uint32(buffer, len, counter, &col));
-    TRY(read_uint32(buffer, len, counter, &length));
+    TRY(read_uint32(buffer, buffer_len, counter, &line));
+    TRY(read_uint32(buffer, buffer_len, counter, &col));
+    TRY(read_uint32(buffer, buffer_len, counter, &length));
 
-    *out = (Metadata) {
+    *out = (struct metadata) {
         .position = {
             .line = line,
             .col = col,
         },
         .length = length,
-    };
-
-    return true;
-}
-
-// ---
-
-static bool read_uint8(const uint8_t *buffer, size_t len, size_t *counter, uint8_t *out) {
-    if (*counter + 1 > len) return false;
-    *out = buffer[(*counter)++];
-
-    return true;
-}
-
-static bool read_uint32(const uint8_t *buffer, size_t len, size_t *counter, uint32_t *out) {
-    if (*counter + 4 > len) return false;
-
-    *out = ((uint32_t)buffer[*counter])           |
-           ((uint32_t)buffer[*counter + 1] << 8)  |
-           ((uint32_t)buffer[*counter + 2] << 16) |
-           ((uint32_t)buffer[*counter + 3] << 24);
-    
-    *counter += 4;
-    return true;
-}
-
-static bool read_float64(const uint8_t *buffer, size_t len, size_t *counter, float64 *out) {
-    if (*counter + 8 > len) return false;
-
-    uint64_t temp =
-        ((uint64_t) buffer[(*counter)])           |
-        ((uint64_t) buffer[(*counter) + 1] << 8)  |
-        ((uint64_t) buffer[(*counter) + 2] << 16) |
-        ((uint64_t) buffer[(*counter) + 3] << 24) |
-        ((uint64_t) buffer[(*counter) + 4] << 32) |
-        ((uint64_t) buffer[(*counter) + 5] << 40) |
-        ((uint64_t) buffer[(*counter) + 6] << 48) |
-        ((uint64_t) buffer[(*counter) + 7] << 56);
-
-    memcpy(out, &temp, sizeof(float64));
-    *counter += 8;
-
-    return true;
-}
-
-static bool read_string(const uint8_t *buffer, size_t len, size_t *counter, String *out) {
-    uint32_t string_len;
-    TRY(read_uint32(buffer, len, counter, &string_len));
-
-    // Check for buffer overflow
-    if (*counter + string_len > len)
-        return false;
-
-    // String + null terminator
-    char *s = malloc(string_len + 1);
-    if (s == NULL)
-        return false;
-
-    memcpy(s, buffer + *counter, string_len);
-    s[string_len] = '\0';
-
-    *counter += string_len;
-    *out = (String) {
-        .chars = s,
-        .length = string_len,
     };
 
     return true;

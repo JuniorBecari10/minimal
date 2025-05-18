@@ -127,19 +127,19 @@ func (c *Compiler) statement(stmt ast.Statement) {
             |   JUMP ------+
             +-- JUMP_FALSE | <- break/continue point
             |   POP        |
-			|   JUMP ------+---+
-            |                 |   |
-            |   [ body ] <----+---+----+
-            |                     |    |
-            |   - end scope - <---+    |
-            |   - begin scope -        |
-			|                          |
-            |   ADVANCE             |
-            +-- JUMP_HAS_NO_NEXT    |
-            |   GET_NEXT            |
-            |   DEF_LOCAL           |
-            |                          |
-            |   LOOP ---------------+
+			|   JUMP ------+------+
+            |              |      |
+            |   [ body ] <-+------+--+
+            |                     |  |
+            |   - end scope - <---+  |
+            |   - begin scope -      |
+			|                        |
+            |   ADVANCE              |
+            +-- JUMP_HAS_NO_NEXT     |
+            |   GET_NEXT             |
+            |   DEF_LOCAL            |
+            |                        |
+            |   LOOP ----------------+
             +-> POP
 
 				- end scope -
@@ -220,21 +220,21 @@ func (c *Compiler) statement(stmt ast.Statement) {
                 [ initializer ]
                 [ condition ] <------+
                                      |
-            +-- JUMP_FALSE        | <- break/continue point
-            |   POP               |
+            +-- JUMP_FALSE           | <- break/continue point
+            |   POP                  |
             |                        |
             |   [ body ]             |
             |                        |
-            |   GET_LOCAL <index> |
+            |   GET_LOCAL <index>    |
             |   - end scope -        |
             |   - begin scope -      |
 			|                        |
 			|   [ initializer* ]     | (this version of the initializer uses the saved value on the stack)
             |                        |
-            | + [ increment ]        | (generated if increment is set)
-            | + POP               |
+			| + [ increment ]        | (+): generated if increment is set
+            | + POP                  |
             |                        |
-            |   LOOP -------------+
+            |   LOOP ----------------+
             +-> POP
 
 				- end scope -
@@ -291,13 +291,13 @@ func (c *Compiler) statement(stmt ast.Statement) {
             Control Flow:
 
             +-- JUMP
-            |   JUMP_FALSE --+ <- break/continue point
-            |   POP          |
+            |   JUMP_FALSE -----+ <- break/continue point
+            |   POP             |
             |                   |
             +-> [ block ] <-+   |
                             |   |
-                LOOP ----+   |
-                POP <--------+
+                LOOP -------+   |
+                POP <-----------+
 
             continues...
 		*/
@@ -369,6 +369,9 @@ func (c *Compiler) statement(stmt ast.Statement) {
 
 		case ast.ExprStatement: {
 			// Optimization to remove nodes that don't have side effects.
+			
+			// TODO: add warning if the reduced expression is different,
+			// saying that the expression contains unused nodes.
 			reduced := reduceToSideEffect(s.Expr)
 
 			if reduced != nil {
