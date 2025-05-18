@@ -5,6 +5,7 @@
 #include "object.h"
 #include "value.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -49,21 +50,11 @@ static bool read_chunk(const char *buffer, size_t buffer_len, size_t *counter,
 // ---
 
 static bool read_name(const char *buffer, size_t buffer_len, size_t *counter, struct chunk *out) {
-    uint32_t name_len;
-    TRY(read_uint32(buffer, buffer_len, counter, &name_len));
+    struct string str;
+    TRY(read_string(buffer, buffer_len, counter, &str));
 
-    // see if the buffer can contain all the code
-    if (*counter + name_len > buffer_len)
-        return false;
-
-    out->name = malloc(name_len);
-    
-    if (!out->name)
-        return false;
-
-    memcpy(out->name, buffer + *counter, name_len);
-    *counter += name_len;
-
+    // safe. the chunk will own the allocation.
+    out->name = str.chars;
     return true;
 }
 
@@ -91,7 +82,7 @@ static bool read_constants(const char *buffer, size_t buffer_len, size_t *counte
     uint32_t const_len;
     TRY(read_uint32(buffer, buffer_len, counter, &const_len));
 
-    out->constants = malloc(const_len);
+    out->constants = malloc(const_len * sizeof(struct value));
     
     if (!out->constants)
         return false;
@@ -107,7 +98,7 @@ static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter
     uint32_t metadata_len;
     TRY(read_uint32(buffer, buffer_len, counter, &metadata_len));
 
-    out->metadata = malloc(metadata_len);
+    out->metadata = malloc(metadata_len * sizeof(struct metadata));
 
     for (size_t i = 0; i < metadata_len; i++) {
         struct metadata metadata;
@@ -147,9 +138,10 @@ static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
             struct string str;
             TRY(read_string(buffer, buffer_len, counter, &str));
 
-            struct string *interned = intern_string(str, strings);
+            struct string *interned = intern_string(strings, str);
+            TRY(interned);
+
             struct obj_string *obj_str = obj_string_new(interned);
-            
             TRY(obj_str);
 
             *out = NEW_OBJECT((struct object *) obj_str);
@@ -189,9 +181,9 @@ static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
                 // safe, because it is zero-terminated and now 'name' will own the allocation.
                 name = str.chars;
             }
-            
+            printf("ok until now\n");
             struct chunk c;
-            TRY(read_chunk(buffer, buffer_len, counter, &c, obj_list, strings));
+            TRY(read_chunk(buffer, buffer_len, counter, &c, obj_list, strings)); // here
 
             struct obj_function *function = obj_function_new(c, arity, name);
             TRY(function);
@@ -203,9 +195,11 @@ static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
             return true;
         }
 
-        case CLOSURE_CODE: {
-            // TODO
-            return true;
+        // we don't need to deserialize closures and upvalues, because they aren't generated at compile time.
+
+        default: {
+            fprintf(stderr, "Unknown type tag: %" PRIu8 ".", tag);
+            return false;
         }
     }
 }

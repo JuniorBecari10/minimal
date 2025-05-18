@@ -129,16 +129,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			buf.Write(val.Chunk.Serialize())
 		}
 
-		case ValueClosure: {
-			buf.WriteByte(ClosureCode)
-			serializeValue(buf, val.Fn)
-			
-			binary.Write(buf, binary.LittleEndian, uint32(len(val.Upvalues)))
-			
-			for _, up := range val.Upvalues {
-				serializeUpvalue(buf, up)
-			}
-		}
+		// we don't need to serialize closures and upvalues, because they aren't generated at compile time.
 
 		case ValueRange: {
 			buf.WriteByte(RangeCode)
@@ -151,6 +142,7 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 				buf.WriteByte(1)
 			} else {
 				buf.WriteByte(0)
+				
 			}
 		}
 
@@ -188,8 +180,9 @@ func serializeValue(buf *bytes.Buffer, v Value) {
 			serializeValue(buf, &val.Method)
 		}
 
-		// ValueNativeFunction cannot be serialized,
-		// but that's not a problem, because the VM needs to reimplement them
+		// ValueNativeFn cannot be serialized,
+		// because it is implementation-dependent.
+		// in the VM we will create them.
 
 		default:
 			panic(fmt.Sprintf("Unknown type: %T\n", v))
@@ -202,24 +195,6 @@ func serializeString(buf *bytes.Buffer, s string) {
 		panic(fmt.Sprintf("failed to write string length: %v", err))
 	}
 	buf.WriteString(s)
-}
-
-func serializeUpvalue(buf *bytes.Buffer, up Upvalue) {
-	err := binary.Write(buf, binary.LittleEndian, uint32(up.LocalsIndex))
-	if err != nil {
-		panic(fmt.Sprintf("failed to write upvalue LocalsIndex: %v", err))
-	}
-	err = binary.Write(buf, binary.LittleEndian, uint32(up.Index))
-	if err != nil {
-		panic(fmt.Sprintf("failed to write upvalue Index: %v", err))
-	}
-
-	if up.IsClosed {
-		buf.WriteByte(1)
-		serializeValue(buf, up.ClosedValue)
-	} else {
-		buf.WriteByte(0)
-	}
 }
 
 func serializeMetadata(buf *bytes.Buffer, m Metadata) {

@@ -2,9 +2,9 @@ package value
 
 import (
 	"bytes"
-	"io"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"minlib/token"
 )
 
@@ -125,36 +125,7 @@ func deserializeValue(r io.Reader) Value {
 			return ValueFunction{Arity: arity, Chunk: fchunk, Name: name}
 		}
 
-		case ClosureCode: {
-			fn := deserializeValue(buf).(ValueFunction)
-			
-			var upcount int32
-			binary.Read(buf, binary.LittleEndian, &upcount)
-			
-			upvalues := make([]Upvalue, upcount)
-			for i := range upvalues {
-				var li, idx int32
-				var closed bool
-				
-				binary.Read(buf, binary.LittleEndian, &li)
-				binary.Read(buf, binary.LittleEndian, &idx)
-				binary.Read(buf, binary.LittleEndian, &closed)
-				
-				up := Upvalue{
-					LocalsIndex: int(li),
-					Index:       int(idx),
-					IsClosed:    closed,
-				}
-				
-				if closed {
-					up.ClosedValue = deserializeValue(buf)
-				}
-				
-				upvalues[i] = up
-			}
-			
-			return ValueClosure{Fn: &fn, Upvalues: upvalues}
-		}
+		// we don't need to deserialize closures and upvalues, because they aren't generated at compile time.
 
 		case RecordCode: {
 			name := deserializeString(buf)

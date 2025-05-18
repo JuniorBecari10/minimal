@@ -5,6 +5,7 @@
 #include "string.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #define TRY(e) if (!(e)) return NULL;
 
@@ -28,9 +29,8 @@ struct object *object_new(size_t size, enum object_type type) {
 void object_free(struct object *obj) {
     switch (obj->type) {
         case OBJ_STRING: {
+            // this does not free the string itself because it doesn't own it. the VM set does.
             struct obj_string *str = (struct obj_string *) obj;
-            string_free(str->str);
-
             memset(str, 0, sizeof(*str));
             break;
         }
@@ -57,9 +57,7 @@ void object_free(struct object *obj) {
         case OBJ_UPVALUE: {
             struct obj_upvalue *upvalue = (struct obj_upvalue *) obj;
             
-            // only free the closed value if the upvalue is closed.
-            if (upvalue->is_closed && IS_OBJECT(upvalue->data.closed))
-                object_free(AS_OBJECT(upvalue->data.closed));
+            // TODO: free upvalue.
 
             memset(upvalue, 0, sizeof(*upvalue));
             break;
@@ -79,14 +77,14 @@ void add_object_to_list(struct object *obj, struct object **list) {
     *list = obj;
 }
 
-struct string *intern_string(struct string str, struct string_set *set) {
+struct string *intern_string(struct string_set *set, struct string str) {
     return string_set_add(set, str);
 }
 
 // ---
 
 struct obj_string *obj_string_new(struct string *str) {
-    struct obj_string *obj = object_new(sizeof(struct obj_string), OBJ_STRING);
+    struct obj_string *obj = (struct obj_string *) object_new(sizeof(struct obj_string), OBJ_STRING);
     TRY(obj);
 
     obj->str = str;
@@ -94,7 +92,7 @@ struct obj_string *obj_string_new(struct string *str) {
 }
 
 struct obj_function *obj_function_new(struct chunk chunk, size_t arity, char *name) {
-    struct obj_function *obj = object_new(sizeof(struct obj_function), OBJ_FUNCTION);
+    struct obj_function *obj = (struct obj_function *) object_new(sizeof(struct obj_function), OBJ_FUNCTION);
     TRY(obj);
 
     obj->chunk = chunk;
@@ -104,8 +102,8 @@ struct obj_function *obj_function_new(struct chunk chunk, size_t arity, char *na
     return obj;
 }
 
-struct obj_function *obj_closure_new(struct obj_function *fn, struct obj_upvalue **upvalues, size_t upvalue_len) {
-    struct obj_closure *obj = object_new(sizeof(struct obj_closure), OBJ_CLOSURE);
+struct obj_closure *obj_closure_new(struct obj_function *fn, struct obj_upvalue **upvalues, size_t upvalue_len) {
+    struct obj_closure *obj = (struct obj_closure *) object_new(sizeof(struct obj_closure), OBJ_CLOSURE);
     TRY(obj);
 
     obj->fn = fn;
@@ -116,22 +114,11 @@ struct obj_function *obj_closure_new(struct obj_function *fn, struct obj_upvalue
 }
 
 struct obj_native_fn *obj_native_fn_new(native_fn *fn, size_t arity) {
-    struct obj_native_fn *obj = object_new(sizeof(struct obj_native_fn), OBJ_NATIVE_FN);
+    struct obj_native_fn *obj = (struct obj_native_fn *) object_new(sizeof(struct obj_native_fn), OBJ_NATIVE_FN);
     TRY(obj);
 
     obj->fn = fn;
     obj->arity = arity;
-
-    return obj;
-}
-
-struct obj_upvalue *obj_upvalue_new_open(struct value *location) {
-    struct obj_upvalue *obj = object_new(sizeof(struct obj_upvalue), OBJ_UPVALUE);
-    TRY(obj);
-
-    obj->is_closed = false;
-    obj->data.location = location;
-    obj->next = NULL;
 
     return obj;
 }
