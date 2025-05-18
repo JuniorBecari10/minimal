@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define TRY(e) if (!e) return false
+#define TRY(e) if (!(e)) return false
 
 #define HEADER "MNML"
 #define HEADER_LEN 4

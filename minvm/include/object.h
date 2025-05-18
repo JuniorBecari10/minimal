@@ -80,7 +80,8 @@ struct obj_string *obj_string_new(struct string *str);
 struct obj_function *obj_function_new(struct chunk chunk, size_t arity, char *name);
 struct obj_function *obj_closure_new(struct obj_function *fn, struct obj_upvalue **upvalues, size_t upvalue_len);
 struct obj_native_fn *obj_native_fn_new(native_fn *fn, size_t arity);
-// TODO: new upvalue
+struct obj_upvalue *obj_upvalue_new_open(struct value *location);
+// TODO: new closed, if necessary.
 
 #define IS_STRING(value)        is_object_type(value, OBJ_STRING)
 #define AS_STRING(value)        ((struct obj_string *) AS_OBJECT(value))

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 static uint32_t hash_string(const char *chars, size_t length);
 

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TRY(e) if (!e) return 1
+#define TRY(e) if (!(e)) return 1
 
 int main(int argc, char **argv) {
     if (argc != 2) {
