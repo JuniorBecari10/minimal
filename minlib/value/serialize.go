@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// Upvalues do not need a code because they will only exist inside closures.
 const (
 	IntCode = iota
 	FloatCode

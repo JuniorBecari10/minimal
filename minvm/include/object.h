@@ -76,10 +76,10 @@ static inline bool is_object_type(struct value value, enum object_type type) {
     return IS_OBJECT(value) && AS_OBJECT(value)->type == type;
 }
 
-struct obj_string *new_string(struct string *str);
-struct obj_function *new_function(struct chunk chunk, size_t arity, char *name);
-struct obj_function *new_closure(struct obj_function *fn, struct obj_upvalue **upvalues, size_t upvalue_len);
-struct obj_native_fn *new_native_fn(native_fn *fn, size_t arity);
+struct obj_string *obj_string_new(struct string *str);
+struct obj_function *obj_function_new(struct chunk chunk, size_t arity, char *name);
+struct obj_function *obj_closure_new(struct obj_function *fn, struct obj_upvalue **upvalues, size_t upvalue_len);
+struct obj_native_fn *obj_native_fn_new(native_fn *fn, size_t arity);
 // TODO: new upvalue
 
 #define IS_STRING(value)        is_object_type(value, OBJ_STRING)

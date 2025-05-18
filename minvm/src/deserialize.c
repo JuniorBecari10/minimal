@@ -25,8 +25,7 @@ static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter
 // ---
 
 static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
-                       struct chunk *out, struct object **obj_list,
-                       struct string_set *strings, struct value *value_out);
+                       struct object **obj_list, struct string_set *strings, struct value *out);
 
 static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, struct metadata *out);
 
@@ -34,7 +33,7 @@ static bool read_meta(const char *buffer, size_t buffer_len, size_t *counter, st
 
 bool deserialize(const char *buffer, size_t buffer_len,
                  struct chunk *out, struct object **obj_list, struct string_set *strings) {
-    size_t counter = HEADER_LEN;
+    size_t counter = HEADER_LEN; // start after the header
     return read_chunk(buffer, buffer_len, &counter, out, obj_list, strings);
 }
 
@@ -58,6 +57,7 @@ static bool read_name(const char *buffer, size_t buffer_len, size_t *counter, st
         return false;
 
     out->name = malloc(name_len);
+    
     if (!out->name)
         return false;
 
@@ -76,6 +76,7 @@ static bool read_code(const char *buffer, size_t buffer_len, size_t *counter, st
         return false;
 
     out->code = malloc(code_len);
+    
     if (!out->code)
         return false;
 
@@ -91,11 +92,12 @@ static bool read_constants(const char *buffer, size_t buffer_len, size_t *counte
     TRY(read_uint32(buffer, buffer_len, counter, &const_len));
 
     out->constants = malloc(const_len);
+    
     if (!out->constants)
         return false;
 
     for (struct value *v = out->constants; v < out->constants + const_len; v++) {
-        TRY(read_value(buffer, buffer_len, counter, out, obj_list, strings, v));
+        TRY(read_value(buffer, buffer_len, counter, obj_list, strings, v));
     }
 
     return true;
@@ -109,8 +111,8 @@ static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter
 
     for (size_t i = 0; i < metadata_len; i++) {
         struct metadata metadata;
-
         TRY(read_meta(buffer, buffer_len, counter, &metadata));
+
         out->metadata[i] = metadata;
     }
 
@@ -120,8 +122,7 @@ static bool read_metadata(const char *buffer, size_t buffer_len, size_t *counter
 // ---
 
 static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
-                       struct chunk *out, struct object **obj_list,
-                       struct string_set *strings, struct value *value_out) {
+                       struct object **obj_list, struct string_set *strings, struct value *out) {
     uint8_t tag;
     TRY(read_uint8(buffer, buffer_len, counter, &tag));
 
@@ -130,7 +131,7 @@ static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
             int32_t num;
             TRY(read_int32(buffer, buffer_len, counter, &num));
 
-            *value_out = NEW_INT(num);
+            *out = NEW_INT(num);
             return true;
         }
 
@@ -138,7 +139,7 @@ static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
             float64 num;
             TRY(read_float64(buffer, buffer_len, counter, &num));
 
-            *value_out = NEW_FLOAT(num);
+            *out = NEW_FLOAT(num);
             return true;
         }
 
@@ -147,9 +148,11 @@ static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
             TRY(read_string(buffer, buffer_len, counter, &str));
 
             struct string *interned = intern_string(str, strings);
-            struct obj_string *obj_str = new_string(interned);
+            struct obj_string *obj_str = obj_string_new(interned);
+            
+            TRY(obj_str);
 
-            *value_out = NEW_OBJECT((struct object *) obj_str);
+            *out = NEW_OBJECT((struct object *) obj_str);
             return true;
         }
 
@@ -157,17 +160,17 @@ static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
             uint8_t boolean;
             TRY(read_uint8(buffer, buffer_len, counter, &boolean));
 
-            *value_out = NEW_BOOL(boolean);
+            *out = NEW_BOOL(boolean);
             return true;
         }
 
         case NIL_CODE: {
-            *value_out = NEW_NIL;
+            *out = NEW_NIL;
             return true;
         }
         
         case VOID_CODE: {
-            *value_out = NEW_VOID;
+            *out = NEW_VOID;
             return true;
         }
 
@@ -190,12 +193,18 @@ static bool read_value(const char *buffer, size_t buffer_len, size_t *counter,
             struct chunk c;
             TRY(read_chunk(buffer, buffer_len, counter, &c, obj_list, strings));
 
-            struct obj_function *function = new_function(c, arity, name);
-            struct object *obj = (struct object *) function;
+            struct obj_function *function = obj_function_new(c, arity, name);
+            TRY(function);
 
+            struct object *obj = (struct object *) function;
             add_object_to_list(obj, obj_list);
 
-            *value_out = NEW_OBJECT(obj);
+            *out = NEW_OBJECT(obj);
+            return true;
+        }
+
+        case CLOSURE_CODE: {
+            // TODO
             return true;
         }
     }
