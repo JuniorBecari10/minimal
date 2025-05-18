@@ -16,7 +16,6 @@ const (
 	NilCode
 	VoidCode
 	FunctionCode
-	ClosureCode
 	RangeCode
 	RecordCode
 	InstanceCode

@@ -10,7 +10,6 @@ enum code {
     NIL_CODE,
     VOID_CODE,
     FUNCTION_CODE,
-    CLOSURE_CODE,
     RANGE_CODE,
     RECORD_CODE,
     INSTANCE_CODE,

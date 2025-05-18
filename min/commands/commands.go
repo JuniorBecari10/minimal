@@ -11,7 +11,9 @@ import (
 	"path/filepath"
 )
 
+// TODO: add a variant of these commands with no arguments to support projects (but they will require a special file at the root of the folder)
 // TODO: add flag silent to remove these 'min' log messages.
+
 func Build(source, output string) {
 	// just run the compiler
 	logMeasure("Compiling", func() {

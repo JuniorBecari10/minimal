@@ -34,9 +34,9 @@ struct obj_string {
 struct obj_function {
     struct object obj;
 
+    char *name;
     struct chunk chunk;
     size_t arity;
-    char *name;
 };
 
 struct obj_closure {
@@ -57,10 +57,51 @@ struct obj_native_fn {
 struct obj_upvalue {
     struct object obj;
     struct obj_upvalue *next; // intrusive list (part of vm's open upvalues list)
+
     size_t upvalue_index;
 
     bool is_closed;
-    struct value closed;
+    union {
+        struct value closed;
+        struct value *location;
+    } data;
+};
+
+// TODO: add a enum range_type field to indicate the range's type (int, float, char)
+struct obj_range {
+    struct object obj;
+
+    struct value start;
+    struct value end;
+    struct value step;
+
+    bool inclusive;
+};
+
+struct obj_record {
+    struct object obj;
+    char *name;
+
+    char **field_names; // array of strings;
+    size_t field_names_len;
+
+    struct obj_closure **methods; // array of heap-allocated closures
+    size_t methods_len;
+};
+
+struct obj_instance {
+    struct object obj;
+    struct obj_record *record; // pointer (borrow) to the record who created this instance
+    
+    struct value *fields;
+    size_t fields_len;
+};
+
+struct obj_bound_method {
+    struct object obj;
+
+    struct value receiver;
+    struct obj_closure *method;
 };
 
 struct object *object_new(size_t size, enum object_type type);
