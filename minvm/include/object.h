@@ -43,7 +43,7 @@ struct obj_closure {
     struct object obj;
     struct obj_function *fn;
 
-    struct obj_upvalue **upvalues; // list to pointers to upvalues
+    struct obj_upvalue *upvalues; // list of upvalues
     size_t upvalue_len;
 };
 
@@ -116,7 +116,7 @@ static inline bool is_object_type(struct value value, enum object_type type) {
 
 struct obj_string *obj_string_new(struct string *str);
 struct obj_function *obj_function_new(struct chunk chunk, size_t arity, char *name);
-struct obj_closure *obj_closure_new(struct obj_function *fn, struct obj_upvalue **upvalues, size_t upvalue_len);
+struct obj_closure *obj_closure_new(struct obj_function *fn, struct obj_upvalue *upvalues, size_t upvalue_len);
 struct obj_native_fn *obj_native_fn_new(native_fn *fn, size_t arity);
 // TODO: new upvalue
 

@@ -32,5 +32,6 @@ int main(int argc, char **argv) {
 
     vm_run(&vm);
     vm_free(&vm);
+
     return 0;
 }

@@ -28,29 +28,21 @@ struct object *object_new(size_t size, enum object_type type) {
 
 void object_free(struct object *obj) {
     switch (obj->type) {
-        case OBJ_STRING: {
-            // this does not free the string itself because it doesn't own it. the VM set does.
-            memset(obj, 0, sizeof(struct obj_string));
-            break;
-        }
+        // the containing string is not owned by the object.
+        case OBJ_STRING: break;
 
         case OBJ_FUNCTION: {
             struct obj_function *fn = (struct obj_function *) obj;
             
             free(fn->name);
             chunk_free(&fn->chunk);
-
-            memset(fn, 0, sizeof(*fn));
             break;
         }
 
         case OBJ_CLOSURE: {
             struct obj_closure *closure = (struct obj_closure *) obj;
-            // do not free the closure.
-
-            // TODO: free upvalues
-
-            memset(closure, 0, sizeof(*closure));
+            free(closure->upvalues);
+            
             break;
         }
 
@@ -58,8 +50,6 @@ void object_free(struct object *obj) {
             struct obj_upvalue *upvalue = (struct obj_upvalue *) obj;
             
             // TODO: free upvalue.
-
-            memset(upvalue, 0, sizeof(*upvalue));
             break;
         }
 
@@ -104,7 +94,7 @@ struct obj_function *obj_function_new(struct chunk chunk, size_t arity, char *na
     return obj;
 }
 
-struct obj_closure *obj_closure_new(struct obj_function *fn, struct obj_upvalue **upvalues, size_t upvalue_len) {
+struct obj_closure *obj_closure_new(struct obj_function *fn, struct obj_upvalue *upvalues, size_t upvalue_len) {
     struct obj_closure *obj = (struct obj_closure *) object_new(sizeof(struct obj_closure), OBJ_CLOSURE);
     TRY(obj);
 
