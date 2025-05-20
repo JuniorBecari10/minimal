@@ -10,7 +10,7 @@ static bool resize(struct string_set *set, size_t size);
 
 struct string_set string_set_new(void) {
     return (struct string_set) {
-        .strings = calloc(sizeof(struct string), INITIAL_CAPACITY),
+        .strings = calloc(INITIAL_CAPACITY, sizeof(struct string)),
         .length = 0,
         .capacity = INITIAL_CAPACITY,
     };

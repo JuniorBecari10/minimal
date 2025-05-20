@@ -26,6 +26,7 @@ struct vm {
     
     size_t ip;
 
+    struct obj_upvalue *open_upvalues; // linked list, not owned by this field. owned by obj_list.
     struct object *obj_list;
     struct string_set strings;
 };
