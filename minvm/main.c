@@ -12,26 +12,26 @@ int main(int argc, char **argv) {
         return 1;
     }
  
-    char *filename = argv[1];
+    const char *filename = argv[1];
 
     struct chunk chunk = {0};
     struct object *obj_list = NULL;
     struct string_set strings = string_set_new();
 
-    bool res = read_bytecode(filename, &chunk, &obj_list, &strings);
+    const bool read_res = read_bytecode(filename, &chunk, &obj_list, &strings);
 
     // fill the open upvalues list when creating the VM.
     // the VM will take ownership of every argument passed to it.
     struct vm vm = vm_new(chunk, obj_list, strings);
 
     // reuse the free code in the vm.
-    if (!res) {
+    if (!read_res) {
         vm_free(&vm);
         return 1;
     }
 
-    vm_run(&vm);
+    const bool run_res = vm_run(&vm);
     vm_free(&vm);
 
-    return 0;
+    return !run_res; // 1 if false, 0 if true.
 }
