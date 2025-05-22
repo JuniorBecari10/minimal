@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"minc/ast"
+	"minc/types"
 	"minlib/token"
 	"minlib/util"
 )
@@ -60,6 +61,15 @@ func (p *Parser) parseFields() []ast.Field {
 	}
 
 	return fields
+}
+
+func (p *Parser) parseTypeAnnotation() types.Type {
+	p.expect(token.TokenColon)
+	return p.parseType()
+}
+
+func (p *Parser) parseType() types.Type {
+	tok := p.advance()
 }
 
 func (p *Parser) parseExpression() ast.Expression {
