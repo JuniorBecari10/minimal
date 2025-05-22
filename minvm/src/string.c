@@ -7,11 +7,19 @@
 static uint32_t hash_string(const char *chars, size_t length);
 
 struct string string_new(const char *chars, size_t length) {
+    // copy the string
     char *chars_heap = malloc(length + 1);
-    strncpy(chars_heap, chars, length);
 
+    strncpy(chars_heap, chars, length);
+    chars_heap[length] = '\0';
+
+    return string_new_no_alloc(chars_heap, length);
+}
+
+// constructs a string, but assumes that 'chars' is heap-allocated and valid.
+struct string string_new_no_alloc(char *chars, size_t length) {
     return (struct string) {
-        .chars = chars_heap,
+        .chars = chars,
         .length = length,
         .hash = hash_string(chars, length),
     };

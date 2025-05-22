@@ -2,8 +2,13 @@
 #include "instructions.h"
 #include "object.h"
 #include "error.h"
+#include "options.h"
+#include "value.h"
 
+#include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define TRY(e) if (!(e)) return false
 
@@ -16,6 +21,17 @@ static struct obj_upvalue *capture_upvalue(struct vm *vm, struct value *location
 
 // these will.
 static bool push(struct vm *vm, struct value value);
+static bool pop(struct vm *vm, struct value *out);
+
+static bool assert_type(struct value value, enum value_type type);
+static bool concatenate(struct vm *vm, const char *a, size_t a_len, const char *b, size_t b_len, char **out);
+
+static struct object *vm_object_new(size_t size, enum object_type type);
+static void vm_object_free(struct object *obj);
+
+static void *vm_malloc(struct vm *vm, size_t size);
+
+static bool binary(struct vm *vm, enum instruction operation);
 
 // operations
 static bool push_const(struct vm *vm);
@@ -83,6 +99,17 @@ bool vm_run(struct vm *vm) {
         switch (inst) {
             case INST_PUSH_CONST: TRY(push_const(vm)); break;
             case INST_PUSH_CLOSURE: TRY(push_closure(vm)); break;
+            
+            case INST_APPEND_METHODS: TRY((print_error(vm, "Uninmplemented"), false)); break;
+
+            case INST_ADD:
+            case INST_SUB:
+            case INST_MUL:
+            case INST_DIV:
+            case INST_MOD: {
+                TRY(binary(vm, inst));
+                break;
+            }
         }
     }
 
@@ -107,29 +134,246 @@ static uint32_t read_uint32(struct vm *vm) {
 // returns an upvalue to the specified variable.
 // this function tries to find an existing one, but if it doesn't find one, it creates.
 static struct obj_upvalue *capture_upvalue(struct vm *vm, struct value *location, size_t upvalue_index) {
-    // try to find an existing upvalue to this variable.
-    for (struct obj_upvalue *upvalue = vm->open_upvalues; upvalue != NULL; upvalue = upvalue->next) {
-        if (upvalue->data.location == location && upvalue->upvalue_index == upvalue_index)
-            return upvalue;
-    }
+    struct obj_upvalue **upvalue_ptr = &vm->open_upvalues;
 
-    // not found. create a new one.
-    struct obj_upvalue *upvalue = obj_upvalue_new_open(location, upvalue_index);
-    upvalue->next = vm->open_upvalues;
-    vm->open_upvalues = upvalue;
+    // Find the correct place in the list (ordered by descending address).
+    while (*upvalue_ptr != NULL && (*upvalue_ptr)->data.location > location)
+        upvalue_ptr = &(*upvalue_ptr)->next;
 
-    return upvalue;
+    // Check if we already have an upvalue for this location and index.
+    // It must be in this place since if it existed it would be here.
+    if (*upvalue_ptr != NULL &&
+        (*upvalue_ptr)->data.location == location &&
+        (*upvalue_ptr)->upvalue_index == upvalue_index)
+        return *upvalue_ptr;
+
+    // Create a new upvalue and insert it into the list.
+    // Inserting it here guarantees the descending order of the list.
+    struct obj_upvalue *new_upvalue = obj_upvalue_new_open(location, upvalue_index);
+    new_upvalue->next = *upvalue_ptr;
+    *upvalue_ptr = new_upvalue;
+
+    return new_upvalue;
 }
 
 // ---
 
 static bool push(struct vm *vm, struct value value) {
-    if (vm->stack_top + 1 > vm->stack + STACK_MAX) {
+    if (vm->stack_top + 1 >= vm->stack + STACK_MAX) {
         print_error(vm, "Operation stack exceeded.");
         return false;
     }
 
     *vm->stack_top++ = value;
+    return true;
+}
+
+static bool pop(struct vm *vm, struct value *out) {
+    if (vm->stack_top == vm->stack) {
+        print_error(vm, "Attempt to pop an empty stack.");
+        return false;
+    }
+
+    *out = *(--vm->stack_top);
+    return true;
+}
+
+static bool assert_type(struct value value, enum value_type type) {
+    return value.type == type;
+}
+
+// assumes length parameters do not contain '\0'.
+static bool concatenate(struct vm *vm, const char *a, size_t a_len, const char *b, size_t b_len, char **out) {
+    char *result = vm_malloc(vm, a_len + b_len + 1);
+    TRY(result);
+
+    memcpy(result, a, a_len);
+    memcpy(result + a_len, b, b_len);
+
+    result[a_len + b_len] = '\0';
+
+    *out = result;
+    return true;
+}
+
+// wrappers for allocate_object and free_object, but with bookmarking additions for the GC.
+static struct object *vm_object_new(size_t size, enum object_type type) {
+    // TODO: increment bytes_allocated
+    return object_new(size, type);
+}
+
+static void vm_object_free(struct object *obj) {
+    // TODO: decrement bytes_allocated
+    object_free(obj);
+}
+
+static void *vm_malloc(struct vm *vm, size_t size) {
+    // TODO: increment bytes_allocated
+    return malloc(size);
+}
+
+static bool binary(struct vm *vm, enum instruction operation) {
+    struct value left, right;
+
+    TRY(pop(vm, &right));
+    TRY(pop(vm, &left));
+
+#ifdef ENABLE_TYPE_CHECKER
+    if (left.type != right.type) {
+        print_error(vm, "Types must be equal when performing arithmetic.");
+        return false;
+    }
+#endif
+
+    switch (operation) {
+        case INST_ADD: {
+            // int, float, str.
+
+            switch (left.type) {
+                case VALUE_INT: {
+                    int32_t a = left.as.integer;
+                    int32_t b = right.as.integer;
+
+                    TRY(push(vm, NEW_INT(a + b)));
+                    break;
+                }
+                
+                case VALUE_FLOAT: {
+                    float64 a = left.as.floating;
+                    float64 b = right.as.floating;
+
+                    TRY(push(vm, NEW_FLOAT(a + b)));
+                    break;
+                }
+                
+                case VALUE_OBJ: {
+#ifdef ENABLE_TYPE_CHECKER
+                    if (AS_OBJECT(left)->type != OBJ_STRING) {
+                        print_error(vm, "Object type is not 'str'.");
+                        return false;
+                    }
+#endif
+
+                    struct obj_string *a = AS_STRING(left);
+                    struct obj_string *b = AS_STRING(right);
+
+                    char *concatenated;
+                    TRY(concatenate(vm,
+                                    AS_CSTRING(left), a->str->length,
+                                    AS_CSTRING(right), b->str->length, &concatenated));
+
+                    struct string str = string_new_no_alloc(concatenated, a->str->length + b->str->length);
+                    struct string *interned = intern_string(&vm->strings, str);
+
+                    struct obj_string *new_str =
+                        (struct obj_string *) vm_object_new(sizeof(struct obj_string), OBJ_STRING);
+
+                    TRY(new_str);
+                    new_str->str = interned;
+
+                    TRY(push(vm, NEW_OBJECT(new_str)));
+                    break;
+                }
+
+                default: {
+#ifdef ENABLE_TYPE_CHECKER
+                    print_error(vm, "Invalid type for addition.");
+                    return false;
+#endif
+                }
+            }
+        }
+        
+        case INST_SUB:
+        case INST_MUL:
+        case INST_DIV:
+        case INST_MOD: {
+            // int, float.
+            
+            switch (left.type) {
+                case VALUE_INT: {
+                    int32_t a = left.as.integer;
+                    int32_t b = right.as.integer;
+
+                    int32_t result = 0;
+                    switch (operation) {
+                        case INST_SUB: result = a - b; break;
+                        case INST_MUL: result = a * b; break;
+                        case INST_DIV: {
+                            if (b == 0) {
+                                print_error(vm, "Cannot divide by zero.");
+                                return false;
+                            }
+                        
+                            result = a / b;
+                            break;
+                        }
+                        
+                        case INST_MOD: {
+                            if (b == 0) {
+                                print_error(vm, "Cannot divide by zero.");
+                                return false;
+                            }
+                        
+                            result = a % b;
+                            break;
+                        }
+
+                        default: { }
+                    }
+
+                    TRY(push(vm, NEW_INT(result)));
+                    break;
+                }
+                
+                case VALUE_FLOAT: {
+                    float64 a = left.as.floating;
+                    float64 b = right.as.floating;
+                    
+                    float64 result = 0;
+                    switch (operation) {
+                        case INST_SUB: result = a - b; break;
+                        case INST_MUL: result = a * b; break;
+                        case INST_DIV: {
+                            if (b == 0.0) {
+                                print_error(vm, "Cannot divide by zero.");
+                                return false;
+                            }
+
+                            result = a / b;
+                            break;
+                        }
+                        
+                        case INST_MOD: {
+                            if (b == 0.0) {
+                                print_error(vm, "Cannot divide by zero.");
+                                return false;
+                            }
+                        
+                            result = fmod(a, b);
+                            break;
+                        }
+
+                        default: { }
+                    }
+
+                    TRY(push(vm, NEW_FLOAT(result)));
+                    break;
+                }
+
+                default: {
+#ifdef ENABLE_TYPE_CHECKER
+                    print_error(vm, "Invalid type for arithmetic.");
+                    return false;
+#endif
+                }
+            }
+        }
+
+        // cannot reach here because of the instruction switch.
+        default: { }
+    }
+
     return true;
 }
 
@@ -154,8 +398,10 @@ static bool push_closure(struct vm *vm) {
         const uint32_t index = read_uint32(vm);
 
         // if it's a local, create an upvalue and put it there.
+        // Get the address of the local in the current scope.
+        // (globals are not captured, so this is safe)
         if (is_local)
-            *upvalue = capture_upvalue(vm, vm->frames_len - 1, index);
+            *upvalue = capture_upvalue(vm, &vm->frames[vm->frames_len - 1].locals[index], index);
         
         // if it's not, get it from the enclosing function's upvalue list.
         // we can safely get the last call frame since global functions do not capture upvalues.

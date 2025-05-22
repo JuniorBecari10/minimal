@@ -12,6 +12,8 @@ struct string {
 };
 
 struct string string_new(const char *chars, size_t length);
+struct string string_new_no_alloc(char *chars, size_t length);
+
 void string_free(struct string *str);
 
 #endif

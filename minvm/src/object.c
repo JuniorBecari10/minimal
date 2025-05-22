@@ -4,6 +4,7 @@
 #include "chunk.h"
 #include "string.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,8 +16,10 @@
 struct object *object_new(size_t size, enum object_type type) {
     struct object *obj = malloc(size);
     
-    if (obj == NULL)
+    if (obj == NULL) {
+        fprintf(stderr, "Cannot allocate object.");
         return NULL;
+    }
 
     *obj = (struct object) {
         .type = type,
@@ -69,6 +72,7 @@ void add_object_to_list(struct object *obj, struct object **list) {
     *list = obj;
 }
 
+// the VM calls this, but I think this shouldn't trigger a GC.
 struct string *intern_string(struct string_set *set, struct string str) {
     return string_set_add(set, str);
 }

@@ -122,6 +122,7 @@ struct obj_upvalue *obj_upvalue_new_open(struct value *location, size_t upvalue_
 
 #define IS_STRING(value)        is_object_type(value, OBJ_STRING)
 #define AS_STRING(value)        ((struct obj_string *) AS_OBJECT(value))
+#define AS_CSTRING(value)       (((struct obj_string *) AS_OBJECT(value))->str->chars)
 
 #define IS_FUNCTION(value)      is_object_type(value, OBJ_FUNCTION)
 #define AS_FUNCTION(value)      ((struct obj_function *) AS_OBJECT(value))
