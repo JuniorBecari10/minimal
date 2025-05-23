@@ -1,8 +1,6 @@
 package util
 
 import (
-	"hash/crc32"
-	"encoding/binary"
 	"fmt"
 	"minlib/token"
 	"path/filepath"
@@ -10,32 +8,6 @@ import (
 	"strings"
 	"os"
 )
-
-// It is little-endian
-func IntToBytes(n int) []byte {
-	bytes := make([]byte, 4)
-
-	binary.LittleEndian.PutUint32(bytes, uint32(n))
-	return bytes
-}
-
-func BytesToInt(b []byte) (int, error) {
-	if len(b) != 4 {
-		return 0, fmt.Errorf("input byte slice must be 4 bytes long")
-	}
-
-	return int(binary.LittleEndian.Uint32(b)), nil
-}
-
-// Removes the last element from the supplied list and returns it.
-func PopList[T any](list *[]T) T {
-	lastIndex := len(*list) - 1
-	
-	topElement := (*list)[lastIndex]
-	*list = (*list)[:lastIndex]
-
-	return topElement
-}
 
 func GetFileName(path string) string {
 	// Use filepath to normalize and extract the file name
@@ -74,12 +46,6 @@ func Center(str string, width int, padChar string) string {
 
 	// Pad the string on both sides
 	return strings.Repeat(padChar, leftPadding) + str + strings.Repeat(" ", rightPadding)
-}
-
-// computeChecksum calculates the CRC32 checksum over the entire byte slice.
-func computeChecksum(data []byte) uint32 {
-    table := crc32.MakeTable(crc32.IEEE)
-    return crc32.Checksum(data, table)
 }
 
 func PrintError(pos token.Position, length int, message string, help *string, fileData *FileData) {
