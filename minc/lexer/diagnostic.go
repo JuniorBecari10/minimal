@@ -6,22 +6,22 @@ import (
 )
 
 func (l *Lexer) makeUnknownTokenDiagnostic(c byte) diagnostic.SimpleDiagnostic {
-	return l.makeUnterminatedDiagnostic(fmt.Sprintf("Unknown token: '%c' (char '%d').", c, c))
+	return l.makeDiagnostic(fmt.Sprintf("Unknown token: '%c' (char '%d').", c, c))
 }
 
 func (l *Lexer) makeUnterminatedStringLiteralDiagnostic() diagnostic.SimpleDiagnostic {
-	return l.makeUnterminatedDiagnostic("Unterminated string literal.")
+	return l.makeDiagnostic("Unterminated string literal.")
 }
 
 func (l *Lexer) makeUnterminatedCharLiteralDiagnostic() diagnostic.SimpleDiagnostic {
-	return l.makeUnterminatedDiagnostic("Unterminated char literal.")
+	return l.makeDiagnostic("Unterminated char literal.")
 }
 
 func (l *Lexer) makeCharLiteralTooLongDiagnostic() diagnostic.SimpleDiagnostic {
-	return l.makeUnterminatedDiagnostic("Char literal too long.")
+	return l.makeDiagnostic("Char literal too long.")
 }
 
-func (l *Lexer) makeUnterminatedDiagnostic(message string) diagnostic.SimpleDiagnostic {
+func (l *Lexer) makeDiagnostic(message string) diagnostic.SimpleDiagnostic {
 	return diagnostic.SimpleDiagnostic{
 		DiagnosticBase: diagnostic.DiagnosticBase{
 			Message: message,

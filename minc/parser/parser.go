@@ -88,6 +88,7 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 
 		if diag != nil {
 			diag.PrintDiagnostic()
+			res = RES_ERROR
 		}
 
 		stmts = append(stmts, decl)
@@ -98,5 +99,5 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 		}
 	}
 
-	return stmts, RES_OK
+	return stmts, res
 }
