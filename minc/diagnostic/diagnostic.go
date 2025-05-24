@@ -47,12 +47,12 @@ func (b *DiagnosticBase) PrintDiagnostic() {
 	eprintf(" | %s [-]\n", padding)
 }
 
-func (s *SimpleDiagnostic) PrintDiagnostic() {
+func (s SimpleDiagnostic) PrintDiagnostic() {
 	s.DiagnosticBase.PrintDiagnostic()
 	eprintln("[-]")
 }
 
-func (h *HelpDiagnostic) PrintDiagnostic() {
+func (h HelpDiagnostic) PrintDiagnostic() {
 	padding := strings.Repeat(" ", len(strconv.Itoa(int(h.Span.Pos.Line + 1))))
 
 	h.DiagnosticBase.PrintDiagnostic()

@@ -3,11 +3,11 @@ package token
 type TokenKind string
 
 const (
-	TokenInt        = "int"
-	TokenFloat      = "float"
-	TokenChar       = "char"
-	TokenString     = "string"
-	TokenIdentifier = "identifier"
+	TokenIntLiteral    = "int literal"
+	TokenFloatLiteral  = "float literal"
+	TokenCharLiteral   = "char literal"
+	TokenStringLiteral = "string literal"
+	TokenIdentifier    = "identifier"
 
 	TokenPlus    = "'+'"
 	TokenMinus   = "'-'"
