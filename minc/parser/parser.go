@@ -17,6 +17,7 @@ const (
 type Parser struct {
 	lexer *lexer.Lexer
 
+	previous token.Token
 	current token.Token
 	next token.Token
 
@@ -39,6 +40,7 @@ func New(source string, fileData *file.FileData) *Parser {
 	p := &Parser{
 		lexer: lexer,
 
+		previous: token.StartToken(),
 		// current and next set when starting to parse
 
 		hadLexerError: false,

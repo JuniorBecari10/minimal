@@ -30,7 +30,9 @@ func (p *Parser) declaration(allowStats bool) (ast.Statement, diagnostic.Diagnos
 }
 
 func (p *Parser) recordDecl() (ast.Statement, diagnostic.Diagnostic) {
-	keyword := p.advance()
+	keyword, diag := p.advance(); if diag != nil {
+		return ast.Statement{}, diag
+	}
 
 	name, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
 		return ast.Statement{}, diag

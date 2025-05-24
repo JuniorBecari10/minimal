@@ -1,20 +1,37 @@
 package parser
 
-import "minlib/token"
+import (
+	"minc/diagnostic"
+	"minlib/token"
+)
 
-func (p *Parser) advance() token.Token {
+func (p *Parser) expect(kind token.TokenKind) bool {
+	_, diag := p.expectToken(kind)
+	return diag == nil
+}
+
+func (p *Parser) expectToken(kind token.TokenKind) (token.Token, diagnostic.Diagnostic) {
+	if !p.check(kind) {
+		return token.Token{}, p.makeExpectedTokenDiagnostic(kind)
+	}
+
+	return p.advance()
+}
+
+func (p *Parser) advance() (token.Token, diagnostic.Diagnostic) {
 	p.current = p.next
 	next, diag := p.lexer.Lex()
 
 	if diag != nil {
-		diag.PrintDiagnostic()
-
 		p.hadLexerError = true
 		p.panicMode = true
+
+		return p.current, diag
 	}
 
+	p.previous = p.current
 	p.next = next
-	return p.current
+	return p.current, nil
 }
 
 func (p *Parser) check(kind token.TokenKind) bool {
