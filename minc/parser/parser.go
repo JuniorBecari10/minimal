@@ -37,3 +37,5 @@ func New(source string, fileData *file.FileData) *Parser {
 
 	return p
 }
+
+func Parse()

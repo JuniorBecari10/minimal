@@ -2,7 +2,8 @@ package diagnostic
 
 import "minlib/token"
 
+// it will only support one line
 type Span struct {
-	Start token.Position
-	End token.Position
+	Pos token.Position
+	Length int
 }
