@@ -2,11 +2,12 @@ package start
 
 import (
 	"fmt"
+	"minc/parser"
 	"os"
 	"strings"
-	
-	"minlib/value"
+
 	"minlib/file"
+	"minlib/value"
 )
 
 func Compile(sourcePath, outputPath string) {
@@ -40,5 +41,10 @@ func Compile(sourcePath, outputPath string) {
 }
 
 func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
+	ast, res := parser.New(source, fileData).Parse()
+	
+	if res == parser.RES_ERROR {
+		os.Exit(1)
+	}
 }
 

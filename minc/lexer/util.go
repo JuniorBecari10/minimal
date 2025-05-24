@@ -1,10 +1,6 @@
 package lexer
 
-import (
-	"fmt"
-	"minlib/token"
-	"minc/diagnostic"
-)
+import "minlib/token"
 
 func (l *Lexer) match(c byte) bool {
 	if l.isAtEnd(0) {
@@ -47,36 +43,6 @@ func (l *Lexer) isAtEnd(offset int) bool {
 func (l *Lexer) increaseLine() {
 	l.currentPos.Line += 1
 	l.currentPos.Col = 0
-}
-
-// ---
-func (l *Lexer) makeUnknownTokenDiagnostic(c byte) diagnostic.SimpleDiagnostic {
-	return l.makeUnterminatedDiagnostic(fmt.Sprintf("Unknown token: '%c' (char '%d').", c, c))
-}
-
-func (l *Lexer) makeUnterminatedStringLiteralDiagnostic() diagnostic.SimpleDiagnostic {
-	return l.makeUnterminatedDiagnostic("Unterminated string literal.")
-}
-
-func (l *Lexer) makeUnterminatedCharLiteralDiagnostic() diagnostic.SimpleDiagnostic {
-	return l.makeUnterminatedDiagnostic("Unterminated char literal.")
-}
-
-func (l *Lexer) makeCharLiteralTooLongDiagnostic() diagnostic.SimpleDiagnostic {
-	return l.makeUnterminatedDiagnostic("Char literal too long.")
-}
-
-func (l *Lexer) makeUnterminatedDiagnostic(message string) diagnostic.SimpleDiagnostic {
-	return diagnostic.SimpleDiagnostic{
-		DiagnosticBase: diagnostic.DiagnosticBase{
-			Message: message,
-			Span: diagnostic.Span{
-				Pos: l.startPos,
-				Length: int(l.currentPos.Col - l.startPos.Col),
-			},
-			FileData: l.fileData,
-		},
-	}
 }
 
 // ---
