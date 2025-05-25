@@ -14,8 +14,13 @@ func (p *Parser) statement() (ast.Statement, diagnostic.Diagnostic) {
 		case token.TokenBreakKw: return p.breakStmt()
 		case token.TokenContinueKw: return p.continueStmt()
 		case token.TokenReturnKw: return p.returnStmt()
-		case token.TokenLeftBrace: return p.blockStmt()
 		
 		default: return p.exprStmt()
 	}
+}
+
+// ---
+
+func (p *Parser) whileStmt() (ast.Statement, diagnostic.Diagnostic) {
+
 }

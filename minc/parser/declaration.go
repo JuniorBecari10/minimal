@@ -26,6 +26,8 @@ func (p *Parser) declaration(allowStats bool) (ast.Statement, diagnostic.Diagnos
 	}
 }
 
+// ---
+
 func (p *Parser) recordDecl() (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance() // Guaranteed.
 
@@ -81,23 +83,16 @@ func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
 		}
 	}
 
-	body, diag := p.parseBlock(); if diag != nil {
+	body, diag := p.parseFnBlock(); if diag != nil {
 		return ast.Statement{}, diag
 	}
 
-	return ast.Statement{
-		Base: ast.AstBase{
-			Pos:    keyword.Pos,
-			Length: len(keyword.Lexeme),
-		},
-
-		Data: ast.FnStatement{
-			Name: name,
-			Parameters: params,
-			Body: body,
-			ReturnType: returnType,
-		},
-	}, nil
+	return newStmt(keyword, ast.FnStatement{
+		Name: name,
+		Parameters: params,
+		Body: body,
+		ReturnType: returnType,
+	}), nil
 }
 
 func (p *Parser) varDecl() (ast.Statement, diagnostic.Diagnostic) {
@@ -127,16 +122,22 @@ func (p *Parser) varDecl() (ast.Statement, diagnostic.Diagnostic) {
 		return ast.Statement{}, diag
 	}
 
+	return newStmt(keyword, ast.VarStatement{
+		Name: name,
+		Init: expr,
+		Type: varType,
+	}), nil
+}
+
+// ---
+
+func newStmt(keyword token.Token, data ast.StmtData) ast.Statement {
 	return ast.Statement{
 		Base: ast.AstBase{
 			Pos:    keyword.Pos,
 			Length: len(keyword.Lexeme),
 		},
 
-		Data: ast.VarStatement{
-			Name: name,
-			Init: expr,
-			Type: varType,
-		},
-	}, nil
+		Data: data,
+	}
 }

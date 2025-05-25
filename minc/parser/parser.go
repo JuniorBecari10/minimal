@@ -40,8 +40,6 @@ func New(source string, fileData *file.FileData) *Parser {
 		fileData: fileData,
 	}
 
-	// TODO: set maps
-
 	return p
 }
 
