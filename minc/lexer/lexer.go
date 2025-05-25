@@ -144,6 +144,7 @@ func (l *Lexer) Lex() (token.Token, diagnostic.Diagnostic) {
 
 		case ',': return l.makeToken(token.TokenComma), nil
 		case ':': return l.makeToken(token.TokenColon), nil
+		case '?': return l.makeToken(token.TokenQuestion), nil
 
 		case '.': {
 			if l.match('.') {

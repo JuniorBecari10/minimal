@@ -1,6 +1,9 @@
 package ast
 
-import "minlib/token"
+import (
+	"minc/types"
+	"minlib/token"
+)
 
 type Statement struct {
 	Base AstBase
@@ -14,7 +17,8 @@ type StmtData interface {
 type FnStatement struct {
 	Name token.Token
 	Parameters []Parameter
-	Body BlockStatement
+	Body BlockExpression
+	ReturnType *types.Type // optional
 }
 
 type RecordStatement struct {
@@ -27,41 +31,36 @@ type ReturnStatement struct {
 	Expression *Expression // optional
 }
 
+type OutStatement struct {
+	Expression *Expression // optional
+}
+
 type VarStatement struct {
 	Name token.Token
 	Init Expression
-}
-
-type BlockStatement struct {
-	Stmts []Statement
-}
-
-type IfStatement struct {
-	Condition Expression
-	Then      BlockStatement
-	Else      *BlockStatement // optional
+	Type *types.Type // optional
 }
 
 type WhileStatement struct {
 	Condition Expression
-	Block     BlockStatement
+	Block     BlockExpression
 }
 
 type ForStatement struct {
 	Variable token.Token // identifier
 	Iterable Expression
-	Block BlockStatement
+	Block BlockExpression
 }
 
 type ForVarStatement struct {
 	Declaration Statement
 	Condition Expression
 	Increment *Expression // optional
-	Block BlockStatement
+	Block BlockExpression
 }
 
 type LoopStatement struct {
-	Block BlockStatement
+	Block BlockExpression
 }
 
 type BreakStatement struct {
@@ -81,9 +80,8 @@ type ExprStatement struct {
 func (x RecordStatement) stmt()   {}
 func (x FnStatement) stmt()       {}
 func (x ReturnStatement) stmt()   {}
+func (x OutStatement) stmt()      {}
 func (x VarStatement) stmt()      {}
-func (x BlockStatement) stmt()    {}
-func (x IfStatement) stmt()       {}
 func (x WhileStatement) stmt()    {}
 func (x ForStatement) stmt()      {}
 func (x ForVarStatement) stmt()   {}

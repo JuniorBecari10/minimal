@@ -8,7 +8,6 @@ import (
 
 func (p *Parser) statement() (ast.Statement, diagnostic.Diagnostic) {
 	switch p.current.Kind {
-		case token.TokenIfKw: return p.ifStmt()
 		case token.TokenWhileKw: return p.whileStmt()
 		case token.TokenForKw: return p.forStmtCheck()
 		case token.TokenLoopKw: return p.loopStmt()

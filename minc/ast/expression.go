@@ -90,7 +90,11 @@ type IdentifierAssignmentExpression struct {
 
 type FnExpression struct {
 	Parameters []Parameter
-	Body BlockStatement
+	Body BlockExpression
+}
+
+type BlockExpression struct {
+	Stmts []Statement
 }
 
 type IfExpression struct {
@@ -129,6 +133,7 @@ func (x IdentifierExpression) expr()           {}
 func (x SelfExpression) expr()                 {}
 func (x IdentifierAssignmentExpression) expr() {}
 func (x FnExpression) expr()                   {}
+func (x BlockExpression) expr()                {}
 func (x IfExpression) expr()                   {}
 func (x GetPropertyExpression) expr()          {}
 func (x SetPropertyExpression) expr()          {}

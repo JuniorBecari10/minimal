@@ -2,9 +2,10 @@ package disassembler
 
 import (
 	"fmt"
+	"min/util"
+	"minlib/file"
 	"minlib/instructions"
 	"minlib/value"
-	"minlib/util"
 	"strconv"
 	"strings"
 )
@@ -88,7 +89,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 	switch inst {
 		// inst index value
 		case instructions.PUSH_CONST: {
-			index, _ := util.BytesToInt(d.chunk.Code[d.ip:d.ip + 4])
+			index, _ := file.BytesToInt(d.chunk.Code[d.ip:d.ip + 4])
 			d.ip += 4
 
 			str := d.chunk.Constants[index].String()
@@ -108,7 +109,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 		}
 
         case instructions.GET_PROPERTY, instructions.SET_PROPERTY: {
-			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			index, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			str := d.chunk.Constants[index].String()
@@ -122,10 +123,10 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 		// inst index value count + metadata
 		case instructions.PUSH_CLOSURE: {
-			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			index, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
-			upvalueCount, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			upvalueCount, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			// TODO: print the type as well
@@ -139,7 +140,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 				isLocal := d.chunk.Code[d.ip] == 1
 				d.ip += 1
 
-				upvalueIndex, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+				upvalueIndex, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 				d.ip += 4
 
 				var text string
@@ -174,7 +175,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 			instructions.GET_GLOBAL, instructions.SET_GLOBAL,
 			instructions.CALL, instructions.APPEND_METHODS,
 			instructions.EXIT: {
-			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			count, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			fmt.Printf(
@@ -185,10 +186,10 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 		// inst [int] [int]
 		case instructions.CALL_PROPERTY: {
-			index, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			index, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
-			arity, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			arity, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			fmt.Printf(
@@ -200,7 +201,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 		// inst amount result (add)
 		case instructions.JUMP, instructions.JUMP_TRUE, instructions.JUMP_FALSE, instructions.JUMP_HAS_NO_NEXT: {
-			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			count, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			fmt.Printf(
@@ -212,7 +213,7 @@ func (d *Disassembler) PrintInstruction(inst byte, ip int, i int) {
 
 		// inst amount result (subtract)
 		case instructions.LOOP: {
-			count, _ := util.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
+			count, _ := file.BytesToInt(d.chunk.Code[d.ip : d.ip+4])
 			d.ip += 4
 
 			fmt.Printf(

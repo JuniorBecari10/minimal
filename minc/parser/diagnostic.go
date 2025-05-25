@@ -16,6 +16,14 @@ func (p *Parser) makeStatementsNotAllowedDiagnostic() diagnostic.SimpleDiagnosti
 	return p.makeDiagnostic("Statements are not allowed at top-level.")
 }
 
+func (p *Parser) makeInvalidTypeArgumentsLengthDiagnostic(expected, got int) diagnostic.SimpleDiagnostic {
+	return p.makeDiagnostic(fmt.Sprintf("Expected '%d' type arguments, but got '%d'.", expected, got))
+}
+
+func (p *Parser) makeExpectedExpressionDiagnostic() diagnostic.SimpleDiagnostic {
+	return p.makeDiagnostic(fmt.Sprintf("Expected expression after '%s', but got '%s'.", p.previous.FormatError(), p.current.FormatError()))
+}
+
 func (p *Parser) makeDiagnostic(message string) diagnostic.SimpleDiagnostic {
 	return diagnostic.SimpleDiagnostic{
 		DiagnosticBase: diagnostic.DiagnosticBase{

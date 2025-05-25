@@ -78,6 +78,7 @@ func (l *Lexer) checkKeyword() token.TokenKind {
 		case "self": return token.TokenSelfKw
 		case "record": return token.TokenRecordKw
 		case "return": return token.TokenReturnKw
+		case "out": return token.TokenOutKw
 
 		case "and": return token.TokenAndKw
 		case "or": return token.TokenOrKw

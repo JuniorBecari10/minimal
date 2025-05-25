@@ -41,6 +41,8 @@ type TypeUserDefined struct {
 	Name string
 }
 
+// TODO: add lists, arrays, maps and results.
+
 // ---
 
 func (x TypeInt) String() string { return "int" }

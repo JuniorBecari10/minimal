@@ -34,6 +34,8 @@ const (
 	TokenSemicolon = "';'"
 	TokenComma     = "','"
 	TokenColon     = "':'"
+	TokenQuestion  = "'?'"
+
 	TokenDot       = "'.'"
 	TokenDoubleDot = "'..'"
 
@@ -58,6 +60,7 @@ const (
 	TokenSelfKw     = "'self' keyword"
 	TokenRecordKw   = "'record' keyword"
 	TokenReturnKw   = "'return' keyword"
+	TokenOutKw      = "'out' keyword"
 
 	TokenAndKw = "'and' keyword"
 	TokenOrKw  = "'or' keyword"

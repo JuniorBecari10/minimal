@@ -18,13 +18,21 @@ func (p *Parser) expectToken(kind token.TokenKind) (token.Token, diagnostic.Diag
 	return p.advance()
 }
 
+func (p *Parser) expectSemicolon() diagnostic.Diagnostic {
+	if !p.check(token.TokenSemicolon) {
+		// TODO: maybe make this error message more specific
+		return p.makeExpectedTokenDiagnostic(token.TokenSemicolon)
+	}
+
+	return nil
+}
+
 func (p *Parser) advance() (token.Token, diagnostic.Diagnostic) {
 	p.current = p.next
 	next, diag := p.lexer.Lex()
 
 	if diag != nil {
 		p.hadLexerError = true
-		p.panicMode = true
 
 		return p.current, diag
 	}
@@ -49,8 +57,6 @@ func (p *Parser) match(kind token.TokenKind) bool {
 }
 
 func (p *Parser) synchronize() {
-	p.panicMode = false
-
 	for !p.current.IsEnd() {
 		kind := p.current.Kind
 

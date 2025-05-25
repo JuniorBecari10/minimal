@@ -21,16 +21,9 @@ type Parser struct {
 	current token.Token
 	next token.Token
 
-	prefixMap map[token.TokenKind]func() ast.Expression
-	infixMap map[token.TokenKind]func(ast.Expression, token.Position) ast.Expression
-	precedenceMap map[token.TokenKind]int
-
 	// Turned on if the lexer the parser owns had an error. The parser may not continue parsing, because
 	// the subsequent tokens may be incomplete and thus not suitable for parsing.
 	hadLexerError bool
-
-	// Turned on when some error occurs and the parser needs to be synchronized.
-	panicMode bool
 	fileData *file.FileData
 }
 
@@ -44,8 +37,6 @@ func New(source string, fileData *file.FileData) *Parser {
 		// current and next set when starting to parse
 
 		hadLexerError: false,
-		panicMode: false,
-
 		fileData: fileData,
 	}
 
@@ -91,6 +82,8 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 		if diag != nil {
 			diag.PrintDiagnostic()
 			res = RES_ERROR
+
+			p.synchronize()
 		}
 
 		stmts = append(stmts, decl)

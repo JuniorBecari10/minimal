@@ -168,3 +168,11 @@ func intToBytes(n int) []byte {
 	binary.LittleEndian.PutUint32(bytes, uint32(n))
 	return bytes
 }
+
+func BytesToInt(b []byte) (int, error) {
+	if len(b) != 4 {
+		return 0, fmt.Errorf("input byte slice must be 4 bytes long")
+	}
+
+	return int(binary.LittleEndian.Uint32(b)), nil
+}
