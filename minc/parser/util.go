@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"minc/diagnostic"
 	"minlib/token"
 )
@@ -11,6 +12,7 @@ func (p *Parser) expect(kind token.TokenKind) bool {
 }
 
 func (p *Parser) expectToken(kind token.TokenKind) (token.Token, diagnostic.Diagnostic) {
+	fmt.Println(p.current, kind)
 	if !p.check(kind) {
 		return token.Token{}, p.makeExpectedTokenDiagnostic(kind)
 	}
@@ -58,16 +60,18 @@ func (p *Parser) match(kind token.TokenKind) bool {
 
 func (p *Parser) synchronize() {
 	for !p.current.IsEnd() {
-		kind := p.current.Kind
+		if p.previous.Kind == token.TokenSemicolon {
+			p.advance()
+			break
+		}
 
-		switch kind {
-			case
-				token.TokenRightBrace,
-				token.TokenSemicolon:
-					return
+		switch p.current.Kind {
+			case token.TokenLetKw, token.TokenVarKw, token.TokenFnKw, token.TokenRecordKw,
+				 token.TokenIfKw, token.TokenWhileKw, token.TokenForKw:
+				break
 		}
 
 		p.advance()
 	}
-	p.advance()
 }
+

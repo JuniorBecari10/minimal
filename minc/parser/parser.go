@@ -82,6 +82,7 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 			res = RES_ERROR
 
 			p.synchronize()
+			continue
 		}
 
 		stmts = append(stmts, decl)

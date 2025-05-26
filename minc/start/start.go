@@ -23,7 +23,7 @@ func Compile(sourcePath, outputPath string) {
 	source := string(sourceContent)
 
 	fileData := file.FileData{
-		Name:  sourcePath,
+		Name:  file.GetFileName(sourcePath),
 		Lines: strings.Split(source, "\n"),
 	}
 

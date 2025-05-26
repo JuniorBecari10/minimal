@@ -8,7 +8,7 @@ import (
 
 func (p *Parser) makeExpectedTokenDiagnostic(expected token.TokenKind) diagnostic.SimpleDiagnostic {
 	return p.makeDiagnostic(
-		fmt.Sprintf("Expected '%s' after '%s', but got '%s'.",
+		fmt.Sprintf("Expected %s after %s, but got %s.",
 			expected, p.previous.FormatError(), p.current.FormatError()))
 }
 
@@ -17,15 +17,15 @@ func (p *Parser) makeStatementsNotAllowedDiagnostic() diagnostic.SimpleDiagnosti
 }
 
 func (p *Parser) makeInvalidTypeArgumentsLengthDiagnostic(expected, got int) diagnostic.SimpleDiagnostic {
-	return p.makeDiagnostic(fmt.Sprintf("Expected '%d' type arguments, but got '%d'.", expected, got))
+	return p.makeDiagnostic(fmt.Sprintf("Expected %d type arguments, but got %d.", expected, got))
 }
 
 func (p *Parser) makeExpectedExpressionDiagnostic() diagnostic.SimpleDiagnostic {
-	return p.makeDiagnostic(fmt.Sprintf("Expected expression after '%s', but got '%s'.", p.previous.FormatError(), p.current.FormatError()))
+	return p.makeDiagnostic(fmt.Sprintf("Expected expression after %s, but got %s.", p.previous.FormatError(), p.current.FormatError()))
 }
 
 func (p *Parser) makeExpectedTypeDiagnostic() diagnostic.SimpleDiagnostic {
-	return p.makeDiagnostic(fmt.Sprintf("Expected type after '%s', but got '%s'.", p.previous.FormatError(), p.current.FormatError()))
+	return p.makeDiagnostic(fmt.Sprintf("Expected type after %s, but got %s.", p.previous.FormatError(), p.current.FormatError()))
 }
 
 func (p *Parser) makeInvalidAssignmentTargetDiagnostic() diagnostic.SimpleDiagnostic {
