@@ -292,29 +292,145 @@ func (p *Parser) parseBlockExpr() (ast.Expression, diagnostic.Diagnostic) {
 }
 
 func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
+	keyword, _ := p.advance()
 
+	condition, diag := p.parseExpression(); if diag != nil {
+		return ast.Expression{}, nil
+	}
+
+	thenToken := p.current
+	then, diag := p.parseBlock(); if diag != nil {
+		return ast.Expression{}, nil
+	}
+
+	elseToken := p.current
+	var else_ *ast.BlockExpression = nil
+
+	// Spécial case for 'else if', which is another 'if' inside the 'else' clause,
+	// that does not need to be embraced in a block.
+	if p.match(token.TokenElseKw) {
+		if p.check(token.TokenIfKw) {
+			elseIfExpr, diag := p.parseIf(); if diag != nil {
+				return ast.Expression{}, nil
+			}
+
+			// Create a new block with an ExprStatement inside, which contains the 'if' expression.
+			*else_ = ast.BlockExpression{
+				Stmts: []ast.Statement{
+					{
+						Base: ast.AstBase{
+							Pos: elseIfExpr.Base.Pos,
+						},
+
+						Data: ast.ExprStatement{
+							Expr: elseIfExpr,
+						},
+					},
+				},
+			}
+		} else {
+			elseBlock, diag := p.parseBlock(); if diag != nil {
+				return ast.Expression{}, nil
+			}
+
+			*else_ = elseBlock
+		}
+	}
+
+	thenExpr := newExpr(thenToken, then)
+	var elseExpr *ast.Expression = nil
+
+	if else_ != nil {
+		*elseExpr = newExpr(elseToken, else_)
+	}
+
+	return newExpr(keyword, ast.IfExpression{
+		Condition: condition,
+		Then: thenExpr,
+		Else: elseExpr,
+	}), nil
 }
 
 func (p *Parser) parseFnExpr() (ast.Expression, diagnostic.Diagnostic) {
+    keyword, _ := p.advance()
 
+	params, returnType, body, diag := p.parseFunctionDefinition(); if diag != nil {
+		return ast.Expression{}, nil
+	}
+
+	return newExpr(keyword, ast.FnExpression{
+		Parameters: params,
+		Return: returnType,
+		Body: body,
+	}), nil
 }
 
 // ---
 
 func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) (ast.Expression, diagnostic.Diagnostic) {
+    operator, _ := p.advance()
 
+	right, diag := p.parseExpression(); if diag != nil {
+		return ast.Expression{}, nil
+	}
+
+	return p.makeAssignment(left, right, operator), nil
 }
 
 func (p *Parser) parseCall(left ast.Expression, pos token.Position) (ast.Expression, diagnostic.Diagnostic) {
+	leftParen := p.current
 
+	args, diag := p.parseArguments(); if diag != nil {
+		return ast.Expression{}, nil
+	}
+
+	return newExpr(leftParen, ast.CallExpression{
+		Callee: left,
+		Arguments: args,
+	}), nil
 }
 
 func (p *Parser) parseDot(left ast.Expression, pos token.Position) (ast.Expression, diagnostic.Diagnostic) {
+	_, diag := p.expectToken(token.TokenDot); if diag != nil {
+		return ast.Expression{}, nil
+	}
 
+	property, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
+		return ast.Expression{}, nil
+	}
+
+	return newExpr(property, ast.GetPropertyExpression{
+		Left: left,
+		Property: property,
+	}), nil
 }
 
 func (p *Parser) parseRange(left ast.Expression, pos token.Position) (ast.Expression, diagnostic.Diagnostic) {
+	operator, _ := p.advance()
 
+	// TODO: check if this doesn't have a diagnostic
+	inclusive := p.match(token.TokenEqual)
+
+	right, diag := p.expression(PREC_RANGE); if diag != nil {
+		return ast.Expression{}, nil
+	}
+
+	var step *ast.Expression = nil
+
+	if p.match(token.TokenColon) {
+		stepExpr, diag := p.expression(PREC_RANGE); if diag != nil {
+			return ast.Expression{}, nil
+		}
+
+		*step = stepExpr
+	}
+
+	return newExpr(operator, ast.RangeExpression{
+		Start: left,
+		End: right,
+		Step: step,
+		Inclusive: inclusive,
+	}), nil
 }
 
 // ---
@@ -354,8 +470,24 @@ func (p *Parser) parseBinary(left ast.Expression, op token.TokenKind) (ast.Expre
 	}), nil
 }
 
-func (p *Parser) parseOperatorAssignment(left ast.Expression, operator token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
+func (p *Parser) parseOperatorAssignment(left ast.Expression, finalOp token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
+	operator, _ := p.advance()
 
+	opAsFinal := operator
+	opAsFinal.Kind = finalOp
+	opAsFinal.Lexeme = string(finalOp)
+
+	right, diag := p.parseExpression(); if diag != nil {
+		return ast.Expression{}, diag
+	}
+
+	right.Data = ast.BinaryExpression{
+		Left: left,
+		Right: right,
+		Operator: opAsFinal,
+	}
+
+	return p.makeAssignment(left, right, operator), nil
 }
 
 func (p *Parser) parseLogical(left ast.Expression, op token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {

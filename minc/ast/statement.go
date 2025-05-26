@@ -17,8 +17,8 @@ type StmtData interface {
 type FnStatement struct {
 	Name token.Token
 	Parameters []Parameter
+	Return *types.Type // optional
 	Body BlockExpression
-	ReturnType *types.Type // optional
 }
 
 type RecordStatement struct {

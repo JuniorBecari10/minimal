@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"minc/types"
 	"minlib/token"
 )
 
@@ -88,6 +89,7 @@ type IdentifierAssignmentExpression struct {
 
 type FnExpression struct {
 	Parameters []Parameter
+	Return *types.Type // optional
 	Body BlockExpression
 }
 
@@ -98,7 +100,7 @@ type BlockExpression struct {
 type IfExpression struct {
 	Condition Expression
 	Then Expression
-	Else Expression
+	Else *Expression // optional
 }
 
 type GetPropertyExpression struct {

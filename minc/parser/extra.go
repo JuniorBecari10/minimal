@@ -11,7 +11,8 @@ func (p *Parser) parseBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
 	const START = token.TokenColon
 
 	if p.check(START) {
-		return p.parseOneStmtBlock(START)
+		// statement-level one-statement blocks do not require semicolons.
+		return p.parseOneStmtBlock(START, false)
 	} else {
 		return p.parseBraceBlock()
 	}
@@ -21,18 +22,19 @@ func (p *Parser) parseFnBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
 	const START = token.TokenArrow
 
 	if p.check(START) {
-		return p.parseOneStmtBlock(START)
+		// function one-statement blocks require semicolons.
+		return p.parseOneStmtBlock(START, true)
 	} else {
 		return p.parseBraceBlock()
 	}
 }
 
-func (p *Parser) parseOneStmtBlock(start token.TokenKind) (ast.BlockExpression, diagnostic.Diagnostic) {
+func (p *Parser) parseOneStmtBlock(start token.TokenKind, requireSemicolon bool) (ast.BlockExpression, diagnostic.Diagnostic) {
 	_, diag := p.expectToken(start); if diag != nil {
 		return ast.BlockExpression{}, diag
 	}
 
-	stmt, diag := p.declaration(true); if diag != nil {
+	stmt, diag := p.declaration(true, requireSemicolon); if diag != nil {
 		return ast.BlockExpression{}, diag
 	}
 
@@ -49,7 +51,7 @@ func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) 
 	stmts := []ast.Statement{}
 
 	for !p.check(token.TokenRightBrace) {
-		decl, diag := p.declaration(true); if diag != nil {
+		decl, diag := p.declaration(true, true); if diag != nil {
 			return ast.BlockExpression{}, diag
 		}
 
@@ -63,6 +65,29 @@ func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) 
 	return ast.BlockExpression{
 		Stmts: stmts,
 	}, nil
+}
+
+func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.BlockExpression, diagnostic.Diagnostic) {
+	errorRet := func(diag diagnostic.Diagnostic) ([]ast.Parameter, *types.Type, ast.BlockExpression, diagnostic.Diagnostic) {
+		return []ast.Parameter{}, nil, ast.BlockExpression{}, diag
+	}
+
+	params, diag := p.parseParameters(); if diag != nil {
+		return errorRet(diag)
+	}
+
+	var returnType *types.Type = nil
+	if p.check(token.TokenColon) {
+		*returnType, diag = p.parseTypeAnnotation(); if diag != nil {
+			return errorRet(diag)
+		}
+	}
+
+	body, diag := p.parseFnBlock(); if diag != nil {
+		return errorRet(diag)
+	}
+
+	return params, returnType, body, nil
 }
 
 func (p *Parser) parseMethods() ([]ast.FnStatement, diagnostic.Diagnostic) {
@@ -135,6 +160,30 @@ func (p *Parser) parseParameters() ([]ast.Parameter, diagnostic.Diagnostic) {
 	return params, nil
 }
 
+func (p *Parser) parseArguments() ([]ast.Expression, diagnostic.Diagnostic) {
+	_, diag := p.expectToken(token.TokenLeftParen); if diag != nil {
+		return nil, diag
+	}
+	
+	args := []ast.Expression{}
+
+	for !p.match(token.TokenRightParen) {
+		expr, diag := p.parseExpression(); if diag != nil {
+			return nil, diag
+		}
+
+		args = append(args, expr)
+
+		if !p.check(token.TokenRightParen) {
+			_, diag := p.expectToken(token.TokenComma); if diag != nil {
+				return nil, diag
+			}
+		}
+	}
+
+	return args, nil
+}
+
 func (p *Parser) parseFields() ([]ast.Field, diagnostic.Diagnostic) {
 	params, diag := p.parseParameters(); if diag != nil {
 		return []ast.Field{}, diag
@@ -150,4 +199,26 @@ func (p *Parser) parseFields() ([]ast.Field, diagnostic.Diagnostic) {
 	}
 	
 	return fields, nil
+}
+
+func (p *Parser) makeAssignment(left, right ast.Expression, operator token.Token) (ast.Expression, diagnostic.Diagnostic) {
+	switch lValue := left.Data.(type) {
+		case ast.IdentifierExpression: {
+			return newExpr(operator, ast.IdentifierAssignmentExpression{
+				Name: lValue.Token,
+				Expr: right,
+			}), nil
+		}
+
+		case ast.GetPropertyExpression: {
+			return newExpr(lValue.Property, ast.SetPropertyExpression{
+				Left: lValue.Left,
+				Property: lValue.Property,
+				Value: right,
+			}), nil
+		}
+
+		default:
+			return ast.Expression{}, p.makeInvalidAssignmentTargetDiagnostic()
+	}
 }

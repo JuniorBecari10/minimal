@@ -6,15 +6,15 @@ import (
 	"minlib/token"
 )
 
-func (p *Parser) statement() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) statement(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	switch p.current.Kind {
-		case token.TokenWhileKw: return p.whileStmt()
-		case token.TokenForKw: return p.forStmtCheck()
-		case token.TokenLoopKw: return p.loopStmt()
-		case token.TokenBreakKw: return p.breakStmt()
-		case token.TokenContinueKw: return p.continueStmt()
-		case token.TokenReturnKw: return p.returnStmt()
-		case token.TokenOutKw: return p.outStmt()
+		case token.TokenWhileKw: return p.whileStmt(requireSemicolon)
+		case token.TokenForKw: return p.forStmtCheck(requireSemicolon)
+		case token.TokenLoopKw: return p.loopStmt(requireSemicolon)
+		case token.TokenBreakKw: return p.breakStmt(requireSemicolon)
+		case token.TokenContinueKw: return p.continueStmt(requireSemicolon)
+		case token.TokenReturnKw: return p.returnStmt(requireSemicolon)
+		case token.TokenOutKw: return p.outStmt(requireSemicolon)
 		
 		default: return p.exprStmt()
 	}

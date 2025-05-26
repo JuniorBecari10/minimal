@@ -7,18 +7,18 @@ import (
 	"minlib/token"
 )
 
-func (p *Parser) declaration(allowStats bool) (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) declaration(allowStats, requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	switch p.current.Kind {
-		case token.TokenRecordKw: return p.recordDecl()
+		case token.TokenRecordKw: return p.recordDecl(requireSemicolon)
 		case token.TokenFnKw: return p.fnDecl()
 
 		case token.TokenVarKw,
 			 token.TokenLetKw:
-			 return p.varDecl(p.current.Kind == token.TokenLetKw)
+			 return p.varDecl(p.current.Kind == token.TokenLetKw, requireSemicolon)
 
 		default: {
 			if allowStats {
-				return p.statement()
+				return p.statement(requireSemicolon)
 			} else {
 				diag := p.makeStatementsNotAllowedDiagnostic()
 				p.advance()
@@ -31,7 +31,7 @@ func (p *Parser) declaration(allowStats bool) (ast.Statement, diagnostic.Diagnos
 
 // ---
 
-func (p *Parser) recordDecl() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) recordDecl(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance() // Guaranteed.
 
 	name, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
@@ -48,7 +48,7 @@ func (p *Parser) recordDecl() (ast.Statement, diagnostic.Diagnostic) {
 		methods, diag = p.parseMethods(); if diag != nil {
 			return ast.Statement{}, diag
 		}
-	} else {
+	} else if requireSemicolon {
 		diag := p.expectSemicolon(); if diag != nil {
 			return ast.Statement{}, diag
 		}
@@ -61,6 +61,7 @@ func (p *Parser) recordDecl() (ast.Statement, diagnostic.Diagnostic) {
 	}), nil
 }
 
+// function declarations do not require a semicolon.
 func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance() // Guaranteed.
 
@@ -68,30 +69,19 @@ func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
 		return ast.Statement{}, diag
 	}
 
-	params, diag := p.parseParameters(); if diag != nil {
-		return ast.Statement{}, diag
-	}
-
-	var returnType *types.Type = nil
-	if p.check(token.TokenColon) {
-		*returnType, diag = p.parseTypeAnnotation(); if diag != nil {
-			return ast.Statement{}, diag
-		}
-	}
-
-	body, diag := p.parseFnBlock(); if diag != nil {
-		return ast.Statement{}, diag
+	params, returnType, body, diag := p.parseFunctionDefinition(); if diag != nil {
+		return ast.Statement{}, nil
 	}
 
 	return newStmt(keyword, ast.FnStatement{
 		Name: name,
 		Parameters: params,
+		Return: returnType,
 		Body: body,
-		ReturnType: returnType,
 	}), nil
 }
 
-func (p *Parser) varDecl(isLet bool) (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) varDecl(isLet bool, requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance() // Guaranteed.
 
 	name, varType, diag := p.parseVariableBinding(); if diag != nil {
@@ -106,8 +96,10 @@ func (p *Parser) varDecl(isLet bool) (ast.Statement, diagnostic.Diagnostic) {
 		return ast.Statement{}, diag
 	}
 
-	diag = p.expectSemicolon(); if diag != nil {
-		return ast.Statement{}, diag
+	if requireSemicolon {
+		diag = p.expectSemicolon(); if diag != nil {
+			return ast.Statement{}, diag
+		}
 	}
 
 	return newStmt(keyword, ast.VarStatement{
