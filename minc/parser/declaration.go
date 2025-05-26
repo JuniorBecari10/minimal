@@ -94,16 +94,8 @@ func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
 func (p *Parser) varDecl(isLet bool) (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance() // Guaranteed.
 
-	name, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
-		return ast.Statement{}, diag
-	}
-
-	var varType *types.Type = nil
-	if p.check(token.TokenColon) {
-		var diag diagnostic.Diagnostic
-		*varType, diag = p.parseTypeAnnotation(); if diag != nil {
-			return ast.Statement{}, diag
-		}
+	name, varType, diag := p.parseVariableBinding(); if diag != nil {
+		return ast.Statement{}, nil
 	}
 
 	_, diag = p.expectToken(token.TokenEqual); if diag != nil {

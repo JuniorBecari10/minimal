@@ -50,7 +50,28 @@ func (p *Parser) forStmtCheck() (ast.Statement, diagnostic.Diagnostic) {
 }
 
 func (p *Parser) forStmt(keyword token.Token) (ast.Statement, diagnostic.Diagnostic) {
+	name, varType, diag := p.parseVariableBinding(); if diag != nil {
+		return ast.Statement{}, nil
+	}
 
+	_, diag = p.expectToken(token.TokenInKw); if diag != nil {
+		return ast.Statement{}, nil
+	}
+
+	iterable, diag := p.parseExpression(); if diag != nil {
+		return ast.Statement{}, nil
+	}
+
+	block, diag := p.parseBlock(); if diag != nil {
+		return ast.Statement{}, nil
+	}
+
+	return newStmt(keyword, ast.ForStatement{
+		Variable: name,
+		Type: varType,
+		Iterable: iterable,
+		Block: block,
+	}), nil
 }
 
 func (p *Parser) forVarStmt(keyword token.Token, isLet bool) (ast.Statement, diagnostic.Diagnostic) {
@@ -79,6 +100,7 @@ func (p *Parser) forVarStmt(keyword token.Token, isLet bool) (ast.Statement, dia
 		Condition: condition,
 		Increment: increment,
 		Block: block,
+		Immutable: isLet,
 	}), nil
 }
 

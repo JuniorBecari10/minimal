@@ -49,6 +49,7 @@ type WhileStatement struct {
 
 type ForStatement struct {
 	Variable token.Token // identifier
+	Type *types.Type // optional
 	Iterable Expression
 	Block BlockExpression
 }
@@ -58,6 +59,7 @@ type ForVarStatement struct {
 	Condition Expression
 	Increment *Expression // optional
 	Block BlockExpression
+	Immutable bool
 }
 
 type LoopStatement struct {

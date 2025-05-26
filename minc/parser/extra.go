@@ -3,6 +3,7 @@ package parser
 import (
 	"minc/ast"
 	"minc/diagnostic"
+	"minc/types"
 	"minlib/token"
 )
 
@@ -84,6 +85,23 @@ func (p *Parser) parseMethods() ([]ast.FnStatement, diagnostic.Diagnostic) {
 	}
 
 	return methods, nil
+}
+
+func (p *Parser) parseVariableBinding() (token.Token, *types.Type, diagnostic.Diagnostic) {
+	name, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
+		return token.Token{}, nil, diag
+	}
+
+	var varType *types.Type = nil
+
+	if p.check(token.TokenColon) {
+		var diag diagnostic.Diagnostic
+		*varType, diag = p.parseTypeAnnotation(); if diag != nil {
+			return token.Token{}, nil, diag
+		}
+	}
+
+	return name, varType, nil
 }
 
 func (p *Parser) parseParameters() ([]ast.Parameter, diagnostic.Diagnostic) {
