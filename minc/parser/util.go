@@ -62,38 +62,12 @@ func (p *Parser) synchronize() {
 
 		switch kind {
 			case
-				// Declarations and control flow
-				token.TokenVarKw,
-				token.TokenFnKw,
-				token.TokenRecordKw,
-				token.TokenIfKw,
-				token.TokenElseKw,
-				token.TokenWhileKw,
-				token.TokenForKw,
-				token.TokenLoopKw,
-				token.TokenBreakKw,
-				token.TokenContinueKw,
-				token.TokenReturnKw,
-
-				// Block start/end
-				token.TokenLeftBrace,
 				token.TokenRightBrace,
-
-				// Expression starters
-				token.TokenIdentifier,
-				token.TokenIntLiteral,
-				token.TokenFloatLiteral,
-				token.TokenCharLiteral,
-				token.TokenStringLiteral,
-				token.TokenMinus,
-				token.TokenNotKw,
-				token.TokenLeftParen,
-
-				// Soft sync point
 				token.TokenSemicolon:
 					return
 		}
 
 		p.advance()
 	}
+	p.advance()
 }
