@@ -39,6 +39,7 @@ type VarStatement struct {
 	Name token.Token
 	Init Expression
 	Type *types.Type // optional
+	Immutable bool
 }
 
 type WhileStatement struct {
@@ -63,13 +64,8 @@ type LoopStatement struct {
 	Block BlockExpression
 }
 
-type BreakStatement struct {
-	Token token.Token
-}
-
-type ContinueStatement struct {
-	Token token.Token
-}
+type BreakStatement struct {}
+type ContinueStatement struct {}
 
 type ExprStatement struct {
 	Expr Expression

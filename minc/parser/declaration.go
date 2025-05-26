@@ -11,7 +11,10 @@ func (p *Parser) declaration(allowStats bool) (ast.Statement, diagnostic.Diagnos
 	switch p.current.Kind {
 		case token.TokenRecordKw: return p.recordDecl()
 		case token.TokenFnKw: return p.fnDecl()
-		case token.TokenVarKw: return p.varDecl()
+
+		case token.TokenVarKw,
+			 token.TokenLetKw:
+			 return p.varDecl(p.current.Kind == token.TokenLetKw)
 
 		default: {
 			if allowStats {
@@ -51,18 +54,11 @@ func (p *Parser) recordDecl() (ast.Statement, diagnostic.Diagnostic) {
 		}
 	}
 
-	return ast.Statement{
-		Base: ast.AstBase{
-			Pos:    keyword.Pos,
-			Length: len(keyword.Lexeme),
-		},
-
-		Data: ast.RecordStatement{
-			Name:   name,
-			Fields: fields,
-			Methods: methods,
-		},
-	}, nil
+	return newStmt(keyword, ast.RecordStatement{
+		Name:   name,
+		Fields: fields,
+		Methods: methods,
+	}), nil
 }
 
 func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
@@ -95,7 +91,7 @@ func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
 	}), nil
 }
 
-func (p *Parser) varDecl() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) varDecl(isLet bool) (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance() // Guaranteed.
 
 	name, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
@@ -126,6 +122,7 @@ func (p *Parser) varDecl() (ast.Statement, diagnostic.Diagnostic) {
 		Name: name,
 		Init: expr,
 		Type: varType,
+		Immutable: isLet,
 	}), nil
 }
 
