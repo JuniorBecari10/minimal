@@ -6,7 +6,7 @@ import (
 	"minlib/token"
 )
 
-func (p *Parser) declaration(allowStats, requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) declaration(allowStatements, requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	switch p.current.Kind {
 		case token.TokenRecordKw: return p.recordDecl(requireSemicolon)
 		case token.TokenFnKw: return p.fnDecl()
@@ -16,7 +16,7 @@ func (p *Parser) declaration(allowStats, requireSemicolon bool) (ast.Statement, 
 			 return p.varDecl(p.current.Kind == token.TokenLetKw, requireSemicolon)
 
 		default: {
-			if allowStats {
+			if allowStatements {
 				return p.statement(requireSemicolon)
 			} else {
 				diag := p.makeStatementsNotAllowedDiagnostic()

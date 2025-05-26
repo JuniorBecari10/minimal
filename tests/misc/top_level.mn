@@ -1,0 +1,5 @@
+var fn = 10;
+let y = 10;
+
+fn main() { }
+

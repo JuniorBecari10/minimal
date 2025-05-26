@@ -3,8 +3,8 @@ package parser
 import (
 	"minc/ast"
 	"minc/lexer"
-	"minlib/token"
 	"minlib/file"
+	"minlib/token"
 )
 
 type ParserResult int
