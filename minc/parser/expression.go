@@ -180,7 +180,6 @@ func (p *Parser) infixLogical(op token.TokenKind) InfixFn {
 	}
 }
 
-
 // ---
 
 func (p *Parser) parseInt() (ast.Expression, diagnostic.Diagnostic) {
@@ -283,7 +282,13 @@ func (p *Parser) parseGroup() (ast.Expression, diagnostic.Diagnostic) {
 }
 
 func (p *Parser) parseBlockExpr() (ast.Expression, diagnostic.Diagnostic) {
+	tok := p.current
 
+	block, diag := p.parseBlock(); if diag != nil {
+		return ast.Expression{}, nil
+	}
+
+	return newExpr(tok, block), nil
 }
 
 func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
@@ -315,19 +320,63 @@ func (p *Parser) parseRange(left ast.Expression, pos token.Position) (ast.Expres
 // ---
 
 func (p *Parser) parseUnary(kind token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
+	pos := p.current.Pos
+
+	operator, diag := p.expectToken(kind); if diag != nil {
+		return ast.Expression{}, diag
+	}
+
+	operand, diag := p.expression(PREC_UNARY); if diag != nil {
+		return ast.Expression{}, nil
+	}
+	
+	return newExprLength(pos, len(operator.Lexeme), ast.UnaryExpression{
+		Operand: operand,
+		Operator: operator,
+	}), nil
+}
+
+func (p *Parser) parseBinary(left ast.Expression, op token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
+	prec := getPrecedenceFor(op)
+	
+	operator, diag := p.expectToken(op); if diag != nil {
+		return ast.Expression{}, diag
+	}
+
+	right, diag := p.expression(prec); if diag != nil {
+		return ast.Expression{}, diag
+	}
+
+	return newExpr(operator, ast.BinaryExpression{
+		Left: left,
+		Right: right,
+		Operator: operator,
+	}), nil
+}
+
+func (p *Parser) parseOperatorAssignment(left ast.Expression, operator token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
 
 }
 
-func (p *Parser) parseBinary(left ast.Expression, kind token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
+func (p *Parser) parseLogical(left ast.Expression, op token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
+	prec := getPrecedenceFor(op)
+	
+	operator, diag := p.expectToken(op); if diag != nil {
+		return ast.Expression{}, diag
+	}
 
-}
+	shortCircuit := !p.match(token.TokenStar)
 
-func (p *Parser) parseOperatorAssignment(left ast.Expression, kind token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
+	right, diag := p.expression(prec); if diag != nil {
+		return ast.Expression{}, diag
+	}
 
-}
-
-func (p *Parser) parseLogical(left ast.Expression, kind token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
-
+	return newExpr(operator, ast.LogicalExpression{
+		Left: left,
+		Right: right,
+		Operator: operator,
+		ShortCircuit: shortCircuit,
+	}), nil
 }
 
 // ---
