@@ -24,6 +24,10 @@ func (p *Parser) makeExpectedExpressionDiagnostic() diagnostic.SimpleDiagnostic 
 	return p.makeDiagnostic(fmt.Sprintf("Expected expression after '%s', but got '%s'.", p.previous.FormatError(), p.current.FormatError()))
 }
 
+func (p *Parser) makeExpectedTypeDiagnostic() diagnostic.SimpleDiagnostic {
+	return p.makeDiagnostic(fmt.Sprintf("Expected type after '%s', but got '%s'.", p.previous.FormatError(), p.current.FormatError()))
+}
+
 func (p *Parser) makeDiagnostic(message string) diagnostic.SimpleDiagnostic {
 	return diagnostic.SimpleDiagnostic{
 		DiagnosticBase: diagnostic.DiagnosticBase{

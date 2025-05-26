@@ -187,112 +187,60 @@ func (p *Parser) parseInt() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
 	value, _ := strconv.Atoi(tok.Lexeme)
 
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme),
-		},
-		Data: ast.IntExpression{
-			Literal: int32(value),
-		},
-	}, nil
+	return newExpr(tok, ast.IntExpression{
+		Literal: int32(value),
+	}), nil
 }
 
 func (p *Parser) parseFloat() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
 	value, _ := strconv.ParseFloat(tok.Lexeme, 64)
 
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme),
-		},
-		Data: ast.FloatExpression{
-			Literal: value,
-		},
-	}, nil
+	return newExpr(tok, ast.FloatExpression{
+		Literal: value,
+	}), nil
 }
 
 func (p *Parser) parseStr() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
 
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme) + 2, // the quotes
-		},
-		Data: ast.StringExpression{
-			Literal: tok.Lexeme,
-		},
-	}, nil
+	return newExprLength(tok.Pos, len(tok.Lexeme) + 2, ast.StringExpression{
+		Literal: tok.Lexeme,
+	}), nil
 }
 
 func (p *Parser) parseChar() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
 
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme) + 2,
-		},
-		Data: ast.CharExpression{
-			Literal: uint8(tok.Lexeme[0]), // guaranteed to be one character long
-		},
-	}, nil
+	return newExprLength(tok.Pos, len(tok.Lexeme) + 2, ast.CharExpression{
+		Literal: uint8(tok.Lexeme[0]), // guaranteed to be one character long
+	}), nil
 }
 
 func (p *Parser) parseIdentifier() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
 
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme),
-		},
-		Data: ast.IdentifierExpression{
-			Token: tok,
-		},
-	}, nil
+	return newExpr(tok, ast.IdentifierExpression{
+		Token: tok,
+	}), nil
 }
 
 func (p *Parser) parseSelf() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
-
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme),
-		},
-		Data: ast.SelfExpression{
-			Token: tok,
-		},
-	}, nil
+	return newExpr(tok, ast.SelfExpression{}), nil
 }
 
 func (p *Parser) parseBool() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
 
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme),
-		},
-		Data: ast.BoolExpression{
-			Literal: tok.Kind == token.TokenTrueKw,
-		},
-	}, nil
+	return newExpr(tok, ast.BoolExpression{
+		Literal: tok.Kind == token.TokenTrueKw,
+	}), nil
 }
 
 func (p *Parser) parseNil() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
-
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme),
-		},
-		Data: ast.NilExpression{},
-	}, nil
+	return newExpr(tok, ast.NilExpression{}), nil
 }
 
 func (p *Parser) parseVoid() (ast.Expression, diagnostic.Diagnostic) {
@@ -306,18 +254,12 @@ func (p *Parser) parseVoid() (ast.Expression, diagnostic.Diagnostic) {
 		}
 
 		p.expect(token.TokenRightParen)
-		expr = &e
+		*expr = e
 	}
 
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos: tok.Pos,
-			Length: len(tok.Lexeme),
-		},
-		Data: ast.VoidExpression{
-			Expr: expr,
-		},
-	}, nil
+	return newExpr(tok, ast.VoidExpression{
+		Expr: expr,
+	}), nil
 }
 
 func (p *Parser) parseGroup() (ast.Expression, diagnostic.Diagnostic) {
@@ -335,15 +277,9 @@ func (p *Parser) parseGroup() (ast.Expression, diagnostic.Diagnostic) {
 		return ast.Expression{}, diag
 	}
 
-	return ast.Expression{
-		Base: ast.AstBase{
-			Pos:    pos,
-			Length: expr.Base.Length + 2, // The parentheses
-		},
-		Data: ast.GroupExpression{
-			Expr: expr,
-		},
-	}, nil
+	return newExprLength(pos, expr.Base.Length + 2, ast.GroupExpression{
+		Expr: expr,
+	}), nil
 }
 
 func (p *Parser) parseBlockExpr() (ast.Expression, diagnostic.Diagnostic) {
@@ -392,4 +328,26 @@ func (p *Parser) parseOperatorAssignment(left ast.Expression, kind token.TokenKi
 
 func (p *Parser) parseLogical(left ast.Expression, kind token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {
 
+}
+
+// ---
+
+func newExpr(tok token.Token, data ast.ExprData) ast.Expression {
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    tok.Pos,
+			Length: len(tok.Lexeme),
+		},
+		Data: data,
+	}
+}
+
+func newExprLength(pos token.Position, length int, data ast.ExprData) ast.Expression {
+	return ast.Expression{
+		Base: ast.AstBase{
+			Pos:    pos,
+			Length: length,
+		},
+		Data: data,
+	}
 }

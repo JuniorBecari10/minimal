@@ -79,9 +79,7 @@ type IdentifierExpression struct {
 	Token token.Token
 }
 
-type SelfExpression struct {
-	Token token.Token
-}
+type SelfExpression struct {}
 
 type IdentifierAssignmentExpression struct {
 	Name token.Token

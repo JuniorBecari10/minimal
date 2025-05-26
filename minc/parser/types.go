@@ -14,45 +14,73 @@ func (p *Parser) parseTypeAnnotation() (types.Type, diagnostic.Diagnostic) {
 	return p.parseType()
 }
 
+
 func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
+	// Grouping with parentheses
+	if p.match(token.TokenLeftParen) {
+		innerType, diag := p.parseType(); if diag != nil {
+			return nil, diag
+		}
+
+		_, diag = p.expectToken(token.TokenRightParen); if diag != nil {
+			return nil, diag
+		}
+
+		// Allow postfix optional for grouped type
+		if p.match(token.TokenQuestion) {
+			return types.TypeOptional{
+				Inside: innerType,
+			}, nil
+		}
+
+		return innerType, nil
+	}
+
+	// Normal type parsing
 	typeToken, diag := p.advance(); if diag != nil {
 		return nil, diag
 	}
 
-	switch typeToken.Lexeme {
-		case "int": return types.TypeInt{}, nil
-		case "float": return types.TypeFloat{}, nil
-		case "str": return types.TypeStr{}, nil
-		case "char": return types.TypeChar{}, nil
-		case "bool": return types.TypeBool{}, nil
+	var baseType types.Type
 
+	switch typeToken.Lexeme {
+		case "int": baseType = types.TypeInt{}
+		case "float": baseType = types.TypeFloat{}
+		case "str": baseType = types.TypeStr{}
+		case "char": baseType = types.TypeChar{}
+		case "bool": baseType = types.TypeBool{}
+		
 		// 'untyped nil' should not be written, only inferred.
 
 		// for generics, like: ok<_, int>
-		case "_": return types.TypeUnknown{}, nil
-		case "void": return types.TypeVoid{}, nil
-
+		case "_": baseType = types.TypeUnknown{}
+		case "void": baseType = types.TypeVoid{}
 		case "fn": return p.parseFnType()
 		case "range": return p.parseRangeType()
 
 		default: {
-			parsedType, diag := p.parseType(); if diag != nil {
-				return nil, diag
+			if typeToken.Kind == token.TokenIdentifier {
+				baseType = types.TypeUserDefined{
+					Name: typeToken.Lexeme,
+				}
+			} else {
+				return nil, p.makeExpectedExpressionDiagnostic()
 			}
-
-			if p.match(token.TokenQuestion) {
-				return types.TypeOptional{
-					Inside: parsedType,
-				}, nil
-			}
-
-			// TODO: see what we can do with user types
 		}
 	}
+
+	// Apply optional modifier
+	if p.match(token.TokenQuestion) {
+		baseType = types.TypeOptional{
+			Inside: baseType,
+		}
+	}
+
+	return baseType, nil
 }
 
 func (p *Parser) parseFnType() (types.Type, diagnostic.Diagnostic) {
-	// 'fn' keyword already advanced.
+	// 'fn' keyword is already advanced.
 
 	params, diag := p.parseParameterTypes(); if diag != nil {
 		return nil, diag
