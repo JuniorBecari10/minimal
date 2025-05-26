@@ -78,9 +78,11 @@ func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.Bl
 
 	var returnType *types.Type = nil
 	if p.check(token.TokenColon) {
-		*returnType, diag = p.parseTypeAnnotation(); if diag != nil {
+		returnTypeDecl, diag := p.parseTypeAnnotation(); if diag != nil {
 			return errorRet(diag)
 		}
+
+		returnType = &returnTypeDecl
 	}
 
 	body, diag := p.parseFnBlock(); if diag != nil {
@@ -121,9 +123,11 @@ func (p *Parser) parseVariableBinding() (token.Token, *types.Type, diagnostic.Di
 
 	if p.check(token.TokenColon) {
 		var diag diagnostic.Diagnostic
-		*varType, diag = p.parseTypeAnnotation(); if diag != nil {
+		varTypeDecl, diag := p.parseTypeAnnotation(); if diag != nil {
 			return token.Token{}, nil, diag
 		}
+
+		varType = &varTypeDecl
 	}
 
 	return name, varType, nil

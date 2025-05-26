@@ -8,9 +8,9 @@ import (
 
 func (p *Parser) statement(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	switch p.current.Kind {
-		case token.TokenWhileKw: return p.whileStmt(requireSemicolon)
-		case token.TokenForKw: return p.forStmtCheck(requireSemicolon)
-		case token.TokenLoopKw: return p.loopStmt(requireSemicolon)
+		case token.TokenWhileKw: return p.whileStmt()
+		case token.TokenForKw: return p.forStmtCheck()
+		case token.TokenLoopKw: return p.loopStmt()
 		case token.TokenBreakKw: return p.breakStmt(requireSemicolon)
 		case token.TokenContinueKw: return p.continueStmt(requireSemicolon)
 		case token.TokenReturnKw: return p.returnStmt(requireSemicolon)
@@ -75,7 +75,7 @@ func (p *Parser) forStmt(keyword token.Token) (ast.Statement, diagnostic.Diagnos
 }
 
 func (p *Parser) forVarStmt(keyword token.Token, isLet bool) (ast.Statement, diagnostic.Diagnostic) {
-	decl, diag := p.varDecl(isLet); if diag != nil {
+	decl, diag := p.varDecl(isLet, true); if diag != nil {
 		return ast.Statement{}, nil
 	}
 
@@ -86,9 +86,11 @@ func (p *Parser) forVarStmt(keyword token.Token, isLet bool) (ast.Statement, dia
 	var increment *ast.Expression = nil
 	
 	if p.match(token.TokenSemicolon) {
-		*increment, diag = p.parseExpression(); if diag != nil {
+		incrementDecl, diag := p.parseExpression(); if diag != nil {
 			return ast.Statement{}, nil
 		}
+
+		increment = &incrementDecl
 	}
 
 	block, diag := p.parseBlock(); if diag != nil {
@@ -115,28 +117,38 @@ func (p *Parser) loopStmt() (ast.Statement, diagnostic.Diagnostic) {
 	}), nil
 }
 
-func (p *Parser) breakStmt() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) breakStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance()
 
-	diag := p.expectSemicolon(); if diag != nil {
-		return ast.Statement{}, nil
+	if requireSemicolon {
+		diag := p.expectSemicolon(); if diag != nil {
+			return ast.Statement{}, nil
+		}
 	}
 
 	return newStmt(keyword, ast.ContinueStatement{}), nil
 }
 
-func (p *Parser) continueStmt() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) continueStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	// To the parser they mean the same thing.
-	return p.breakStmt()
+	return p.breakStmt(requireSemicolon)
 }
 
-func (p *Parser) returnStmt() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) returnStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance()
 	var expr *ast.Expression = nil
 	
 	if p.match(token.TokenSemicolon) {
 		var diag diagnostic.Diagnostic
-		*expr, diag = p.parseExpression(); if diag != nil {
+		exprVal, diag := p.parseExpression(); if diag != nil {
+			return ast.Statement{}, nil
+		}
+
+		expr = &exprVal
+	}
+
+	if requireSemicolon {
+		diag := p.expectSemicolon(); if diag != nil {
 			return ast.Statement{}, nil
 		}
 	}
@@ -146,9 +158,9 @@ func (p *Parser) returnStmt() (ast.Statement, diagnostic.Diagnostic) {
 	}), nil
 }
 
-func (p *Parser) outStmt() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) outStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	// To the parser they mean the same thing.
-	return p.returnStmt()
+	return p.returnStmt(requireSemicolon)
 }
 
 func (p *Parser) exprStmt() (ast.Statement, diagnostic.Diagnostic) {

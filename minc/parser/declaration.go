@@ -3,7 +3,6 @@ package parser
 import (
 	"minc/ast"
 	"minc/diagnostic"
-	"minc/types"
 	"minlib/token"
 )
 

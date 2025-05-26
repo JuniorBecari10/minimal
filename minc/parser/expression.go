@@ -253,7 +253,7 @@ func (p *Parser) parseVoid() (ast.Expression, diagnostic.Diagnostic) {
 		}
 
 		p.expect(token.TokenRightParen)
-		*expr = e
+		expr = &e
 	}
 
 	return newExpr(tok, ast.VoidExpression{
@@ -315,7 +315,7 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 			}
 
 			// Create a new block with an ExprStatement inside, which contains the 'if' expression.
-			*else_ = ast.BlockExpression{
+			else_ = &ast.BlockExpression{
 				Stmts: []ast.Statement{
 					{
 						Base: ast.AstBase{
@@ -333,7 +333,7 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 				return ast.Expression{}, nil
 			}
 
-			*else_ = elseBlock
+			else_ = &elseBlock
 		}
 	}
 
@@ -341,7 +341,8 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 	var elseExpr *ast.Expression = nil
 
 	if else_ != nil {
-		*elseExpr = newExpr(elseToken, else_)
+		elseExprDecl := newExpr(elseToken, else_)
+		elseExpr = &elseExprDecl
 	}
 
 	return newExpr(keyword, ast.IfExpression{
@@ -374,7 +375,7 @@ func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) (ast.E
 		return ast.Expression{}, nil
 	}
 
-	return p.makeAssignment(left, right, operator), nil
+	return p.makeAssignment(left, right, operator)
 }
 
 func (p *Parser) parseCall(left ast.Expression, pos token.Position) (ast.Expression, diagnostic.Diagnostic) {
@@ -422,7 +423,7 @@ func (p *Parser) parseRange(left ast.Expression, pos token.Position) (ast.Expres
 			return ast.Expression{}, nil
 		}
 
-		*step = stepExpr
+		step = &stepExpr
 	}
 
 	return newExpr(operator, ast.RangeExpression{
@@ -487,7 +488,7 @@ func (p *Parser) parseOperatorAssignment(left ast.Expression, finalOp token.Toke
 		Operator: opAsFinal,
 	}
 
-	return p.makeAssignment(left, right, operator), nil
+	return p.makeAssignment(left, right, operator)
 }
 
 func (p *Parser) parseLogical(left ast.Expression, op token.TokenKind) (ast.Expression, diagnostic.Diagnostic) {

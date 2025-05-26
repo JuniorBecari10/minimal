@@ -75,7 +75,7 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 	}
 
 	for !p.current.IsEnd() {
-		decl, diag := p.declaration(false)
+		decl, diag := p.declaration(false, true)
 
 		if diag != nil {
 			diag.PrintDiagnostic()
