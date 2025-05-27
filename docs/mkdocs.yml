@@ -1,0 +1,17 @@
+site_name: The Minimal Programming Language
+theme:
+    name: material
+
+nav:
+    - Language:
+        - Overview: language/index.md
+        - Syntax: language/syntax.md
+        - Types: language/types.md
+    - Internals:
+        - Overview: internals/index.md
+        - Parser: internals/parser.md
+        - Bytecode: internals/bytecode.md
+    - Tooling:
+        - Overview: tooling/index.md
+        - CLI: tooling/cli.md
+        - LSP: tooling/lsp.md
