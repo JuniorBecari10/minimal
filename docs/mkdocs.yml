@@ -56,6 +56,7 @@ nav:
       - "2. The Basics":
         - "2. The Basics": reference/2-the-basics/index.md
         - "2.1 - Variables": reference/2-the-basics/2.1-variables.md
+        - "2.2 - Types": reference/2-the-basics/2.2-types.md
 
   - Technical Book:
       - Overview: technical/overview.md
