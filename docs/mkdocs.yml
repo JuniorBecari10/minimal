@@ -1,17 +1,33 @@
 site_name: The Minimal Programming Language
+repo_url: https://github.com/JuniorBecari10/minimal/
+copyright: Copyright &copy; 2025 Antônio Carlos (JuniorBecari10)
+
 theme:
     name: material
+    color_mode: auto
+    language: en
+
+    favicon: img/logo.png
+    logo: img/logo.png
+    
+    features:
+      - navigation.footer
+      - navigation.tabs
+      - navigation.sections
+      - navigation.path
+      - navigation.top
 
 nav:
-    - Language:
-        - Overview: language/index.md
-        - Syntax: language/syntax.md
-        - Types: language/types.md
-    - Internals:
-        - Overview: internals/index.md
-        - Parser: internals/parser.md
-        - Bytecode: internals/bytecode.md
-    - Tooling:
-        - Overview: tooling/index.md
-        - CLI: tooling/cli.md
-        - LSP: tooling/lsp.md
+  - Home: index.md
+
+  - Reference Book:
+      - Overview: reference/overview.md
+      - How to Use: reference/how-to-use.md
+
+      - Getting Started:
+          - "1. Getting Started": reference/1-getting-started/1-getting-started.md
+          - "1.1 - Installation": reference/1-getting-started/1.1-installation.md
+          - "1.2 - Hello, World!": reference/1-getting-started/1.2-hello-world.md
+
+  - Technical Book:
+      - Overview: technical/overview.md
