@@ -53,5 +53,9 @@ nav:
           - "1.1 - Installation": reference/1-getting-started/1.1-installation.md
           - "1.2 - Hello, World!": reference/1-getting-started/1.2-hello-world.md
 
+      - "2. The Basics":
+        - "2. The Basics": reference/2-the-basics/index.md
+        - "2.1 - Variables": reference/2-the-basics/2.1-variables.md
+
   - Technical Book:
       - Overview: technical/overview.md

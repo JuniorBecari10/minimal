@@ -1,4 +1,4 @@
-# Getting Started
+# 1. Getting Started
 
 Let's begin our journey to learn the language!
 
