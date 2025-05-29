@@ -21,6 +21,8 @@ type Parser struct {
 	current token.Token
 	next token.Token
 
+	hadError bool
+
 	// Turned on if the lexer the parser owns had an error. The parser may not continue parsing, because
 	// the subsequent tokens may be incomplete and thus not suitable for parsing.
 	hadLexerError bool
@@ -36,7 +38,9 @@ func New(source string, fileData *file.FileData) *Parser {
 		previous: token.StartToken(),
 		// current and next set when starting to parse
 
+		hadError: false,
 		hadLexerError: false,
+
 		fileData: fileData,
 	}
 
@@ -75,18 +79,18 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 	}
 
 	for !p.current.IsEnd() {
-		stmt, hadError := p.parseStatement()
+		stmt := p.parseTopLevelDeclaration()
 
-		if hadError {
+		if p.hadError {
 			continue
 		}
-
-		stmts = append(stmts, stmt)
 
 		// The parser cannot recover from a lexer error.
 		if p.hadLexerError {
 			return stmts, RES_ERROR
 		}
+		
+		stmts = append(stmts, stmt)
 	}
 
 	return stmts, res

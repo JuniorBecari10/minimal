@@ -138,7 +138,7 @@ func (p *Parser) returnStmt(requireSemicolon bool) (ast.Statement, diagnostic.Di
 	keyword, _ := p.advance()
 	var expr *ast.Expression = nil
 	
-	if p.match(token.TokenSemicolon) {
+	if !p.match(token.TokenSemicolon) {
 		var diag diagnostic.Diagnostic
 		exprVal, diag := p.parseExpression(); if diag != nil {
 			return ast.Statement{}, nil

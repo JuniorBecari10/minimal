@@ -7,22 +7,28 @@ import (
 )
 
 // parses a statement and only returns if it has been succeeded.
-func (p *Parser) parseStatement() (ast.Statement, bool) {
-	hadError := false
+func (p *Parser) parseTopLevelDeclaration() ast.Statement {
+	return p.parseStatement(false, true)
+}
 
-	for {
-		decl, diag := p.declaration(false, true)
+func (p *Parser) parseStatement(allowStatements, requireSemicolon bool) ast.Statement {
+	for !p.current.IsEnd() {
+		decl, diag := p.declaration(allowStatements, requireSemicolon)
 
 		if diag != nil {
 			diag.PrintDiagnostic()
-			hadError = true
+			p.hadError = true
 
 			p.synchronize()
 			continue
 		}
 		
-		return decl, hadError
+		return decl
 	}
+
+	// reached end expecting a statement.
+	p.hadError = true
+	return ast.Statement{}
 }
 
 func (p *Parser) declaration(allowStatements, requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
