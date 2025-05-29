@@ -252,7 +252,10 @@ func (p *Parser) parseVoid() (ast.Expression, diagnostic.Diagnostic) {
 			return ast.Expression{}, diag
 		}
 
-		p.expect(token.TokenRightParen)
+		_, diag = p.expectToken(token.TokenRightParen); if diag != nil {
+			return ast.Expression{}, diag
+		}
+
 		expr = &e
 	}
 

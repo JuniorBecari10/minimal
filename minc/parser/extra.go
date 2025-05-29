@@ -8,33 +8,20 @@ import (
 )
 
 func (p *Parser) parseBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
-	const START = token.TokenColon
-
-	if p.check(START) {
-		// statement-level one-statement blocks do not require semicolons.
-		return p.parseOneStmtBlock(START, false)
+	if p.check(token.TokenColon) {
+		// one-statement blocks do not require semicolons.
+		return p.parseOneStmtBlock()
 	} else {
 		return p.parseBraceBlock()
 	}
 }
 
-func (p *Parser) parseFnBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
-	const START = token.TokenArrow
-
-	if p.check(START) {
-		// function one-statement blocks require semicolons.
-		return p.parseOneStmtBlock(START, true)
-	} else {
-		return p.parseBraceBlock()
-	}
-}
-
-func (p *Parser) parseOneStmtBlock(start token.TokenKind, requireSemicolon bool) (ast.BlockExpression, diagnostic.Diagnostic) {
-	_, diag := p.expectToken(start); if diag != nil {
+func (p *Parser) parseOneStmtBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
+	_, diag := p.expectToken(token.TokenColon); if diag != nil {
 		return ast.BlockExpression{}, diag
 	}
 
-	stmt, diag := p.declaration(true, requireSemicolon); if diag != nil {
+	stmt, diag := p.declaration(true, false); if diag != nil {
 		return ast.BlockExpression{}, diag
 	}
 
@@ -85,7 +72,7 @@ func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.Bl
 		returnType = &returnTypeDecl
 	}
 
-	body, diag := p.parseFnBlock(); if diag != nil {
+	body, diag := p.parseBraceBlock(); if diag != nil {
 		return errorRet(diag)
 	}
 

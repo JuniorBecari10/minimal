@@ -1,18 +1,11 @@
 package parser
 
 import (
-	"fmt"
 	"minc/diagnostic"
 	"minlib/token"
 )
 
-func (p *Parser) expect(kind token.TokenKind) bool {
-	_, diag := p.expectToken(kind)
-	return diag == nil
-}
-
 func (p *Parser) expectToken(kind token.TokenKind) (token.Token, diagnostic.Diagnostic) {
-	fmt.Println(p.current, kind)
 	if !p.check(kind) {
 		return token.Token{}, p.makeExpectedTokenDiagnostic(kind)
 	}
@@ -30,7 +23,9 @@ func (p *Parser) expectSemicolon() diagnostic.Diagnostic {
 }
 
 func (p *Parser) advance() (token.Token, diagnostic.Diagnostic) {
+	p.previous = p.current
 	p.current = p.next
+	
 	next, diag := p.lexer.Lex()
 
 	if diag != nil {
@@ -39,9 +34,8 @@ func (p *Parser) advance() (token.Token, diagnostic.Diagnostic) {
 		return p.current, diag
 	}
 
-	p.previous = p.current
 	p.next = next
-	return p.current, nil
+	return p.previous, nil
 }
 
 func (p *Parser) check(kind token.TokenKind) bool {
@@ -74,7 +68,5 @@ func (p *Parser) synchronize() {
 
 		p.advance()
 	}
-
-	p.advance()
 }
 
