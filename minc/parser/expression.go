@@ -3,6 +3,7 @@ package parser
 import (
 	"minc/ast"
 	"minc/diagnostic"
+	"minc/types"
 	"minlib/token"
 	"strconv"
 )
@@ -239,7 +240,20 @@ func (p *Parser) parseBool() (ast.Expression, diagnostic.Diagnostic) {
 
 func (p *Parser) parseNil() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
-	return newExpr(tok, ast.NilExpression{}), nil
+
+	var typeArgs []types.Type
+
+	if p.check(token.TokenLess) {
+		var diag diagnostic.Diagnostic
+
+		typeArgs, diag = p.parseTypeArguments(); if diag != nil {
+			return ast.Expression{}, diag
+		}
+	}
+
+	return newExpr(tok, ast.NilExpression{
+		TypeArguments: typeArgs,
+	}), nil
 }
 
 func (p *Parser) parseVoid() (ast.Expression, diagnostic.Diagnostic) {
@@ -288,7 +302,7 @@ func (p *Parser) parseBlockExpr() (ast.Expression, diagnostic.Diagnostic) {
 	tok := p.current
 
 	block, diag := p.parseBlock(); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	return newExpr(tok, block), nil
@@ -298,12 +312,12 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 	keyword, _ := p.advance()
 
 	condition, diag := p.parseExpression(); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	thenToken := p.current
 	then, diag := p.parseBlock(); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	elseToken := p.current
@@ -314,7 +328,7 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 	if p.match(token.TokenElseKw) {
 		if p.check(token.TokenIfKw) {
 			elseIfExpr, diag := p.parseIf(); if diag != nil {
-				return ast.Expression{}, nil
+				return ast.Expression{}, diag
 			}
 
 			// Create a new block with an ExprStatement inside, which contains the 'if' expression.
@@ -333,7 +347,7 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 			}
 		} else {
 			elseBlock, diag := p.parseBlock(); if diag != nil {
-				return ast.Expression{}, nil
+				return ast.Expression{}, diag
 			}
 
 			else_ = &elseBlock
@@ -359,7 +373,7 @@ func (p *Parser) parseFnExpr() (ast.Expression, diagnostic.Diagnostic) {
     keyword, _ := p.advance()
 
 	params, returnType, body, diag := p.parseFunctionDefinition(); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	return newExpr(keyword, ast.FnExpression{
@@ -375,7 +389,7 @@ func (p *Parser) parseAssignment(left ast.Expression, pos token.Position) (ast.E
     operator, _ := p.advance()
 
 	right, diag := p.parseExpression(); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	return p.makeAssignment(left, right, operator)
@@ -385,7 +399,7 @@ func (p *Parser) parseCall(left ast.Expression, pos token.Position) (ast.Express
 	leftParen := p.current
 
 	args, diag := p.parseArguments(); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	return newExpr(leftParen, ast.CallExpression{
@@ -396,11 +410,11 @@ func (p *Parser) parseCall(left ast.Expression, pos token.Position) (ast.Express
 
 func (p *Parser) parseDot(left ast.Expression, pos token.Position) (ast.Expression, diagnostic.Diagnostic) {
 	_, diag := p.expectToken(token.TokenDot); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	property, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	return newExpr(property, ast.GetPropertyExpression{
@@ -416,14 +430,14 @@ func (p *Parser) parseRange(left ast.Expression, pos token.Position) (ast.Expres
 	inclusive := p.match(token.TokenEqual)
 
 	right, diag := p.expression(PREC_RANGE); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 
 	var step *ast.Expression = nil
 
 	if p.match(token.TokenColon) {
 		stepExpr, diag := p.expression(PREC_RANGE); if diag != nil {
-			return ast.Expression{}, nil
+			return ast.Expression{}, diag
 		}
 
 		step = &stepExpr
@@ -447,7 +461,7 @@ func (p *Parser) parseUnary(kind token.TokenKind) (ast.Expression, diagnostic.Di
 	}
 
 	operand, diag := p.expression(PREC_UNARY); if diag != nil {
-		return ast.Expression{}, nil
+		return ast.Expression{}, diag
 	}
 	
 	return newExprLength(pos, len(operator.Lexeme), ast.UnaryExpression{

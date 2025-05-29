@@ -42,7 +42,9 @@ type RangeExpression struct {
     Inclusive bool
 }
 
-type NilExpression struct {}
+type NilExpression struct {
+	TypeArguments []types.Type
+}
 
 type VoidExpression struct {
 	Expr *Expression // optional

@@ -37,6 +37,9 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 	}
 
 	// Normal type parsing
+
+	endDiag := p.makeExpectedTypeDiagnostic()
+
 	typeToken, diag := p.advance(); if diag != nil {
 		return nil, diag
 	}
@@ -64,7 +67,8 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 					Name: typeToken.Lexeme,
 				}
 			} else {
-				return nil, p.makeExpectedExpressionDiagnostic()
+				// diagnostic is already prepared before the token advances
+				return nil, endDiag
 			}
 		}
 	}
@@ -125,21 +129,30 @@ func (p *Parser) parseTypeArguments() ([]types.Type, diagnostic.Diagnostic) {
 
 func (p *Parser) parseTypeList(left, right token.TokenKind) ([]types.Type, diagnostic.Diagnostic) {
 	_, diag := p.expectToken(left); if diag != nil {
-		return []types.Type{}, diag
+		return nil, diag
 	}
 
 	params := []types.Type{}
 
-	for !p.match(right) {
+	if p.check(right) {
+		p.advance()
+		return params, nil
+	}
+
+	for {
 		type_, diag := p.parseType(); if diag != nil {
 			return []types.Type{}, diag
 		}
 
 		params = append(params, type_)
-	}
 
-	_, diag = p.expectToken(right); if diag != nil {
-		return []types.Type{}, diag
+		if p.match(token.TokenComma) {
+			continue
+		} else if p.match(right) {
+			break
+		} else {
+			return nil, p.makeExpectedTokenDiagnostic(right) // or comma
+		}
 	}
 
 	return params, nil

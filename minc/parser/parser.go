@@ -82,6 +82,7 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 		stmt := p.parseTopLevelDeclaration()
 
 		if p.hadError {
+			res = RES_ERROR
 			continue
 		}
 

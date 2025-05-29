@@ -26,11 +26,11 @@ func (p *Parser) whileStmt() (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance()
 
 	condition, diag := p.parseExpression(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	block, diag := p.parseBlock(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	return newStmt(keyword, ast.WhileStatement{
@@ -51,19 +51,19 @@ func (p *Parser) forStmtCheck() (ast.Statement, diagnostic.Diagnostic) {
 
 func (p *Parser) forStmt(keyword token.Token) (ast.Statement, diagnostic.Diagnostic) {
 	name, varType, diag := p.parseVariableBinding(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	_, diag = p.expectToken(token.TokenInKw); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	iterable, diag := p.parseExpression(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	block, diag := p.parseBlock(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	return newStmt(keyword, ast.ForStatement{
@@ -76,25 +76,25 @@ func (p *Parser) forStmt(keyword token.Token) (ast.Statement, diagnostic.Diagnos
 
 func (p *Parser) forVarStmt(keyword token.Token, isLet bool) (ast.Statement, diagnostic.Diagnostic) {
 	decl, diag := p.varDecl(isLet, true); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	condition, diag := p.parseExpression(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	var increment *ast.Expression = nil
 	
 	if p.match(token.TokenSemicolon) {
 		incrementDecl, diag := p.parseExpression(); if diag != nil {
-			return ast.Statement{}, nil
+			return ast.Statement{}, diag
 		}
 
 		increment = &incrementDecl
 	}
 
 	block, diag := p.parseBlock(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	return newStmt(keyword, ast.ForVarStatement{
@@ -109,7 +109,7 @@ func (p *Parser) forVarStmt(keyword token.Token, isLet bool) (ast.Statement, dia
 func (p *Parser) loopStmt() (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance()
 	block, diag := p.parseBlock(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	return newStmt(keyword, ast.LoopStatement{
@@ -122,7 +122,7 @@ func (p *Parser) breakStmt(requireSemicolon bool) (ast.Statement, diagnostic.Dia
 
 	if requireSemicolon {
 		diag := p.expectSemicolon(); if diag != nil {
-			return ast.Statement{}, nil
+			return ast.Statement{}, diag
 		}
 	}
 
@@ -141,7 +141,7 @@ func (p *Parser) returnStmt(requireSemicolon bool) (ast.Statement, diagnostic.Di
 	if !p.match(token.TokenSemicolon) {
 		var diag diagnostic.Diagnostic
 		exprVal, diag := p.parseExpression(); if diag != nil {
-			return ast.Statement{}, nil
+			return ast.Statement{}, diag
 		}
 
 		expr = &exprVal
@@ -149,7 +149,7 @@ func (p *Parser) returnStmt(requireSemicolon bool) (ast.Statement, diagnostic.Di
 
 	if requireSemicolon {
 		diag := p.expectSemicolon(); if diag != nil {
-			return ast.Statement{}, nil
+			return ast.Statement{}, diag
 		}
 	}
 	
@@ -167,11 +167,11 @@ func (p *Parser) exprStmt() (ast.Statement, diagnostic.Diagnostic) {
 	pos := p.current.Pos
 
 	expr, diag := p.parseExpression(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	diag = p.expectSemicolon(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	return ast.Statement{

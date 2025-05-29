@@ -94,7 +94,7 @@ func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
 	}
 
 	params, returnType, body, diag := p.parseFunctionDefinition(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	return newStmt(keyword, ast.FnStatement{
@@ -109,7 +109,7 @@ func (p *Parser) varDecl(isLet bool, requireSemicolon bool) (ast.Statement, diag
 	keyword, _ := p.advance() // Guaranteed.
 
 	name, varType, diag := p.parseVariableBinding(); if diag != nil {
-		return ast.Statement{}, nil
+		return ast.Statement{}, diag
 	}
 
 	_, diag = p.expectToken(token.TokenEqual); if diag != nil {
