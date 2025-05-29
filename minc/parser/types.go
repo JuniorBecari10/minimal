@@ -134,6 +134,7 @@ func (p *Parser) parseTypeList(left, right token.TokenKind) ([]types.Type, diagn
 
 	params := []types.Type{}
 
+	// Handle empty list '<>'
 	if p.check(right) {
 		p.advance()
 		return params, nil
