@@ -59,9 +59,10 @@ func (p *Parser) match(kind token.TokenKind) bool {
 }
 
 func (p *Parser) synchronize() {
+	p.advance()
+
 	for !p.current.IsEnd() {
 		if p.previous.Kind == token.TokenSemicolon {
-			p.advance()
 			break
 		}
 
@@ -73,5 +74,7 @@ func (p *Parser) synchronize() {
 
 		p.advance()
 	}
+
+	p.advance()
 }
 

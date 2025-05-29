@@ -75,17 +75,13 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 	}
 
 	for !p.current.IsEnd() {
-		decl, diag := p.declaration(false, true)
+		stmt, hadError := p.parseStatement()
 
-		if diag != nil {
-			diag.PrintDiagnostic()
-			res = RES_ERROR
-
-			p.synchronize()
+		if hadError {
 			continue
 		}
 
-		stmts = append(stmts, decl)
+		stmts = append(stmts, stmt)
 
 		// The parser cannot recover from a lexer error.
 		if p.hadLexerError {

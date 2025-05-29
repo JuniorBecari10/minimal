@@ -6,6 +6,25 @@ import (
 	"minlib/token"
 )
 
+// parses a statement and only returns if it has been succeeded.
+func (p *Parser) parseStatement() (ast.Statement, bool) {
+	hadError := false
+
+	for {
+		decl, diag := p.declaration(false, true)
+
+		if diag != nil {
+			diag.PrintDiagnostic()
+			hadError = true
+
+			p.synchronize()
+			continue
+		}
+		
+		return decl, hadError
+	}
+}
+
 func (p *Parser) declaration(allowStatements, requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	switch p.current.Kind {
 		case token.TokenRecordKw: return p.recordDecl(requireSemicolon)
