@@ -47,6 +47,7 @@ const (
 	TokenLess      = "'<'"
 	TokenLessEqual = "'<='"
 
+	TokenAsKw       = "'as' keyword"
 	TokenIfKw       = "'if' keyword"
 	TokenElseKw     = "'else' keyword"
 	TokenWhileKw    = "'while' keyword"

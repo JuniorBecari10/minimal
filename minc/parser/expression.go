@@ -22,6 +22,7 @@ const (
 	PREC_TERM          // + -
 	PREC_FACTOR        // * /
 	PREC_UNARY         // not -
+	PREC_AS            // as
 	PREC_CALL          // ()
 	PREC_GET_PROPERTY  // .
 	PREC_RANGE         // ..
@@ -157,6 +158,9 @@ func getPrecedenceFor(kind token.TokenKind) Precedence {
 
 		case token.TokenDoubleDot:
 			return PREC_RANGE
+		
+		case token.TokenAsKw:
+			return PREC_AS
 
 		default:
 			return PREC_LOWEST
@@ -461,7 +465,7 @@ func (p *Parser) parseAs(left ast.Expression, pos token.Position) (ast.Expressio
 
 	return newExpr(operator, ast.AsExpression{
 		Operand: left,
-		Type: type,
+		Type: type_,
 	}), nil
 }
 
