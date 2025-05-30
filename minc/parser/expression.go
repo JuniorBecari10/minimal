@@ -116,6 +116,8 @@ func (p *Parser) getInfixFn(kind token.TokenKind) InfixFn {
 		case token.TokenLeftParen: return p.parseCall
 		case token.TokenDot: return p.parseDot
 		case token.TokenDoubleDot: return p.parseRange
+		
+		case token.TokenAsKw: return p.parseAs
 
 		default: return nil
 	}
@@ -447,6 +449,19 @@ func (p *Parser) parseRange(left ast.Expression, pos token.Position) (ast.Expres
 		End: right,
 		Step: step,
 		Inclusive: inclusive,
+	}), nil
+}
+
+func (p *Parser) parseAs(left ast.Expression, pos token.Position) (ast.Expression, diagnostic.Diagnostic) {
+	operator, _ := p.advance()
+
+	type_, diag := p.parseType(); if diag != nil {
+		return ast.Expression{}, diag
+	}
+
+	return newExpr(operator, ast.AsExpression{
+		Operand: left,
+		Type: type,
 	}), nil
 }
 

@@ -65,6 +65,7 @@ func (l *Lexer) identifier() token.Token {
 
 func (l *Lexer) checkKeyword() token.TokenKind {
 	switch l.source[l.start:l.current] {
+		case "as": return token.TokenAsKw
 		case "if": return token.TokenIfKw
 		case "else": return token.TokenElseKw
 		case "while": return token.TokenWhileKw

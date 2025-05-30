@@ -42,6 +42,11 @@ type RangeExpression struct {
     Inclusive bool
 }
 
+type AsExpression struct {
+	Operand Expression
+	Type types.Type
+}
+
 type NilExpression struct {
 	TypeArguments []types.Type
 }
@@ -126,6 +131,7 @@ func (x BoolExpression) expr()                 {}
 func (x NilExpression) expr()                  {}
 func (x VoidExpression) expr()                 {}
 func (x RangeExpression) expr()                {}
+func (x AsExpression) expr()                   {}
 func (x UnaryExpression) expr()                {}
 func (x LogicalExpression) expr()              {}
 func (x BinaryExpression) expr()               {}
