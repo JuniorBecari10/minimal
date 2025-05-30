@@ -240,7 +240,6 @@ func (p *Parser) parseBool() (ast.Expression, diagnostic.Diagnostic) {
 
 func (p *Parser) parseNil() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
-
 	var typeArgs []types.Type
 
 	if p.check(token.TokenLess) {

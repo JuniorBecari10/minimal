@@ -6,29 +6,29 @@ import (
 	"minlib/token"
 )
 
-// parses a statement and only returns if it has been succeeded.
-func (p *Parser) parseTopLevelDeclaration() ast.Statement {
+func (p *Parser) parseTopLevelDeclaration() (ast.Statement, ParserResult) {
 	return p.parseStatement(false, true)
 }
 
-func (p *Parser) parseStatement(allowStatements, requireSemicolon bool) ast.Statement {
-	for !p.current.IsEnd() {
-		decl, diag := p.declaration(allowStatements, requireSemicolon)
-
-		if diag != nil {
-			diag.PrintDiagnostic()
-			p.hadError = true
-
-			p.synchronize()
-			continue
-		}
-		
-		return decl
+// parses a statement and print the diagnostic if an error occurs.
+// this is the synchronization point; this does not bubble up the error.
+// it returns a ParseResult.
+func (p *Parser) parseStatement(allowStatements, requireSemicolon bool) (ast.Statement, ParserResult) {
+	if p.current.IsEnd() {
+		// Unexpected EOF when a statement was required
+		p.hadError = true
+		return ast.Statement{}, RES_ERROR
 	}
 
-	// reached end expecting a statement.
-	p.hadError = true
-	return ast.Statement{}
+	decl, diag := p.declaration(allowStatements, requireSemicolon); if diag != nil {
+		diag.PrintDiagnostic()
+		p.hadError = true
+
+		p.synchronize()
+		return ast.Statement{}, RES_ERROR
+	}
+
+	return decl, RES_OK
 }
 
 func (p *Parser) declaration(allowStatements, requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {

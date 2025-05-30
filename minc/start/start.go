@@ -49,7 +49,7 @@ func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
 
 	// Debug print
 	fmt.Printf("%#v\n", ast)
-	os.Exit(1)
+	os.Exit(0)
 
 	return value.Chunk{}, true
 }

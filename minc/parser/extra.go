@@ -34,7 +34,12 @@ func (p *Parser) parseOneStmtBlock(start token.TokenKind, requireSemicolon bool)
 		return ast.BlockExpression{}, diag
 	}
 
-	stmt := p.parseStatement(true, requireSemicolon)
+	stmt, res := p.parseStatement(true, requireSemicolon); if res != RES_OK {
+		// returns as OK because the error has already been handled.
+		return ast.BlockExpression{
+			Stmts: []ast.Statement{},
+		}, nil
+	}
 
 	return ast.BlockExpression{
 		Stmts: []ast.Statement{stmt},
@@ -48,9 +53,13 @@ func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) 
 
 	stmts := []ast.Statement{}
 
-	for !p.check(token.TokenRightBrace) {
-		decl := p.parseStatement(true, true)
-
+	for !p.check(token.TokenRightBrace) && !p.current.IsEnd() {
+		decl, res := p.parseStatement(true, true); if res != RES_OK {
+			// continues to try to parse another statement, since blocks
+			// are a synchronization point. Also, don't add this one to the list.
+			continue
+		}
+		
 		stmts = append(stmts, decl)
 	}
 

@@ -79,9 +79,9 @@ func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
 	}
 
 	for !p.current.IsEnd() {
-		stmt := p.parseTopLevelDeclaration()
+		stmt, internalRes := p.parseTopLevelDeclaration()
 
-		if p.hadError {
+		if internalRes == RES_ERROR || p.hadError {
 			res = RES_ERROR
 			continue
 		}
