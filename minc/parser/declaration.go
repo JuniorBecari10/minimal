@@ -12,7 +12,7 @@ func (p *Parser) parseTopLevelDeclaration() (ast.Statement, ParserResult) {
 
 // parses a statement and print the diagnostic if an error occurs.
 // this is the synchronization point; this does not bubble up the error.
-// it returns a ParseResult.
+// it returns a ParseResult for better error handling on the caller side.
 func (p *Parser) parseStatement(allowStatements, requireSemicolon bool) (ast.Statement, ParserResult) {
 	if p.current.IsEnd() {
 		// Unexpected EOF when a statement was required

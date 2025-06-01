@@ -53,7 +53,7 @@ func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) 
 
 	stmts := []ast.Statement{}
 
-	for !p.check(token.TokenRightBrace) && !p.current.IsEnd() {
+	for !(p.check(token.TokenRightBrace) || p.current.IsEnd()) {
 		decl, res := p.parseStatement(true, true); if res != RES_OK {
 			// continues to try to parse another statement, since blocks
 			// are a synchronization point. Also, don't add this one to the list.
@@ -206,13 +206,11 @@ func (p *Parser) parseFields() ([]ast.Field, diagnostic.Diagnostic) {
 		return []ast.Field{}, diag
 	}
 
-	fields := []ast.Field{}
+	// pre-allocate space for the
+	fields := make([]ast.Field, 0, len(params))
 
 	for _, param := range params {
-		fields = append(fields, ast.Field{
-			Name: param.Name,
-			Type: param.Type,
-		})
+		fields = append(fields, ast.Field(param))
 	}
 	
 	return fields, nil

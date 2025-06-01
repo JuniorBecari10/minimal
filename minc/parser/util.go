@@ -53,8 +53,6 @@ func (p *Parser) match(kind token.TokenKind) bool {
 }
 
 func (p *Parser) synchronize() {
-	p.advance()
-
 	for !p.current.IsEnd() {
 		if p.previous.Kind == token.TokenSemicolon {
 			break
@@ -63,10 +61,9 @@ func (p *Parser) synchronize() {
 		switch p.current.Kind {
 			case token.TokenLetKw, token.TokenVarKw, token.TokenFnKw, token.TokenRecordKw,
 				 token.TokenIfKw, token.TokenWhileKw, token.TokenForKw:
-				break
+				return
 		}
 
 		p.advance()
 	}
 }
-
