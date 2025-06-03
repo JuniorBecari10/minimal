@@ -1,9 +1,6 @@
 package lexer
 
-import (
-	"minlib/token"
-	"minlib/util"
-)
+import "minlib/token"
 
 func (l *Lexer) match(c byte) bool {
 	if l.isAtEnd(0) {
@@ -48,25 +45,20 @@ func (l *Lexer) increaseLine() {
 	l.currentPos.Col = 0
 }
 
-func (l *Lexer) error(message string) {
-	util.PrintError(l.startPos, 1, message, nil, l.fileData)
-	l.hadError = true
-}
-
 // ---
 
-func (l *Lexer) addToken(kind token.TokenKind) {
-	l.tokens = append(l.tokens, token.Token{
+func (l *Lexer) makeToken(kind token.TokenKind) token.Token {
+	return token.Token{
 		Kind:   kind,
 		Lexeme: l.source[l.start:l.current],
 		Pos:    l.startPos,
-	})
+	}
 }
 
-func (l *Lexer) addTokenLexeme(kind token.TokenKind, lexeme string) {
-	l.tokens = append(l.tokens, token.Token{
+func (l *Lexer) makeTokenLexeme(kind token.TokenKind, lexeme string) token.Token {
+	return token.Token{
 		Kind:   kind,
 		Lexeme: lexeme,
 		Pos:    l.startPos,
-	})
+	}
 }

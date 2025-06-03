@@ -26,7 +26,7 @@ func (t Token) IsEnd() bool {
 
 func (t Token) FormatError() string {
 	switch t.Kind {
-		case TokenInt, TokenFloat, TokenChar, TokenString, TokenIdentifier:
+		case TokenIntLiteral, TokenFloatLiteral, TokenCharLiteral, TokenStringLiteral, TokenIdentifier:
 			return fmt.Sprintf("%s '%s'", t.Kind, t.Lexeme)
 		
 		default:

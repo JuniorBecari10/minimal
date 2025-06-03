@@ -1,19 +1,20 @@
 package lexer
 
 import (
+	"minc/diagnostic"
 	"minlib/token"
 	"unicode"
 )
 
-func (l *Lexer) number() {
-	tokenType := token.TokenKind(token.TokenInt)
+func (l *Lexer) number() token.Token {
+	tokenType := token.TokenKind(token.TokenIntLiteral)
 
 	for unicode.IsDigit(rune(l.peek(0))) {
 		l.advance()
 	}
 
 	if l.peek(0) == '.' && unicode.IsDigit(rune(l.peek(1))) {
-		tokenType = token.TokenFloat
+		tokenType = token.TokenFloatLiteral
 		l.advance()
 
 		for unicode.IsDigit(rune(l.peek(0))) {
@@ -21,57 +22,56 @@ func (l *Lexer) number() {
 		}
 	}
 
-	l.addToken(tokenType)
+	return l.makeToken(tokenType)
 }
 
-func (l *Lexer) string() {
+func (l *Lexer) string() (token.Token, diagnostic.Diagnostic) {
 	for l.peek(0) != '"' && !l.isAtEnd(0) {
 		l.advance()
 	}
 
 	if l.isAtEnd(0) {
-		l.error("Unterminated string")
-		return
+		return token.Token{}, l.makeUnterminatedStringLiteralDiagnostic()
 	}
 
 	l.advance() // the closing '"'
-	l.addTokenLexeme(token.TokenString, l.source[l.start + 1 : l.current - 1])
+	return l.makeTokenLexeme(token.TokenStringLiteral, l.source[l.start + 1 : l.current - 1]), nil
 }
 
-func (l *Lexer) char() {
+func (l *Lexer) char() (token.Token, diagnostic.Diagnostic) {
 	for l.peek(0) != '\'' && !l.isAtEnd(0) {
 		l.advance()
 	}
 
 	if l.isAtEnd(0) {
-		l.error("Unterminated character literal")
-		return
+		return token.Token{}, l.makeUnterminatedCharLiteralDiagnostic()
 	}
 
 	if l.current - l.start - 2 > 1 {
-		l.error("Character literal too long")
-		return
+		return token.Token{}, l.makeCharLiteralTooLongDiagnostic()
 	}
 
 	l.advance() // the closing '\''
-	l.addTokenLexeme(token.TokenChar, l.source[l.start + 1 : l.current - 1])
+	return l.makeTokenLexeme(token.TokenCharLiteral, l.source[l.start + 1 : l.current - 1]), nil
 }
 
-func (l *Lexer) identifier() {
+func (l *Lexer) identifier() token.Token {
 	for unicode.IsLetter(rune(l.peek(0))) || unicode.IsDigit(rune(l.peek(0))) || l.peek(0) == '_' {
 		l.advance()
 	}
 
-	l.addToken(l.checkKeyword())
+	return l.makeToken(l.checkKeyword())
 }
 
 func (l *Lexer) checkKeyword() token.TokenKind {
 	switch l.source[l.start:l.current] {
+		case "as": return token.TokenAsKw
 		case "if": return token.TokenIfKw
 		case "else": return token.TokenElseKw
 		case "while": return token.TokenWhileKw
 		case "for": return token.TokenForKw
 		case "loop": return token.TokenLoopKw
+		case "let": return token.TokenLetKw
 		case "var": return token.TokenVarKw
 		case "fn": return token.TokenFnKw
 		case "break": return token.TokenBreakKw
@@ -80,6 +80,7 @@ func (l *Lexer) checkKeyword() token.TokenKind {
 		case "self": return token.TokenSelfKw
 		case "record": return token.TokenRecordKw
 		case "return": return token.TokenReturnKw
+		case "out": return token.TokenOutKw
 
 		case "and": return token.TokenAndKw
 		case "or": return token.TokenOrKw

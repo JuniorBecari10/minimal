@@ -1,9 +1,10 @@
-package util
+package file
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"os"
 	"strings"
@@ -144,11 +145,34 @@ func WriteBytecodeFile(path string, data []byte) error {
 		return err
 	}
 
-	_, err = buffer.Write(IntToBytes(int(computeChecksum(buffer.Bytes()))))
+	_, err = buffer.Write(intToBytes(int(computeChecksum(buffer.Bytes()))))
 	
 	if err != nil {
 		return err
 	}
 
 	return writeOutput(out, buffer.Bytes())
+}
+
+// ---
+
+// computeChecksum calculates the CRC32 checksum over the entire byte slice.
+func computeChecksum(data []byte) uint32 {
+    table := crc32.MakeTable(crc32.IEEE)
+    return crc32.Checksum(data, table)
+}
+
+func intToBytes(n int) []byte {
+	bytes := make([]byte, 4)
+
+	binary.LittleEndian.PutUint32(bytes, uint32(n))
+	return bytes
+}
+
+func BytesToInt(b []byte) (int, error) {
+	if len(b) != 4 {
+		return 0, fmt.Errorf("input byte slice must be 4 bytes long")
+	}
+
+	return int(binary.LittleEndian.Uint32(b)), nil
 }

@@ -1,4 +1,4 @@
-package util
+package file
 
 type FileData struct {
 	Name  string

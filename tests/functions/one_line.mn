@@ -1,0 +1,7 @@
+fn main() { }
+
+fn add_block(a: int, b: int): int {
+    return a + b;
+}
+
+fn add_one(a: int, b: int): int -> a + b;

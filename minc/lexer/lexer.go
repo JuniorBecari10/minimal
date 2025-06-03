@@ -1,9 +1,9 @@
 package lexer
 
 import (
-	"fmt"
+	"minc/diagnostic"
+	"minlib/file"
 	"minlib/token"
-	"minlib/util"
 	"strings"
 	"unicode"
 )
@@ -11,46 +11,30 @@ import (
 type Lexer struct {
 	source string
 
-	start   int
+	start int
 	current int
-	
-	startPos   token.Position
+
+	startPos token.Position
 	currentPos token.Position
 
-	hadError bool
-	tokens []token.Token
-
-	fileData *util.FileData
+	fileData *file.FileData
 }
 
-func NewLexer(source string, fileData *util.FileData) *Lexer {
+func New(source string, fileData *file.FileData) *Lexer {
 	return &Lexer{
-		source:  source,
+		source: source,
 
-		start:   0,
+		start: 0,
 		current: 0,
-		
-		startPos:   token.Position{},
-		currentPos: token.Position{},
 
-		hadError: false,
-		tokens:   []token.Token{},
+		startPos: token.Position{},
+		currentPos: token.Position{},
 
 		fileData: fileData,
 	}
 }
 
-func (l *Lexer) Lex() ([]token.Token, bool) {
-	for !l.isAtEnd(0) {
-		l.scanToken()
-	}
-
-	return l.tokens, l.hadError
-}
-
-// ---
-
-func (l *Lexer) scanToken() {
+func (l *Lexer) Lex() (token.Token, diagnostic.Diagnostic) {
 	for strings.IndexByte(" \r\t\n", l.peek(0)) != -1 {
 		l.advance()
 	}
@@ -59,120 +43,124 @@ func (l *Lexer) scanToken() {
 	l.startPos = l.currentPos
 
 	c := l.advance()
-
+	
 	if c == 0 {
-		return
+		return token.EndToken(), nil
 	}
 
 	switch c {
 		case '+': {
 			if l.match('=') {
-				l.addToken(token.TokenPlusEqual)
+				return l.makeToken(token.TokenPlusEqual), nil
 			} else {
-				l.addToken(token.TokenPlus)
+				return l.makeToken(token.TokenPlus), nil
 			}
 		}
 
 		case '-': {
 			if l.match('>') {
-				l.addToken(token.TokenArrow)
+				return l.makeToken(token.TokenArrow), nil
 			} else if l.match('=') {
-				l.addToken(token.TokenMinusEqual)
+				return l.makeToken(token.TokenMinusEqual), nil
 			} else {
-				l.addToken(token.TokenMinus)
+				return l.makeToken(token.TokenMinus), nil
 			}
 		}
 
 		case '*': {
 			if l.match('=') {
-				l.addToken(token.TokenStarEqual)
+				return l.makeToken(token.TokenStarEqual), nil
 			} else {
-				l.addToken(token.TokenStar)
+				return l.makeToken(token.TokenStar), nil
 			}
 		}
 
 		case '/': {
 			if l.match('/') {
-				// A comment goes until the end of the line.
+				// Comment. Skip to end of line
 				for l.peek(0) != '\n' && !l.isAtEnd(0) {
 					l.advance()
 				}
+
+				// Try to lex again another token
+				return l.Lex()
 			} else if l.match('=') {
-				l.addToken(token.TokenSlashEqual)
+				return l.makeToken(token.TokenSlashEqual), nil
 			} else {
-				l.addToken(token.TokenSlash)
+				return l.makeToken(token.TokenSlash), nil
 			}
 		}
 
 		case '%': {
 			if l.match('=') {
-				l.addToken(token.TokenPercentEqual)
+				return l.makeToken(token.TokenPercentEqual), nil
 			} else {
-				l.addToken(token.TokenPercent)
+				return l.makeToken(token.TokenPercent), nil
 			}
 		}
-		
-		case '(': l.addToken(token.TokenLeftParen)
-		case ')': l.addToken(token.TokenRightParen)
 
-		case '{': l.addToken(token.TokenLeftBrace)
-		case '}': l.addToken(token.TokenRightBrace)
+		case '(': return l.makeToken(token.TokenLeftParen), nil
+		case ')': return l.makeToken(token.TokenRightParen), nil
+
+		case '{': return l.makeToken(token.TokenLeftBrace), nil
+		case '}': return l.makeToken(token.TokenRightBrace), nil
 
 		case '=': {
 			if l.match('=') {
-				l.addToken(token.TokenDoubleEqual)
+				return l.makeToken(token.TokenDoubleEqual), nil
 			} else {
-				l.addToken(token.TokenEqual)
+				return l.makeToken(token.TokenEqual), nil
 			}
 		}
 
 		case '!': {
 			if l.match('=') {
-				l.addToken(token.TokenBangEqual)
+				return l.makeToken(token.TokenBangEqual), nil
 			} else {
-				l.error(fmt.Sprintf("Unknown character: '%c' (%d)", c, int(c)))
+				return token.Token{}, l.makeUnknownTokenDiagnostic(c)
 			}
 		}
 
 		case '>': {
 			if l.match('=') {
-				l.addToken(token.TokenGreaterEqual)
+				return l.makeToken(token.TokenGreaterEqual), nil
 			} else {
-				l.addToken(token.TokenGreater)
+				return l.makeToken(token.TokenGreater), nil
 			}
 		}
 
 		case '<': {
 			if l.match('=') {
-				l.addToken(token.TokenLessEqual)
+				return l.makeToken(token.TokenLessEqual), nil
 			} else {
-				l.addToken(token.TokenLess)
+				return l.makeToken(token.TokenLess), nil
 			}
 		}
 
-		case ';': l.addToken(token.TokenSemicolon)
+		case ';': return l.makeToken(token.TokenSemicolon), nil
 
-		case '"': l.string()
-		case '\'': l.char()
+		case '"': return l.string()
+		case '\'': return l.char()
 
-		case ',': l.addToken(token.TokenComma)
-		case ':': l.addToken(token.TokenColon)
+		case ',': return l.makeToken(token.TokenComma), nil
+		case ':': return l.makeToken(token.TokenColon), nil
+		case '?': return l.makeToken(token.TokenQuestion), nil
 
-		case '.':  {
+		case '.': {
 			if l.match('.') {
-				l.addToken(token.TokenDoubleDot)
+				return l.makeToken(token.TokenDoubleDot), nil
 			} else {
-				l.addToken(token.TokenDot)
+				return l.makeToken(token.TokenDot), nil
 			}
 		}
 
 		default: {
 			if unicode.IsDigit(rune(c)) {
-				l.number()
+				return l.number(), nil
 			} else if unicode.IsLetter(rune(c)) || c == '_' {
-				l.identifier()
+				return l.identifier(), nil
 			} else {
-				l.error(fmt.Sprintf("Unknown character: '%c' (code point %d)", c, int(c)))
+				return token.Token{}, l.makeUnknownTokenDiagnostic(c)
 			}
 		}
 	}

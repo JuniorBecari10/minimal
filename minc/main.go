@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"minc/run"
+	"minc/start"
 	"os"
 )
 
@@ -12,5 +12,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	run.Compile(os.Args[1], os.Args[2])
+	start.Compile(os.Args[1], os.Args[2])
 }

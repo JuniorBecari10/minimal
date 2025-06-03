@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"min/disassembler"
-	"minlib/util"
+	"minlib/file"
 	"minlib/value"
 	"os"
 	"os/exec"
@@ -50,7 +50,7 @@ func Disasm(source string) {
 			os.Exit(1)
 		}
 
-		data, err = util.ReadBytecode(*bytes.NewBuffer(stdout))
+		data, err = file.ReadBytecode(*bytes.NewBuffer(stdout))
 
 		if err != nil {
 			log("Compiling phase failed.")
@@ -67,7 +67,7 @@ func Disasm(source string) {
 func Disasmb(bytecodePath string) {
 	// just disassemble
 	logNewline("Disassembling", func() {
-		bytecode, err := util.ReadBytecodeFile(bytecodePath)
+		bytecode, err := file.ReadBytecodeFile(bytecodePath)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Cannot read bytecode file '%s'.\n", bytecodePath)

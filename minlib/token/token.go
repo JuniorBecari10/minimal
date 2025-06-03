@@ -3,11 +3,11 @@ package token
 type TokenKind string
 
 const (
-	TokenInt        = "int"
-	TokenFloat      = "float"
-	TokenChar       = "char"
-	TokenString     = "string"
-	TokenIdentifier = "identifier"
+	TokenIntLiteral    = "int literal"
+	TokenFloatLiteral  = "float literal"
+	TokenCharLiteral   = "char literal"
+	TokenStringLiteral = "string literal"
+	TokenIdentifier    = "identifier"
 
 	TokenPlus    = "'+'"
 	TokenMinus   = "'-'"
@@ -34,6 +34,8 @@ const (
 	TokenSemicolon = "';'"
 	TokenComma     = "','"
 	TokenColon     = "':'"
+	TokenQuestion  = "'?'"
+
 	TokenDot       = "'.'"
 	TokenDoubleDot = "'..'"
 
@@ -45,11 +47,13 @@ const (
 	TokenLess      = "'<'"
 	TokenLessEqual = "'<='"
 
+	TokenAsKw       = "'as' keyword"
 	TokenIfKw       = "'if' keyword"
 	TokenElseKw     = "'else' keyword"
 	TokenWhileKw    = "'while' keyword"
 	TokenForKw      = "'for' keyword"
 	TokenLoopKw     = "'loop' keyword"
+	TokenLetKw      = "'let' keyword"
 	TokenVarKw      = "'var' keyword"
 	TokenFnKw       = "'fn' keyword"
 	TokenBreakKw    = "'break' keyword"
@@ -58,6 +62,7 @@ const (
 	TokenSelfKw     = "'self' keyword"
 	TokenRecordKw   = "'record' keyword"
 	TokenReturnKw   = "'return' keyword"
+	TokenOutKw      = "'out' keyword"
 
 	TokenAndKw = "'and' keyword"
 	TokenOrKw  = "'or' keyword"

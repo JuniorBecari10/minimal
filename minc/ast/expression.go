@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"minc/types"
 	"minlib/token"
 )
 
@@ -41,7 +42,14 @@ type RangeExpression struct {
     Inclusive bool
 }
 
-type NilExpression struct {}
+type AsExpression struct {
+	Operand Expression
+	Type types.Type
+}
+
+type NilExpression struct {
+	TypeArguments []types.Type
+}
 
 type VoidExpression struct {
 	Expr *Expression // optional
@@ -79,9 +87,7 @@ type IdentifierExpression struct {
 	Token token.Token
 }
 
-type SelfExpression struct {
-	Token token.Token
-}
+type SelfExpression struct {}
 
 type IdentifierAssignmentExpression struct {
 	Name token.Token
@@ -90,13 +96,18 @@ type IdentifierAssignmentExpression struct {
 
 type FnExpression struct {
 	Parameters []Parameter
-	Body BlockStatement
+	Return *types.Type // optional
+	Body BlockExpression
+}
+
+type BlockExpression struct {
+	Stmts []Statement
 }
 
 type IfExpression struct {
 	Condition Expression
 	Then Expression
-	Else Expression
+	Else *Expression // optional
 }
 
 type GetPropertyExpression struct {
@@ -120,6 +131,7 @@ func (x BoolExpression) expr()                 {}
 func (x NilExpression) expr()                  {}
 func (x VoidExpression) expr()                 {}
 func (x RangeExpression) expr()                {}
+func (x AsExpression) expr()                   {}
 func (x UnaryExpression) expr()                {}
 func (x LogicalExpression) expr()              {}
 func (x BinaryExpression) expr()               {}
@@ -129,6 +141,7 @@ func (x IdentifierExpression) expr()           {}
 func (x SelfExpression) expr()                 {}
 func (x IdentifierAssignmentExpression) expr() {}
 func (x FnExpression) expr()                   {}
+func (x BlockExpression) expr()                {}
 func (x IfExpression) expr()                   {}
 func (x GetPropertyExpression) expr()          {}
 func (x SetPropertyExpression) expr()          {}
