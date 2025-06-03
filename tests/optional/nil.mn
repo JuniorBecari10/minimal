@@ -5,10 +5,3 @@ fn main() {
 
 fn a() -> void(nil>);
 
-// Fix this error:
-// [-] Error: Expected '}' after ';', but got end.
-//  |   [-] nil.mn (line 1, col 1)
-//  |  1 | fn main() {
-//  |    | 
-//  |   [-]
-// [-]

@@ -44,7 +44,7 @@ type RangeExpression struct {
 
 type AsExpression struct {
 	Operand Expression
-	Type types.Type
+	ConvertType types.Type
 }
 
 type NilExpression struct {

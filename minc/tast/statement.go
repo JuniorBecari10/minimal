@@ -6,10 +6,8 @@ import (
 	"minc/ast"
 )
 
-type Statement = ast.Statement
-type StmtData = ast.StmtData
-
-// from now on, there won't be any aliases, since they need to implement StmtData separately
+type Statement ast.Statement
+type StmtData ast.StmtData
 
 type FnStatement struct {
 	Name token.Token
@@ -35,7 +33,10 @@ type VarStatement struct {
 	Immutable bool
 }
 
-type WhileStatement ast.WhileStatement
+type WhileStatement struct {
+	Condition Expression
+	Block     BlockExpression
+}
 
 type ForStatement struct {
 	Variable token.Token // identifier
@@ -44,13 +45,24 @@ type ForStatement struct {
 	Block BlockExpression
 }
 
-// Increment is indeed optional
-type ForVarStatement ast.ForVarStatement
+type ForVarStatement struct {
+	Declaration Statement
+	Condition Expression
+	Increment *Expression // optional
+	Block BlockExpression
+	Immutable bool
+}
 
-type LoopStatement ast.LoopStatement
+type LoopStatement struct {
+	Block BlockExpression
+}
+
 type BreakStatement ast.BreakStatement
 type ContinueStatement ast.ContinueStatement
-type ExprStatement ast.ExprStatement
+
+type ExprStatement struct {
+	Expr Expression
+}
 
 // ---
 

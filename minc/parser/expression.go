@@ -465,7 +465,7 @@ func (p *Parser) parseAs(left ast.Expression, pos token.Position) (ast.Expressio
 
 	return newExpr(operator, ast.AsExpression{
 		Operand: left,
-		Type: type_,
+		ConvertType: type_,
 	}), nil
 }
 
