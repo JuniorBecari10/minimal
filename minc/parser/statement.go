@@ -166,6 +166,8 @@ func (p *Parser) outStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagn
 func (p *Parser) exprStmt() (ast.Statement, diagnostic.Diagnostic) {
 	pos := p.current.Pos
 
+	// TODO: maybe pass a flag here saying that this is supposed to be a statement, and therefore refine the error message,
+	// to say 'expected statement', instead of 'expected expression'.
 	expr, diag := p.parseExpression(); if diag != nil {
 		return ast.Statement{}, diag
 	}
