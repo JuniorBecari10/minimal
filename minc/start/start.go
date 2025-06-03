@@ -2,6 +2,7 @@ package start
 
 import (
 	"fmt"
+	"minc/analyzer"
 	"minc/parser"
 	"os"
 	"strings"
@@ -47,9 +48,11 @@ func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
 		os.Exit(1)
 	}
 
-	// Debug print
-	fmt.Printf("%#v\n", ast)
-	os.Exit(0)
+	tast, res := analyzer.New(ast).Analyze()
+	
+	if res == analyzer.RES_ERROR {
+		os.Exit(1)
+	}
 
 	return value.Chunk{}, true
 }
