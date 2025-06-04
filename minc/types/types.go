@@ -41,6 +41,10 @@ type TypeUserDefined struct {
 	Name string
 }
 
+type TypeRecord struct {
+
+}
+
 // TODO: add lists, arrays, maps and results.
 
 // ---

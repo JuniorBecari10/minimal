@@ -70,7 +70,7 @@ func (p *Parser) setInitialTokens() ParserResult {
 	return RES_OK
 }
 
-func (p *Parser) Parse() ([]ast.Statement, ParserResult) {
+func (p *Parser) Parse() (ast.Ast, ParserResult) {
 	stmts := []ast.Statement{}
 	res := p.setInitialTokens()
 

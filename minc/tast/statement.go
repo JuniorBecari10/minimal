@@ -7,7 +7,10 @@ import (
 )
 
 type Statement ast.Statement
-type StmtData ast.StmtData
+
+type StmtData interface {
+	stmt()
+}
 
 type FnStatement struct {
 	Name token.Token
@@ -16,7 +19,11 @@ type FnStatement struct {
 	Body BlockExpression
 }
 
-type RecordStatement ast.RecordStatement
+type RecordStatement struct {
+	Name token.Token
+	Fields []Field
+	Methods []FnStatement
+}
 
 type ReturnStatement struct {
 	Expression Expression
