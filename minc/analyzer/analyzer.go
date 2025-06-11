@@ -3,6 +3,7 @@ package analyzer
 import (
 	"fmt"
 	"minc/ast"
+	"minc/diagnostic"
 	"minc/parser"
 	"minc/tast"
 	"minc/types"
@@ -83,10 +84,30 @@ func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
 func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 	res := RES_OK
 
+	printDiag := func(diag diagnostic.Diagnostic) {
+		diag.PrintDiagnostic()
+		res = RES_ERROR
+	}
+
 	for _, d := range a.ast {
 		switch decl := d.Data.(type) {
-			// In 'fn' statements we check only the declaration. All types must be concrete.
+			// In 'fn' statements we check only the declaration. All types must be explicitly annotated and concrete.
 			case ast.FnDeclaration: {
+				var returnType types.TypeData = types.TypeVoid{}
+
+				if decl.Return != nil {
+					returnType = decl.Return.Data
+				}
+
+				if !typeIsConcrete(returnType) {
+					printDiag(a.makeExpectedConcreteType(returnType, ))
+					continue
+				}
+
+				for _, param := range decl.Parameters {
+
+				}
+
 				a.globals = append(a.globals, Global{
 					name: decl.Name,
 					globalType: types.TypeFunction{},

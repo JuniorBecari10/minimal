@@ -148,28 +148,36 @@ func (p *Parser) parseVariableBinding() (token.Token, *types.Type, diagnostic.Di
 
 func (p *Parser) parseParameters() ([]ast.Parameter, diagnostic.Diagnostic) {
 	_, diag := p.expectToken(token.TokenLeftParen); if diag != nil {
-		return []ast.Parameter{}, diag
+		return nil, diag
 	}
 
 	params := []ast.Parameter{}
 
 	for !p.match(token.TokenRightParen) {
 		name, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
-			return []ast.Parameter{}, diag
+			return nil, diag
+		}
+
+		if p.match(token.TokenComma) {
+			// type not annotated.
+			params = append(params, ast.Parameter{
+				Name: name,
+				Type: nil,
+			})
 		}
 
 		paramType, diag := p.parseTypeAnnotation(); if diag != nil {
-			return []ast.Parameter{}, diag
+			return nil, diag
 		}
 
 		params = append(params, ast.Parameter{
 			Name: name,
-			Type: paramType,
+			Type: &paramType,
 		})
 
 		if !p.check(token.TokenRightParen) {
 			_, diag := p.expectToken(token.TokenComma); if diag != nil {
-				return []ast.Parameter{}, diag
+				return nil, diag
 			}
 		}
 	}
@@ -201,18 +209,35 @@ func (p *Parser) parseArguments() ([]ast.Expression, diagnostic.Diagnostic) {
 	return args, nil
 }
 
+// like parseParameters, but types aren't optional
 func (p *Parser) parseFields() ([]ast.Field, diagnostic.Diagnostic) {
-	params, diag := p.parseParameters(); if diag != nil {
-		return []ast.Field{}, diag
+	_, diag := p.expectToken(token.TokenLeftParen); if diag != nil {
+		return nil, diag
 	}
 
-	// pre-allocate space for the
-	fields := make([]ast.Field, 0, len(params))
+	fields := []ast.Field{}
 
-	for _, param := range params {
-		fields = append(fields, ast.Field(param))
+	for !p.match(token.TokenRightParen) {
+		name, diag := p.expectToken(token.TokenIdentifier); if diag != nil {
+			return nil, diag
+		}
+
+		fieldType, diag := p.parseTypeAnnotation(); if diag != nil {
+			return nil, diag
+		}
+
+		fields = append(fields, ast.Field{
+			Name: name,
+			Type: fieldType,
+		})
+
+		if !p.check(token.TokenRightParen) {
+			_, diag := p.expectToken(token.TokenComma); if diag != nil {
+				return nil, diag
+			}
+		}
 	}
-	
+
 	return fields, nil
 }
 

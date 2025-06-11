@@ -15,6 +15,14 @@ func (a *Analyzer) makeExpectedConcreteType(t types.Type, token token.Token) dia
 	)
 }
 
+func (a *Analyzer) makeExpectedTypeAnnotation(token token.Token) diagnostic.Diagnostic {
+	return a.makeHelpDiagnostic(
+		"Expected type annotation here.",
+		[]string{ "Please annotate this with an actual type." },
+		token,
+	)
+}
+
 func (a *Analyzer) makeDiagnostic(message string, token token.Token) diagnostic.SimpleDiagnostic {
 	return diagnostic.SimpleDiagnostic{
 		DiagnosticBase: diagnostic.DiagnosticBase{

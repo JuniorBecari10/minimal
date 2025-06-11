@@ -14,7 +14,7 @@ func newNative(name string, globalType types.Type) Global {
 	}
 }
 
-func typeIsConcrete(t types.Type) bool {
+func typeIsConcrete(t types.TypeData) bool {
 	switch t.(type) {
 		// the only two abstract types
 		case types.TypeUntypedNil, types.TypeUnknown:

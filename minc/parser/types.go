@@ -8,7 +8,7 @@ import (
 
 func (p *Parser) parseTypeAnnotation() (types.Type, diagnostic.Diagnostic) {
 	_, diag := p.expectToken(token.TokenColon); if diag != nil {
-		return nil, diag
+		return types.Type{}, diag
 	}
 
 	return p.parseType()
@@ -19,17 +19,20 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 	// Grouping with parentheses
 	if p.match(token.TokenLeftParen) {
 		innerType, diag := p.parseType(); if diag != nil {
-			return nil, diag
+			return types.Type{}, diag
 		}
 
 		_, diag = p.expectToken(token.TokenRightParen); if diag != nil {
-			return nil, diag
+			return types.Type{}, diag
 		}
 
 		// Allow postfix optional for grouped type
 		if p.match(token.TokenQuestion) {
-			return types.TypeOptional{
-				Inside: innerType,
+			return types.Type{
+				Token: innerType.Token,
+				Data: types.TypeOptional{
+					Inside: innerType,
+				},
 			}, nil
 		}
 
@@ -41,23 +44,30 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 	endDiag := p.makeExpectedTypeDiagnostic()
 
 	typeToken, diag := p.advance(); if diag != nil {
-		return nil, diag
+		return types.Type{}, diag
 	}
 
 	var baseType types.Type
 
+	newType := func(data types.TypeData) types.Type {
+		return types.Type{
+			Token: typeToken,
+			Data: data,
+		}
+	}
+
 	switch typeToken.Lexeme {
-		case "int": baseType = types.TypeInt{}
-		case "float": baseType = types.TypeFloat{}
-		case "str": baseType = types.TypeStr{}
-		case "char": baseType = types.TypeChar{}
-		case "bool": baseType = types.TypeBool{}
+		case "int": baseType = newType(types.TypeInt{})
+		case "float": baseType = newType(types.TypeFloat{})
+		case "str": baseType = newType(types.TypeStr{})
+		case "char": baseType = newType(types.TypeChar{})
+		case "bool": baseType = newType(types.TypeBool{})
 		
 		// 'untyped nil' should not be written, only inferred.
 
 		// for generics, like: ok<_, int>
-		case "_": baseType = types.TypeUnknown{}
-		case "void": baseType = types.TypeVoid{}
+		case "_": baseType = newType(types.TypeUnknown{})
+		case "void": baseType = newType(types.TypeVoid{})
 		case "fn": return p.parseFnType()
 		case "range": return p.parseRangeType()
 
@@ -68,7 +78,7 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 				}
 			} else {
 				// diagnostic is already prepared before the token advances
-				return nil, endDiag
+				return types.Type{}, endDiag
 			}
 		}
 	}
@@ -87,13 +97,13 @@ func (p *Parser) parseFnType() (types.Type, diagnostic.Diagnostic) {
 	// 'fn' keyword is already advanced.
 
 	params, diag := p.parseParameterTypes(); if diag != nil {
-		return nil, diag
+		return types.Type{}, diag
 	}
 
 	var returnType types.Type = types.TypeVoid{}
 	if p.check(token.TokenColon) {
 		returnType, diag = p.parseTypeAnnotation(); if diag != nil {
-			return nil, diag
+			return types.Type{}, diag
 		}
 	}
 
@@ -107,11 +117,11 @@ func (p *Parser) parseRangeType() (types.Type, diagnostic.Diagnostic) {
 	// 'range' already advanced.
 
 	args, diag := p.parseTypeArguments(); if diag != nil {
-		return nil, diag
+		return types.Type{}, diag
 	}
 
 	if len(args) != 1 {
-		return nil, p.makeInvalidTypeArgumentsLengthDiagnostic(1, len(args))
+		return types.Type{}, p.makeInvalidTypeArgumentsLengthDiagnostic(1, len(args))
 	}
 
 	return types.TypeRange{
@@ -129,7 +139,7 @@ func (p *Parser) parseTypeArguments() ([]types.Type, diagnostic.Diagnostic) {
 
 func (p *Parser) parseTypeList(left, right token.TokenKind) ([]types.Type, diagnostic.Diagnostic) {
 	_, diag := p.expectToken(left); if diag != nil {
-		return nil, diag
+		return types.Type{}, diag
 	}
 
 	params := []types.Type{}
@@ -152,7 +162,7 @@ func (p *Parser) parseTypeList(left, right token.TokenKind) ([]types.Type, diagn
 		} else if p.match(right) {
 			break
 		} else {
-			return nil, p.makeExpectedTokenDiagnostic(right) // or comma
+			return types.Type{}, p.makeExpectedTokenDiagnostic(right) // or comma
 		}
 	}
 

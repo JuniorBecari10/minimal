@@ -2,10 +2,16 @@ package types
 
 import (
 	"fmt"
+	"minlib/token"
 	"strings"
 )
 
-type Type interface {
+type Type struct {
+	Token token.Token
+	Data TypeData
+}
+
+type TypeData interface {
 	String() string
 }
 
@@ -57,7 +63,7 @@ func (x TypeBool) String() string { return "bool" }
 func (x TypeUntypedNil) String() string { return "untyped nil" }
 func (x TypeUnknown) String() string { return "unknown" }
 func (x TypeVoid) String() string { return "void" }
-func (x TypeOptional) String() string { return fmt.Sprintf("%s?", x.Inside.String()) }
+func (x TypeOptional) String() string { return fmt.Sprintf("%s?", x.Inside.Data.String()) }
 
 // fn (int, int): int
 func (x TypeFunction) String() string {
@@ -65,7 +71,7 @@ func (x TypeFunction) String() string {
 	builder.WriteString("fn (")
 
 	for i, ty := range x.Parameters {
-		builder.WriteString(ty.String())
+		builder.WriteString(ty.Data.String())
 
 		if i < len(x.Parameters) - 1 {
 			builder.WriteString(", ")
@@ -73,10 +79,10 @@ func (x TypeFunction) String() string {
 	}
 
 	builder.WriteString("): ")
-	builder.WriteString(x.Return.String())
+	builder.WriteString(x.Return.Data.String())
 
 	return builder.String()
 }
 
-func (x TypeRange) String() string { return fmt.Sprintf("range<%s>", x.Inside.String()) }
+func (x TypeRange) String() string { return fmt.Sprintf("range<%s>", x.Inside.Data.String()) }
 func (x TypeUserDefined) String() string { return x.Name }

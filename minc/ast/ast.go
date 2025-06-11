@@ -14,7 +14,7 @@ type AstBase struct {
 
 type Parameter struct {
 	Name token.Token
-	Type types.Type
+	Type *types.Type // optional
 }
 
 type Field struct {
