@@ -9,7 +9,7 @@ import (
 
 func (c *Compiler) statement(stmt ast.Statement) {
 	switch s := stmt.Data.(type) {
-		case ast.RecordStatement: {
+		case ast.RecordDeclaration: {
 			fieldNames := make([]string, 0, len(s.Fields))
 
 			for _, field := range s.Fields {
@@ -39,14 +39,14 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			c.addDeclarationInstruction(stmt.Base.Pos)
 		}
 
-		case ast.FnStatement: {
+		case ast.FnDeclaration: {
 			c.compileFunction(s.Parameters, s.Body, &s.Name.Lexeme, stmt.Base.Pos)
 
 			c.addVariable(s.Name, s.Name.Pos)
 			c.addDeclarationInstruction(stmt.Base.Pos)
 		}
 
-		case ast.VarStatement: {
+		case ast.VarDeclaration: {
 			c.expression(s.Init)
 
 			if c.hadError {
@@ -262,14 +262,14 @@ func (c *Compiler) statement(stmt ast.Statement) {
 			util.PopList(&c.loopFlowPos)
 
 			// Push the old value to the stack to save it for the next iteration.
-			c.identifier(s.Declaration.Data.(ast.VarStatement).Name, s.Declaration.Data.(ast.VarStatement).Init)
+			c.identifier(s.Declaration.Data.(ast.VarDeclaration).Name, s.Declaration.Data.(ast.VarDeclaration).Init)
 
 			// End the scope to discard the loop variable and close it in an upvalue if it's been captured.
 			c.endScope(stmt.Base.Pos)
 			c.beginScope()
 
 			// Create a new variable for the mutation to occur.
-			c.addVariable(s.Declaration.Data.(ast.VarStatement).Name, s.Declaration.Data.(ast.VarStatement).Name.Pos)
+			c.addVariable(s.Declaration.Data.(ast.VarDeclaration).Name, s.Declaration.Data.(ast.VarDeclaration).Name.Pos)
 			c.addDeclarationInstruction(s.Declaration.Base.Pos)
 			
 			if s.Increment != nil {

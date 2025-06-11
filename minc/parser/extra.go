@@ -105,23 +105,23 @@ func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.Bl
 	return params, returnType, body, nil
 }
 
-func (p *Parser) parseMethods() ([]ast.FnStatement, diagnostic.Diagnostic) {
+func (p *Parser) parseMethods() ([]ast.FnDeclaration, diagnostic.Diagnostic) {
 	_, diag := p.expectToken(token.TokenLeftBrace); if diag != nil {
-		return []ast.FnStatement{}, diag
+		return []ast.FnDeclaration{}, diag
 	}
 
-	methods := []ast.FnStatement{}
+	methods := []ast.FnDeclaration{}
 
 	for !p.current.IsEnd() && !p.check(token.TokenRightBrace) {
 		method, diag := p.fnDecl(); if diag != nil {
-			return []ast.FnStatement{}, diag
+			return []ast.FnDeclaration{}, diag
 		}
 
-		methods = append(methods, method.Data.(ast.FnStatement)) // 'fnDecl' always returns a FnStatement.
+		methods = append(methods, method.Data.(ast.FnDeclaration)) // 'fnDecl' always returns a FnStatement.
 	}
 
 	_, diag = p.expectToken(token.TokenRightBrace); if diag != nil {
-		return []ast.FnStatement{}, diag
+		return []ast.FnDeclaration{}, diag
 	}
 
 	return methods, nil

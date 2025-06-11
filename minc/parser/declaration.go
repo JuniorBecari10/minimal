@@ -66,7 +66,7 @@ func (p *Parser) recordDecl(requireSemicolon bool) (ast.Statement, diagnostic.Di
 		return ast.Statement{}, diag
 	}
 
-	methods := []ast.FnStatement{}
+	methods := []ast.FnDeclaration{}
 
 	if p.check(token.TokenLeftBrace) {
 		methods, diag = p.parseMethods(); if diag != nil {
@@ -78,7 +78,7 @@ func (p *Parser) recordDecl(requireSemicolon bool) (ast.Statement, diagnostic.Di
 		}
 	}
 
-	return newStmt(keyword, ast.RecordStatement{
+	return newStmt(keyword, ast.RecordDeclaration{
 		Name:   name,
 		Fields: fields,
 		Methods: methods,
@@ -97,7 +97,7 @@ func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
 		return ast.Statement{}, diag
 	}
 
-	return newStmt(keyword, ast.FnStatement{
+	return newStmt(keyword, ast.FnDeclaration{
 		Name: name,
 		Parameters: params,
 		Return: returnType,
@@ -126,7 +126,7 @@ func (p *Parser) varDecl(isLet bool, requireSemicolon bool) (ast.Statement, diag
 		}
 	}
 
-	return newStmt(keyword, ast.VarStatement{
+	return newStmt(keyword, ast.VarDeclaration{
 		Name: name,
 		Init: expr,
 		Type: varType,

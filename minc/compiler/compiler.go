@@ -114,21 +114,21 @@ func (c *Compiler) statements(stmts []ast.Statement) {
 func (c *Compiler) hoistTopLevel() {
 	for _, decl := range c.ast {
 		switch s := decl.Data.(type) {
-			case ast.VarStatement: {
+			case ast.VarDeclaration: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
 					initialized: false,
 				})
 			}
 
-			case ast.FnStatement: {
+			case ast.FnDeclaration: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
 					initialized: false,
 				})
 			}
 
-			case ast.RecordStatement: {
+			case ast.RecordDeclaration: {
 				c.globals = append(c.globals, Global{
 					name: s.Name,
 					initialized: false,

@@ -11,11 +11,11 @@ func (a *Analyzer) analyzeBlock(block ast.Ast) (tast.Tast, AnalyzerResult) {
 
 	for _, s := range block {
 		switch stmt := s.Data.(type) {
-			case ast.FnStatement: {
+			case ast.FnDeclaration: {
 				
 			}
 
-			case ast.RecordStatement: {}
+			case ast.RecordDeclaration: {}
 
 			case ast.ReturnStatement: {
 				
@@ -33,7 +33,7 @@ func (a *Analyzer) analyzeBlock(block ast.Ast) (tast.Tast, AnalyzerResult) {
 
 			case ast.OutStatement: {}
 
-			case ast.VarStatement: {}
+			case ast.VarDeclaration: {}
 
 			case ast.WhileStatement: {}
 

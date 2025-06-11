@@ -13,3 +13,14 @@ func newNative(name string, globalType types.Type) Global {
 		initialized: true,
 	}
 }
+
+func typeIsConcrete(t types.Type) bool {
+	switch t.(type) {
+		// the only two abstract types
+		case types.TypeUntypedNil, types.TypeUnknown:
+			return false
+
+		default:
+			return true
+	}
+}

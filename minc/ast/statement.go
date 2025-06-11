@@ -14,17 +14,17 @@ type StmtData interface {
 	stmt()
 }
 
-type FnStatement struct {
+type FnDeclaration struct {
 	Name token.Token
 	Parameters []Parameter
 	Return *types.Type // optional
 	Body BlockExpression
 }
 
-type RecordStatement struct {
+type RecordDeclaration struct {
 	Name token.Token
 	Fields []Field
-	Methods []FnStatement
+	Methods []FnDeclaration
 }
 
 type ReturnStatement struct {
@@ -35,7 +35,7 @@ type OutStatement struct {
 	Expression *Expression // optional
 }
 
-type VarStatement struct {
+type VarDeclaration struct {
 	Name token.Token
 	Init Expression
 	Type *types.Type // optional
@@ -75,11 +75,11 @@ type ExprStatement struct {
 
 // ---
 
-func (x RecordStatement) stmt()   {}
-func (x FnStatement) stmt()       {}
+func (x RecordDeclaration) stmt()   {}
+func (x FnDeclaration) stmt()       {}
 func (x ReturnStatement) stmt()   {}
 func (x OutStatement) stmt()      {}
-func (x VarStatement) stmt()      {}
+func (x VarDeclaration) stmt()      {}
 func (x WhileStatement) stmt()    {}
 func (x ForStatement) stmt()      {}
 func (x ForVarStatement) stmt()   {}

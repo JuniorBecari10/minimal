@@ -6,7 +6,10 @@ import (
 	"minc/ast"
 )
 
-type Statement ast.Statement
+type Statement struct {
+	Base AstBase
+	Data StmtData
+}
 
 type StmtData interface {
 	stmt()

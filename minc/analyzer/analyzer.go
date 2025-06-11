@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"fmt"
 	"minc/ast"
 	"minc/parser"
 	"minc/tast"
@@ -69,33 +70,65 @@ func New(ast ast.Ast, fileData *file.FileData) *Analyzer {
 // Analyzes the code, does a lot of checkings, and if necessary or it's better, modify it, and returns a typed AST.
 func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
 	a.addNatives()
-	a.hoistTopLevel()
+
+	res := a.hoistTopLevel(); if res != RES_OK {
+		return nil, res
+	}
 
 	return a.analyzeBlock(a.ast)
 }
 
 // pre-declares all top-level declarations in order to properly do name resolution.
-// it doesn't do all the required setup, it just adds the name to the list.
-// TODO: finish
-func (a *Analyzer) hoistTopLevel() {
+// it doesn't do all the required setup, it just adds the name to the list with its type, using shallow inference.
+func (a *Analyzer) hoistTopLevel() AnalyzerResult {
+	res := RES_OK
+
 	for _, d := range a.ast {
 		switch decl := d.Data.(type) {
-			case ast.FnStatement: {
+			// In 'fn' statements we check only the declaration. All types must be concrete.
+			case ast.FnDeclaration: {
 				a.globals = append(a.globals, Global{
 					name: decl.Name,
-					globalType: types.TypeFunction{}, // filled later
+					globalType: types.TypeFunction{},
 
 					immutable: true,
 					initialized: false,
 				})
 			}
+			
+			// In 'var'/'let' declarations we check the type and if omitted, we try to infer it shallowly.
+			case ast.VarDeclaration: {
+				if decl.Type == nil {
+					// type isn't annotated. infer it shallowly.
 
+				} else {
+					// type is annotated; add the variable with its type.
+					// actual type checking is done later.
+					a.globals = append(a.globals, Global {
+						name: decl.Name,
+						globalType: *decl.Type,
 
+						immutable: decl.Immutable,
+						initialized: true,
+					})
+				}
+			}
+
+			// In records, all types must be explicitly annotated and concrete.
+			case ast.RecordDeclaration: {
+
+			}
+
+			// Should not reach here.
+			default:
+				panic(fmt.Sprintf("Unknown declaration %v of type %T", decl, decl))
 		}
 	}
+
+	return res
 }
 
-// adds native functions and variables to the global scope.
+// Adds native functions and variables to the global scope.
 func (a *Analyzer) addNatives() {
 	// fn print()
 	a.globals = append(a.globals, newNative("print", types.TypeFunction{
