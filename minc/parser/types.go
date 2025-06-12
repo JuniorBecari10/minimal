@@ -73,9 +73,10 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 
 		default: {
 			if typeToken.Kind == token.TokenIdentifier {
-				baseType = types.TypeUserDefined{
+				baseType = newType(types.TypeRecord{
 					Name: typeToken.Lexeme,
-				}
+					// no fields
+				})
 			} else {
 				// diagnostic is already prepared before the token advances
 				return types.Type{}, endDiag
@@ -85,8 +86,12 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 
 	// Apply optional modifier
 	if p.match(token.TokenQuestion) {
-		baseType = types.TypeOptional{
-			Inside: baseType,
+		baseType = types.Type{
+			Token: baseType.Token,
+
+			Data: types.TypeOptional{
+				Inside: baseType,
+			},
 		}
 	}
 
@@ -95,26 +100,36 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 
 func (p *Parser) parseFnType() (types.Type, diagnostic.Diagnostic) {
 	// 'fn' keyword is already advanced.
+	fnKw := p.previous
 
 	params, diag := p.parseParameterTypes(); if diag != nil {
 		return types.Type{}, diag
 	}
 
-	var returnType types.Type = types.TypeVoid{}
+	var returnType types.Type = types.Type{
+		Token: token.EndToken(), // dummy token, because this doesn't exist and when omitted, it is void
+		Data: types.TypeVoid{},
+	}
+
 	if p.check(token.TokenColon) {
 		returnType, diag = p.parseTypeAnnotation(); if diag != nil {
 			return types.Type{}, diag
 		}
 	}
 
-	return types.TypeFunction{
-		Parameters: params,
-		Return: returnType,
+	return types.Type{
+        Token: fnKw,
+
+		Data: types.TypeFunction{
+			Parameters: params,
+			Return: returnType,
+		},
 	}, nil
 }
 
 func (p *Parser) parseRangeType() (types.Type, diagnostic.Diagnostic) {
 	// 'range' already advanced.
+	rangeTk := p.previous
 
 	args, diag := p.parseTypeArguments(); if diag != nil {
 		return types.Type{}, diag
@@ -124,8 +139,12 @@ func (p *Parser) parseRangeType() (types.Type, diagnostic.Diagnostic) {
 		return types.Type{}, p.makeInvalidTypeArgumentsLengthDiagnostic(1, len(args))
 	}
 
-	return types.TypeRange{
-		Inside: args[0],
+	return types.Type{
+		Token: rangeTk,
+
+		Data: types.TypeRange{
+			Inside: args[0],
+		},
 	}, nil
 }
 
@@ -139,7 +158,7 @@ func (p *Parser) parseTypeArguments() ([]types.Type, diagnostic.Diagnostic) {
 
 func (p *Parser) parseTypeList(left, right token.TokenKind) ([]types.Type, diagnostic.Diagnostic) {
 	_, diag := p.expectToken(left); if diag != nil {
-		return types.Type{}, diag
+		return nil, diag
 	}
 
 	params := []types.Type{}
@@ -162,7 +181,7 @@ func (p *Parser) parseTypeList(left, right token.TokenKind) ([]types.Type, diagn
 		} else if p.match(right) {
 			break
 		} else {
-			return types.Type{}, p.makeExpectedTokenDiagnostic(right) // or comma
+			return nil, p.makeExpectedTokenDiagnostic(right) // or comma
 		}
 	}
 

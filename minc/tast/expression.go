@@ -13,7 +13,7 @@ type Expression struct {
 }
 
 type ExprData interface {
-	Type() types.Type
+	Type() types.TypeData
 }
 
 // these are primitive wrappers, so there's no problem
@@ -74,6 +74,7 @@ type IdentifierExpression struct {
 	Token token.Token
 	VariableType types.Type // filled during type-checking and name-resolution phase
 }
+
 type SelfExpression struct {
 	VariableType types.Type // filled during type-checking and name-resolution phase
 }
@@ -115,55 +116,85 @@ type SetPropertyExpression struct {
 
 // ---
 
-func (x IntExpression) Type() types.Type { return types.TypeInt{} }
-func (x FloatExpression) Type() types.Type { return types.TypeFloat{} }
-func (x StringExpression) Type() types.Type { return types.TypeStr{} }
-func (x CharExpression) Type() types.Type { return types.TypeChar{} }
-func (x BoolExpression) Type() types.Type { return types.TypeBool{} }
-func (x RangeExpression) Type() types.Type { return types.TypeRange{ Inside: x.Start.Data.Type() } }
-func (x AsExpression) Type() types.Type { return types.TypeInt{} } // TODO: add helper function that calculates the actual type
-func (x NilExpression) Type() types.Type { return types.TypeUntypedNil{} }
-func (x VoidExpression) Type() types.Type { return types.TypeVoid{} }
-func (x UnaryExpression) Type() types.Type { return x.Operand.Data.Type() } // the operator doesn't change the type.
-func (x LogicalExpression) Type() types.Type { return x.Left.Data.Type() } // same. assumes both sides have the same type
-func (x BinaryExpression) Type() types.Type { return x.Left.Data.Type() } // same
+func (x IntExpression) Type() types.TypeData   { return types.TypeInt{} }
+func (x FloatExpression) Type() types.TypeData { return types.TypeFloat{} }
+func (x StringExpression) Type() types.TypeData { return types.TypeStr{} }
+func (x CharExpression) Type() types.TypeData  { return types.TypeChar{} }
+func (x BoolExpression) Type() types.TypeData  { return types.TypeBool{} }
 
-func (x CallExpression) Type() types.Type {
-    if fn, ok := x.Callee.Data.Type().(types.TypeFunction); ok {
-        return fn.Return
-    }
-
-	// should not happen
-    return types.TypeUnknown{}
+func (x RangeExpression) Type() types.TypeData {
+	return types.TypeRange{Inside: x.Start.Data.Type()}
 }
 
-func (x GroupExpression) Type() types.Type { return x.Expr.Data.Type() }
-func (x IdentifierExpression) Type() types.Type { return x.VariableType }
-func (x SelfExpression) Type() types.Type { return x.VariableType }
-func (x IdentifierAssignmentExpression) Type() types.Type { return types.TypeVoid{} } // assignments return void
+func (x AsExpression) Type() types.TypeData {
+	// TODO: add helper function that calculates the actual type
+	return types.TypeInt{}
+}
 
-func (x FnExpression) Type() types.Type {
+func (x NilExpression) Type() types.TypeData   { return types.TypeUntypedNil{} }
+func (x VoidExpression) Type() types.TypeData  { return types.TypeVoid{} }
+
+func (x UnaryExpression) Type() types.TypeData {
+	return x.Operand.Data.Type()
+}
+
+func (x LogicalExpression) Type() types.TypeData {
+	return x.Left.Data.Type()
+}
+
+func (x BinaryExpression) Type() types.TypeData {
+	return x.Left.Data.Type()
+}
+
+func (x CallExpression) Type() types.TypeData {
+	if fn, ok := x.Callee.Data.Type().(types.TypeFunction); ok {
+		return fn.Return.Data
+	}
+	return types.TypeUnknown{}
+}
+
+func (x GroupExpression) Type() types.TypeData {
+	return x.Expr.Data.Type()
+}
+
+func (x IdentifierExpression) Type() types.TypeData {
+	return x.VariableType.Data
+}
+
+func (x SelfExpression) Type() types.TypeData {
+	return x.VariableType.Data
+}
+
+func (x IdentifierAssignmentExpression) Type() types.TypeData {
+	return types.TypeVoid{}
+}
+
+func (x FnExpression) Type() types.TypeData {
 	parameterTypes := make([]types.Type, 0, len(x.Parameters))
-
 	for _, param := range x.Parameters {
 		parameterTypes = append(parameterTypes, param.Type)
 	}
-
 	return types.TypeFunction{
 		Parameters: parameterTypes,
-		Return: x.Return,
+		Return:     x.Return,
 	}
 }
 
-func (x BlockExpression) Type() types.Type { return x.BlockType }
+func (x BlockExpression) Type() types.TypeData {
+	return x.BlockType.Data
+}
 
-func (x IfExpression) Type() types.Type {
+func (x IfExpression) Type() types.TypeData {
 	if x.Else == nil {
 		return types.TypeVoid{}
-	} else {
-		return x.Then.Data.Type()
 	}
+	return x.Then.Data.Type()
 }
 
-func (x GetPropertyExpression) Type() types.Type { return x.PropertyType }
-func (x SetPropertyExpression) Type() types.Type { return types.TypeVoid{} }
+func (x GetPropertyExpression) Type() types.TypeData {
+	return x.PropertyType.Data
+}
+
+func (x SetPropertyExpression) Type() types.TypeData {
+	return types.TypeVoid{}
+}
