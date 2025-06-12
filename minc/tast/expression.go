@@ -123,7 +123,12 @@ func (x CharExpression) Type() types.TypeData  { return types.TypeChar{} }
 func (x BoolExpression) Type() types.TypeData  { return types.TypeBool{} }
 
 func (x RangeExpression) Type() types.TypeData {
-	return types.TypeRange{Inside: x.Start.Data.Type()}
+	return types.TypeRange{
+		Inside: types.Type{
+			Token: token.EndToken(),
+			Data: x.Start.Data.Type(),
+		},
+	}
 }
 
 func (x AsExpression) Type() types.TypeData {
@@ -171,9 +176,20 @@ func (x IdentifierAssignmentExpression) Type() types.TypeData {
 
 func (x FnExpression) Type() types.TypeData {
 	parameterTypes := make([]types.Type, 0, len(x.Parameters))
+	
 	for _, param := range x.Parameters {
-		parameterTypes = append(parameterTypes, param.Type)
+		type_ := types.Type{
+			Token: token.EndToken(),
+			Data: types.TypeUnknown{},
+		}
+
+		if param.Type != nil {
+            type_ = *param.Type
+		}
+
+		parameterTypes = append(parameterTypes, type_)
 	}
+
 	return types.TypeFunction{
 		Parameters: parameterTypes,
 		Return:     x.Return,
