@@ -5,10 +5,10 @@ import (
 	"minlib/token"
 )
 
-func newNative(name string, globalType types.Type) Global {
+func newNative(name string, globalType types.TypeData) Global {
 	return Global{
 		name: token.Token{ Lexeme: name },
-		globalType: globalType,
+		globalType: types.DummyType(globalType),
 		immutable: true, // all native types should be immutable.
 		initialized: true,
 	}
@@ -16,7 +16,7 @@ func newNative(name string, globalType types.Type) Global {
 
 func typeIsConcrete(t types.TypeData) bool {
 	switch t.(type) {
-		// the only two abstract types
+		// the only two abstract types.
 		case types.TypeUntypedNil, types.TypeUnknown:
 			return false
 

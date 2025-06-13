@@ -3,9 +3,9 @@ package analyzer
 import (
 	"minc/ast"
 	"minc/tast"
-	"minc/types"
 )
 
+// synchronization point. this function prints the diagnostics and doesn't bubble them up
 func (a *Analyzer) analyzeBlock(block ast.Ast) (tast.Tast, AnalyzerResult) {
 	generatedTast := make(tast.Tast, 0, len(block))
 

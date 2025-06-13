@@ -72,6 +72,9 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 		case "range": return p.parseRangeType()
 
 		default: {
+			// for now, let's treat it like an error.
+			return types.Type{}, endDiag
+			/*
 			if typeToken.Kind == token.TokenIdentifier {
 				baseType = newType(types.TypeRecord{
 					Name: typeToken.Lexeme,
@@ -81,6 +84,7 @@ func (p *Parser) parseType() (types.Type, diagnostic.Diagnostic) {
 				// diagnostic is already prepared before the token advances
 				return types.Type{}, endDiag
 			}
+			*/
 		}
 	}
 
@@ -106,10 +110,10 @@ func (p *Parser) parseFnType() (types.Type, diagnostic.Diagnostic) {
 		return types.Type{}, diag
 	}
 
-	var returnType types.Type = types.Type{
-		Token: token.EndToken(), // dummy token, because this doesn't exist and when omitted, it is void
-		Data: types.TypeVoid{},
-	}
+	// dummy token, because this token doesn't exist and when omitted, the type is void, and I won't add another type for functions
+	// with an optional return type.
+	// This is a semantic problem, but for now let's keep it like this.
+	var returnType types.Type = types.DummyType(types.TypeVoid{})
 
 	if p.check(token.TokenColon) {
 		returnType, diag = p.parseTypeAnnotation(); if diag != nil {

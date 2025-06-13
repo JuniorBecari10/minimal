@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-// redefinition because of import cycle
-type Field struct {
-	Name token.Token
-	Type Type
-}
 type Type struct {
 	Token token.Token
 	Data TypeData
@@ -48,12 +43,13 @@ type TypeRange struct {
 }
 
 // Add UserDefined, or Alias
-
+/*
+// not yet
 type TypeRecord struct {
 	Name string
 	Fields []Field
 }
-
+*/
 // TODO: add lists, arrays, maps and results.
 
 // ---
@@ -88,4 +84,4 @@ func (x TypeFunction) String() string {
 }
 
 func (x TypeRange) String() string { return fmt.Sprintf("range<%s>", x.Inside.Data.String()) }
-func (x TypeRecord) String() string { return x.Name }
+// func (x TypeRecord) String() string { return x.Name }
