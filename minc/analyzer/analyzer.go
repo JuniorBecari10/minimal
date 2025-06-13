@@ -76,7 +76,8 @@ func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
 		return nil, res
 	}
 
-	return a.analyzeBlock(a.ast)
+	block, res := a.analyzeBlock(a.ast, false)
+	return block.Stmts, res
 }
 
 // pre-declares all top-level declarations in order to properly do name resolution.

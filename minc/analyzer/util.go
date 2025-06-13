@@ -24,3 +24,8 @@ func typeIsConcrete(t types.TypeData) bool {
 			return true
 	}
 }
+
+// this also returns true if the types are equal, or the types inside them can coerce into the other too.
+func typeCanCoerceTo(a, b types.TypeData) bool {
+
+}

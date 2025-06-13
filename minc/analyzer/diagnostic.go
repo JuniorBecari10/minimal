@@ -23,6 +23,13 @@ func (a *Analyzer) makeExpectedTypeAnnotation(token token.Token) diagnostic.Diag
 	)
 }
 
+func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Token) diagnostic.Diagnostic {
+	return a.makeDiagnostic(
+		fmt.Sprintf("Expected type '%s', but got '%s'.", expected.String(), got.String()),
+		tok,
+	)
+}
+
 func (a *Analyzer) makeBreakContinueOutsideLoop(tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
 		fmt.Sprintf("'%s' is outside of a loop.", tok.Lexeme),

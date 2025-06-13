@@ -7,10 +7,18 @@ import (
 	"minc/types"
 )
 
+type BlockAnalyzeMode int
+
+const (
+	MODE_NORMAL BlockAnalyzeMode = iota
+	MODE_FUNCTION
+	MODE_LOOP
+)
+
 // synchronization point. this function prints the diagnostics and doesn't bubble them up
 // this returns a block, with its type inferred by its statements.
-// 'return' only tells the type of the block if this is the function block; otherwise it is never.
-func (a *Analyzer) analyzeBlock(block ast.Ast, isFunction bool) (tast.BlockExpression, AnalyzerResult) {
+// the first statement that can set the type of the block directly inside it will do it.
+func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
 	generatedTast := make(tast.Tast, 0, len(block))
 	res := RES_OK
 
@@ -41,6 +49,7 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, isFunction bool) (tast.BlockExpre
 			}
 
 			// assuming this isn't at top-level, and this doesn't tell the type of the current block.
+			// 'return' only tells the type of the block if this is the function block; otherwise it is never.
 			case ast.ReturnStatement: {
 				if stmt.Expression == nil {
 					// no expression = void
@@ -51,6 +60,16 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, isFunction bool) (tast.BlockExpre
 						},
 					}))
 
+					// set the inferred type to 'void', if it's a function's body.
+					if inferredType == nil && mode == MODE_FUNCTION {
+						var infer types.TypeData = types.TypeVoid{}
+						inferredType = &infer
+					} else {
+						// else, we set it to never, since returning in an inner block makes it not return anything.
+						var infer types.TypeData = types.TypeNever{}
+						inferredType = &infer
+					}
+
 					continue
 				}
 
@@ -58,13 +77,25 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, isFunction bool) (tast.BlockExpre
 					printDiag(diag)
 					continue
 				}
+				
+				// set the inferred type to be the type of the expression, if it's a function's body.
+				if inferredType == nil {
+					if mode == MODE_FUNCTION {
+						infer := expr.Data.Type()
+						inferredType = &infer
+					} else {
+						// else, we set it to never, since returning in an inner block makes it not return anything.
+						var infer types.TypeData = types.TypeNever{}
+						inferredType = &infer
+					}
+				}
 
 				generatedTast = append(generatedTast, newStmt(tast.ReturnStatement{
 					Expression: expr,
 				}))
 			}
 
-			// this tells the type of the block.
+			// this always tells the type of the block.
 			case ast.OutStatement: {
 				if stmt.Expression == nil {
 					// no expression = void
@@ -75,6 +106,12 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, isFunction bool) (tast.BlockExpre
 						},
 					}))
 
+					// set the inferred type to 'void'.
+					if inferredType == nil {
+						var infer types.TypeData = types.TypeVoid{}
+						inferredType = &infer
+					}
+
 					continue
 				}
 
@@ -83,14 +120,33 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, isFunction bool) (tast.BlockExpre
 					continue
 				}
 
+				// set the inferred type to be the type of the expression
+				if inferredType == nil {
+					infer := expr.Data.Type()
+					inferredType = &infer
+				}
+
 				generatedTast = append(generatedTast, newStmt(tast.OutStatement{
 					Expression: expr,
 				}))
 			}
 
-			case ast.VarDeclaration: {}
+			case ast.VarDeclaration: {
 
-			case ast.WhileStatement: {}
+			}
+
+			case ast.WhileStatement: {
+				condition, diag := a.analyzeExpression(stmt.Condition, false); if diag != nil {
+					printDiag(diag)
+					continue
+				}
+
+				// check if it's a boolean or it can coerce to it.
+				if !typeCanCoerceTo(condition.Data.Type(), types.TypeBool{}) {
+					printDiag(a.makeExpectedType(types.TypeBool{}, condition.Data.Type(), condition.Base.Token))
+					continue
+				}
+			}
 
 			case ast.ForStatement: {}
 
