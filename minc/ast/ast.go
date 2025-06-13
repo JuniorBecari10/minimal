@@ -8,8 +8,7 @@ import (
 type Ast = []Statement
 
 type AstBase struct {
-	Pos token.Position
-	Length int
+	Token token.Token
 }
 
 type Parameter struct {

@@ -23,6 +23,13 @@ func (a *Analyzer) makeExpectedTypeAnnotation(token token.Token) diagnostic.Diag
 	)
 }
 
+func (a *Analyzer) makeBreakContinueOutsideLoop(tok token.Token) diagnostic.Diagnostic {
+	return a.makeDiagnostic(
+		fmt.Sprintf("'%s' is outside of a loop.", tok.Lexeme),
+		tok,
+	)
+}
+
 func (a *Analyzer) makeDiagnostic(message string, token token.Token) diagnostic.SimpleDiagnostic {
 	return diagnostic.SimpleDiagnostic{
 		DiagnosticBase: diagnostic.DiagnosticBase{

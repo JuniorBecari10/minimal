@@ -28,6 +28,7 @@ type RecordStatement struct {
 	Methods []FnStatement
 }
 
+// if in the AST the expression is omitted, here it should be void.
 type ReturnStatement struct {
 	Expression Expression
 }

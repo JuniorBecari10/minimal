@@ -27,6 +27,9 @@ type TypeUntypedNil struct { }
 // for future use in generics and types intentionally omitted for inference.
 type TypeUnknown struct { }
 
+// for blocks that don't return normally.
+type TypeNever struct { }
+
 type TypeVoid struct { }
 
 type TypeOptional struct {

@@ -141,16 +141,36 @@ func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 			case ast.VarDeclaration: {
 				if decl.Type == nil {
 					// type isn't annotated. infer it shallowly.
+                    expr, diag := a.analyzeExpression(decl.Init, true); if diag != nil {
+						printDiag(diag)
+						continue
+					}
 
+					// type of expr will be the type of the variable, if applicable.
+					// must be concrete; otherwise, it will require a type annotation.
+
+					if !typeIsConcrete(expr.Data.Type()) {
+                        printDiag(a.makeExpectedTypeAnnotation(decl.Name))
+						continue
+					}
+                    
+					// type must be dummy because it is inferred and therefore not in the source code.
+					a.globals = append(a.globals, Global{
+                        name: decl.Name,
+						globalType: types.DummyType(expr.Data.Type()),
+
+						immutable: decl.Immutable,
+						initialized: false,
+					})
 				} else {
 					// type is annotated; add the variable with its type.
 					// actual type checking is done later.
-					a.globals = append(a.globals, Global {
+					a.globals = append(a.globals, Global{
 						name: decl.Name,
 						globalType: *decl.Type,
 
 						immutable: decl.Immutable,
-						initialized: true,
+						initialized: false,
 					})
 				}
 			}
