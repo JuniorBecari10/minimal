@@ -1,9 +1,9 @@
 package tast
 
 import (
-	"go/token"
-	"go/types"
+	"minc/types"
 	"minc/ast"
+	"minlib/token"
 )
 
 type Statement struct {
@@ -15,17 +15,17 @@ type StmtData interface {
 	stmt()
 }
 
-type FnStatement struct {
+type FnDeclaration struct {
 	Name token.Token
 	Parameters []Parameter
 	Return types.Type
 	Body BlockExpression
 }
 
-type RecordStatement struct {
+type RecordDeclaration struct {
 	Name token.Token
 	Fields []Field
-	Methods []FnStatement
+	Methods []FnDeclaration
 }
 
 // if in the AST the expression is omitted, here it should be void.
@@ -37,7 +37,7 @@ type OutStatement struct {
 	Expression Expression
 }
 
-type VarStatement struct {
+type VarDeclaration struct {
 	Name token.Token
 	Init Expression
 	Type types.Type
@@ -51,7 +51,7 @@ type WhileStatement struct {
 
 type ForStatement struct {
 	Variable token.Token // identifier
-	Type types.Type
+	VariableType types.TypeData
 	Iterable Expression
 	Block BlockExpression
 }
@@ -77,11 +77,11 @@ type ExprStatement struct {
 
 // ---
 
-func (x RecordStatement) stmt()   {}
-func (x FnStatement) stmt()       {}
+func (x RecordDeclaration) stmt()   {}
+func (x FnDeclaration) stmt()       {}
 func (x ReturnStatement) stmt()   {}
 func (x OutStatement) stmt()      {}
-func (x VarStatement) stmt()      {}
+func (x VarDeclaration) stmt()      {}
 func (x WhileStatement) stmt()    {}
 func (x ForStatement) stmt()      {}
 func (x ForVarStatement) stmt()   {}

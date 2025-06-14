@@ -1,6 +1,8 @@
 package analyzer
 
 import (
+	"minc/diagnostic"
+	"minc/tast"
 	"minc/types"
 	"minlib/token"
 )
@@ -16,8 +18,7 @@ func newNative(name string, globalType types.TypeData) Global {
 
 func typeIsConcrete(t types.TypeData) bool {
 	switch t.(type) {
-		// the only two abstract types.
-		case types.TypeUntypedNil, types.TypeUnknown:
+		case types.TypeUntypedNil, types.TypeUnknown, types.TypeNever:
 			return false
 
 		default:
@@ -25,7 +26,30 @@ func typeIsConcrete(t types.TypeData) bool {
 	}
 }
 
+func typeIsIterable(t types.TypeData) bool {
+	switch t.(type) {
+		case types.TypeStr, types.TypeRange:
+			return true
+		default:
+			return false
+	}
+}
+
+// assumes that 'iterable' has an iterable type.
+func getIteratorType(iterable tast.Expression) types.TypeData {
+	switch t := iterable.Data.Type().(type) {
+		case types.TypeStr:
+			return types.TypeChar{}
+
+		case types.TypeRange:
+			return t.Inside.Data
+
+		default:
+			panic("Internal: Type is not iterable!")
+	}
+}
+
 // this also returns true if the types are equal, or the types inside them can coerce into the other too.
-func typeCanCoerceTo(a, b types.TypeData) bool {
+func typeCanCoerceTo(from, to types.TypeData) bool {
 
 }

@@ -23,6 +23,14 @@ func (a *Analyzer) makeExpectedTypeAnnotation(token token.Token) diagnostic.Diag
 	)
 }
 
+func (a *Analyzer) makeExpectedIterableType(t types.Type) diagnostic.Diagnostic {
+	return a.makeHelpDiagnostic(
+		fmt.Sprintf("Expected iterable type, but '%s' is not.", t.Token.FormatError()),
+		[]string{ "Please annotate this with an actual type." },
+		t.Token,
+	)
+}
+
 func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
 		fmt.Sprintf("Expected type '%s', but got '%s'.", expected.String(), got.String()),

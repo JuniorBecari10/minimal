@@ -146,24 +146,77 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 					printDiag(a.makeExpectedType(types.TypeBool{}, condition.Data.Type(), condition.Base.Token))
 					continue
 				}
+
+				block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
+					return tast.BlockExpression{}, res
+				}
+
+				generatedTast = append(generatedTast, newStmt(tast.WhileStatement{
+					Condition: condition,
+					Block: block,
+				}))
 			}
 
-			case ast.ForStatement: {}
+			case ast.ForStatement: {
+				iterable, diag := a.analyzeExpression(stmt.Iterable, false); if diag != nil {
+					printDiag(diag)
+					continue
+				}
+
+				if !typeIsIterable(iterable.Data.Type()) {
+					printDiag(a.makeExpectedIterableType(types.Type{
+						Token: iterable.Base.Token,
+						Data: iterable.Data.Type(),
+					}))
+					continue
+				}
+
+				varType := getIteratorType(iterable)
+
+				block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
+					return tast.BlockExpression{}, res
+				}
+
+				generatedTast = append(generatedTast, newStmt(tast.ForStatement{
+					Variable: stmt.Variable,
+					VariableType: varType,
+					Iterable: iterable,
+					Block: block,
+				}))
+			}
 
 			case ast.ForVarStatement: {}
 			
             // TODO: remove code repetition
+			// when mode is loop, it set the type to void, otherwise, never.
 			case ast.BreakStatement: {
 				if !a.isInsideLoop {
 					printDiag(a.makeBreakContinueOutsideLoop(s.Base.Token))
 				}
 
+				if mode == MODE_LOOP {
+					var infer types.TypeData = types.TypeVoid{}
+					inferredType = &infer
+				} else {
+					var infer types.TypeData = types.TypeNever{}
+					inferredType = &infer
+				}
+
 				generatedTast = append(generatedTast, newStmt(tast.BreakStatement{}))
 			}
 
+			// when mode is loop, it set the type to void, otherwise, never.
 			case ast.ContinueStatement: {
 				if !a.isInsideLoop {
 					printDiag(a.makeBreakContinueOutsideLoop(s.Base.Token))
+				}
+
+				if mode == MODE_LOOP {
+					var infer types.TypeData = types.TypeVoid{}
+					inferredType = &infer
+				} else {
+					var infer types.TypeData = types.TypeNever{}
+					inferredType = &infer
 				}
 
 				generatedTast = append(generatedTast, newStmt(tast.ContinueStatement{}))

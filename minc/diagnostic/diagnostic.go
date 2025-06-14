@@ -8,8 +8,16 @@ import (
 	"strings"
 )
 
+type DiagnosticType string
+
+const (
+	TYPE_ERROR DiagnosticType = "Error"
+	TYPE_WARNING = "Warning"
+)
+
 type Diagnostic interface {
 	PrintDiagnostic()
+	diagnosticType() DiagnosticType
 }
 
 type DiagnosticBase struct {
@@ -29,9 +37,14 @@ type HelpDiagnostic struct {
 	Help []string
 }
 
+type WarningDiagnostic struct {
+	DiagnosticBase
+}
+
 // ---
 
-func (b *DiagnosticBase) PrintDiagnostic() {
+// does not implement Diagnostic.
+func (b *DiagnosticBase) printDiagnostic(diagType DiagnosticType) {
 	lineNum := int(b.Span.Pos.Line + 1)
 	colNum := int(b.Span.Pos.Col + 1)
 	
@@ -40,22 +53,30 @@ func (b *DiagnosticBase) PrintDiagnostic() {
 	carets := strings.Repeat("^", b.Span.Length)
 
 	eprintln("")
-	eprintf("[-] Error: %s\n", b.Message)
+	eprintf("[-] %s: %s\n", diagType, b.Message)
 	eprintf(" | %s [-] %s (line %d, col %d)\n", padding, b.FileData.Name, lineNum, colNum)
 	eprintf(" |  %d | %s\n", lineNum, b.FileData.Lines[b.Span.Pos.Line])
 	eprintf(" | %s  | %s%s\n", padding, strings.Repeat(" ", int(b.Span.Pos.Col)), carets)
 	eprintf(" | %s [-]\n", padding)
 }
 
+// ---
+
 func (s SimpleDiagnostic) PrintDiagnostic() {
-	s.DiagnosticBase.PrintDiagnostic()
+	s.DiagnosticBase.printDiagnostic(s.diagnosticType())
 	eprintln("[-]")
 }
+
+func (s SimpleDiagnostic) diagnosticType() DiagnosticType {
+	return TYPE_ERROR
+}
+
+// ---
 
 func (h HelpDiagnostic) PrintDiagnostic() {
 	padding := strings.Repeat(" ", len(strconv.Itoa(int(h.Span.Pos.Line + 1))))
 
-	h.DiagnosticBase.PrintDiagnostic()
+	h.DiagnosticBase.printDiagnostic(h.diagnosticType())
 	eprintf(" | %s [-] Help\n", padding)
 	
 	for _, line := range h.Help {
@@ -64,6 +85,21 @@ func (h HelpDiagnostic) PrintDiagnostic() {
 
 	eprintf(" | %s [-]\n", padding)
 	eprintln("[-]")
+}
+
+func (s HelpDiagnostic) diagnosticType() DiagnosticType {
+	return TYPE_ERROR
+}
+
+// ---
+
+func (w WarningDiagnostic) PrintDiagnostic() {
+	w.DiagnosticBase.printDiagnostic(w.diagnosticType())
+	eprintln("[-]")
+}
+
+func (w WarningDiagnostic) diagnosticType() DiagnosticType {
+	return TYPE_WARNING
 }
 
 // ---
