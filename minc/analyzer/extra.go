@@ -1,252 +1,148 @@
 package analyzer
 
 import (
+	"fmt"
 	"minc/ast"
 	"minc/diagnostic"
-	"minc/tast"
 	"minc/types"
 )
 
-type BlockAnalyzeMode int
-
-const (
-	MODE_NORMAL BlockAnalyzeMode = iota
-	MODE_FUNCTION
-	MODE_LOOP
-)
-
-// synchronization point. this function prints the diagnostics and doesn't bubble them up
-// this returns a block, with its type inferred by its statements.
-// the first statement that can set the type of the block directly inside it will do it.
-func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
-	generatedTast := make(tast.Tast, 0, len(block))
+// pre-declares all top-level declarations in order to properly do name resolution.
+// it doesn't do all the required setup, it just adds the name to the list with its type, using shallow inference.
+func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 	res := RES_OK
 
-	var inferredType *types.TypeData = nil
-	
 	printDiag := func(diag diagnostic.Diagnostic) {
 		diag.PrintDiagnostic()
 		res = RES_ERROR
 	}
 
-	for _, s := range block {
-		newStmt := func(data tast.StmtData) tast.Statement {
-			return tast.Statement{
-				Base: tast.AstBase(s.Base),
-				Data: data,
-			}
-		}
-		
-		switch stmt := s.Data.(type) {
+	for _, d := range a.ast {
+		switch decl := d.Data.(type) {
+			// In 'fn' statements we check only the declaration. All types must be explicitly annotated and concrete.
 			case ast.FnDeclaration: {
-				
+				// Check the return type. Maybe extract this in a different and reusable function.
+
+				// the token can be a dummy one, since this won't be printed in the diagnostic, since void is concrete.
+				// at least inside this one.
+				returnType := types.DummyType(types.TypeVoid{})
+
+				if decl.Return != nil {
+					returnType = *decl.Return
+				}
+
+				if !typeIsConcrete(returnType.Data) {
+					printDiag(a.makeExpectedConcreteType(returnType))
+					continue
+				}
+
+				cont := false
+				paramTypes := []types.Type{}
+
+				for _, param := range decl.Parameters {
+					if param.Type == nil {
+						printDiag(a.makeExpectedTypeAnnotation(param.Name))
+						cont = true
+						break
+					}
+
+					paramTypes = append(paramTypes, *param.Type)
+				}
+
+				if cont {
+					continue
+				}
+
+				a.globals = append(a.globals, Global{
+					name: decl.Name,
+					globalType: types.DummyType(types.TypeFunction{
+						Parameters: paramTypes,
+						Return: returnType,
+					}),
+
+					immutable: true,
+					initialized: false,
+				})
+			}
+			
+			// In 'var'/'let' declarations we check the type and if omitted, we try to infer it shallowly.
+			case ast.VarDeclaration: {
+				if decl.Type == nil {
+					// type isn't annotated. infer it shallowly.
+                    expr, diag := a.analyzeExpression(decl.Init, true); if diag != nil {
+						printDiag(diag)
+						continue
+					}
+
+					// type of expr will be the type of the variable, if applicable.
+					// must be concrete; otherwise, it will require a type annotation.
+
+					if !typeIsConcrete(expr.Data.Type()) {
+                        printDiag(a.makeExpectedTypeAnnotation(decl.Name))
+						continue
+					}
+                    
+					// type must be dummy because it is inferred and therefore not in the source code.
+					a.globals = append(a.globals, Global{
+                        name: decl.Name,
+						globalType: types.DummyType(expr.Data.Type()),
+
+						immutable: decl.Immutable,
+						initialized: false,
+					})
+				} else {
+					// type is annotated; add the variable with its type.
+					// actual type checking is done later.
+					a.globals = append(a.globals, Global{
+						name: decl.Name,
+						globalType: *decl.Type,
+
+						immutable: decl.Immutable,
+						initialized: false,
+					})
+				}
 			}
 
+			// In records, all types must be explicitly annotated and concrete.
 			case ast.RecordDeclaration: {
-				// dummy error; not yet supported.
-				printDiag(a.makeExpectedTypeAnnotation(stmt.Name))
+				// not for now. this is a dummy error.
+				printDiag(a.makeExpectedTypeAnnotation(decl.Name))
 				continue
 			}
 
-			// assuming this isn't at top-level, and this doesn't tell the type of the current block.
-			// 'return' only tells the type of the block if this is the function block; otherwise it is never.
-			case ast.ReturnStatement: {
-				if stmt.Expression == nil {
-					// no expression = void
-					generatedTast = append(generatedTast, newStmt(tast.ReturnStatement{
-						Expression: tast.Expression{
-							Base: tast.AstBase(s.Base),
-							Data: tast.VoidExpression{},
-						},
-					}))
-
-					// set the inferred type to 'void', if it's a function's body.
-					if inferredType == nil && mode == MODE_FUNCTION {
-						var infer types.TypeData = types.TypeVoid{}
-						inferredType = &infer
-					} else {
-						// else, we set it to never, since returning in an inner block makes it not return anything.
-						var infer types.TypeData = types.TypeNever{}
-						inferredType = &infer
-					}
-
-					continue
-				}
-
-                expr, diag := a.analyzeExpression(*stmt.Expression, false); if diag != nil {
-					printDiag(diag)
-					continue
-				}
-				
-				// set the inferred type to be the type of the expression, if it's a function's body.
-				if inferredType == nil {
-					if mode == MODE_FUNCTION {
-						infer := expr.Data.Type()
-						inferredType = &infer
-					} else {
-						// else, we set it to never, since returning in an inner block makes it not return anything.
-						var infer types.TypeData = types.TypeNever{}
-						inferredType = &infer
-					}
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.ReturnStatement{
-					Expression: expr,
-				}))
-			}
-
-			// this always tells the type of the block.
-			case ast.OutStatement: {
-				if stmt.Expression == nil {
-					// no expression = void
-					generatedTast = append(generatedTast, newStmt(tast.OutStatement{
-						Expression: tast.Expression{
-							Base: tast.AstBase(s.Base),
-							Data: tast.VoidExpression{},
-						},
-					}))
-
-					// set the inferred type to 'void'.
-					if inferredType == nil {
-						var infer types.TypeData = types.TypeVoid{}
-						inferredType = &infer
-					}
-
-					continue
-				}
-
-                expr, diag := a.analyzeExpression(*stmt.Expression, false); if diag != nil {
-					printDiag(diag)
-					continue
-				}
-
-				// set the inferred type to be the type of the expression
-				if inferredType == nil {
-					infer := expr.Data.Type()
-					inferredType = &infer
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.OutStatement{
-					Expression: expr,
-				}))
-			}
-
-			case ast.VarDeclaration: {
-
-			}
-
-			case ast.WhileStatement: {
-				condition, diag := a.analyzeExpression(stmt.Condition, false); if diag != nil {
-					printDiag(diag)
-					continue
-				}
-
-				// check if it's a boolean or it can coerce to it.
-				if !typeCanCoerceTo(condition.Data.Type(), types.TypeBool{}) {
-					printDiag(a.makeExpectedType(types.TypeBool{}, condition.Data.Type(), condition.Base.Token))
-					continue
-				}
-
-				block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
-					return tast.BlockExpression{}, res
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.WhileStatement{
-					Condition: condition,
-					Block: block,
-				}))
-			}
-
-			case ast.ForStatement: {
-				iterable, diag := a.analyzeExpression(stmt.Iterable, false); if diag != nil {
-					printDiag(diag)
-					continue
-				}
-
-				if !typeIsIterable(iterable.Data.Type()) {
-					printDiag(a.makeExpectedIterableType(types.Type{
-						Token: iterable.Base.Token,
-						Data: iterable.Data.Type(),
-					}))
-					continue
-				}
-
-				varType := getIteratorType(iterable)
-
-				block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
-					return tast.BlockExpression{}, res
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.ForStatement{
-					Variable: stmt.Variable,
-					VariableType: varType,
-					Iterable: iterable,
-					Block: block,
-				}))
-			}
-
-			case ast.ForVarStatement: {}
-			
-            // TODO: remove code repetition
-			// when mode is loop, it set the type to void, otherwise, never.
-			case ast.BreakStatement: {
-				if !a.isInsideLoop {
-					printDiag(a.makeBreakContinueOutsideLoop(s.Base.Token))
-				}
-
-				if mode == MODE_LOOP {
-					var infer types.TypeData = types.TypeVoid{}
-					inferredType = &infer
-				} else {
-					var infer types.TypeData = types.TypeNever{}
-					inferredType = &infer
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.BreakStatement{}))
-			}
-
-			// when mode is loop, it set the type to void, otherwise, never.
-			case ast.ContinueStatement: {
-				if !a.isInsideLoop {
-					printDiag(a.makeBreakContinueOutsideLoop(s.Base.Token))
-				}
-
-				if mode == MODE_LOOP {
-					var infer types.TypeData = types.TypeVoid{}
-					inferredType = &infer
-				} else {
-					var infer types.TypeData = types.TypeNever{}
-					inferredType = &infer
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.ContinueStatement{}))
-			}
-
-			case ast.ExprStatement: {
-				expr, diag := a.analyzeExpression(stmt.Expr, false); if diag != nil {
-					printDiag(diag)
-					continue
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.ExprStatement{
-					Expr: expr,
-				}))
-			}
+			// Should not reach here.
+			default:
+				panic(fmt.Sprintf("Unknown declaration %v of type %T", decl, decl))
 		}
 	}
 
-	var blockType types.TypeData = types.TypeVoid{}
-
-	if inferredType != nil {
-		blockType = *inferredType
-	}
-
-	return tast.BlockExpression{
-		Stmts: generatedTast,
-		BlockType: types.DummyType(blockType), // dummy because it's inferred.
-	}, res
+	return res
 }
 
-func (a *Analyzer) analyzeExpression(expr ast.Expression, shallow bool) (tast.Expression, diagnostic.Diagnostic) {
-
+// Adds native functions and variables to the global scope.
+// These can be dummy types because they won't go in diagnostics.
+func (a *Analyzer) addNatives() {
+	// fn print()
+	a.globals = append(a.globals, newNative("print", types.TypeFunction{
+		Parameters: []types.Type{},
+		Return: types.DummyType(types.TypeVoid{}),
+	}))
+	
+	// fn println()
+	a.globals = append(a.globals, newNative("println", types.TypeFunction{
+		Parameters: []types.Type{},
+		Return: types.DummyType(types.TypeVoid{}),
+	}))
+	
+	// fn input(prompt: str): str
+	a.globals = append(a.globals, newNative("print", types.TypeFunction{
+		Parameters: []types.Type{ types.DummyType(types.TypeStr{}) },
+		Return: types.DummyType(types.TypeStr{}),
+	}))
+	
+	// fn time(): int
+	a.globals = append(a.globals, newNative("time", types.TypeFunction{
+		Parameters: []types.Type{},
+		Return: types.DummyType(types.TypeVoid{}),
+	}))
 }
