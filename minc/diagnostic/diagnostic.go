@@ -41,6 +41,10 @@ type WarningDiagnostic struct {
 	DiagnosticBase
 }
 
+// Used to return an empty diagnostic, signaling all its related ones have alread been handled.
+// its print function is no-op.
+type HandledDiagnostic struct { }
+
 // ---
 
 // does not implement Diagnostic.
@@ -100,6 +104,15 @@ func (w WarningDiagnostic) PrintDiagnostic() {
 
 func (w WarningDiagnostic) diagnosticType() DiagnosticType {
 	return TYPE_WARNING
+}
+
+// ---
+
+
+func (h HandledDiagnostic) PrintDiagnostic() { }
+
+func (h HandledDiagnostic) diagnosticType() DiagnosticType {
+	return TYPE_ERROR
 }
 
 // ---

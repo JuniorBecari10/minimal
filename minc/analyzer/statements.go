@@ -48,30 +48,14 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 			}
 
 			case ast.WhileStatement: {
-				condition, diag := a.analyzeExpression(stmt.Condition, false); if diag != nil {
-					printDiag(diag)
+				res := a.whileStmt(stmt, &generatedTast, newStmt, printDiag); if res == RES_ERROR {
 					continue
 				}
-
-				// check if it's a boolean or it can coerce to it.
-				if !typeCanCoerceTo(condition.Data.Type(), types.TypeBool{}) {
-					printDiag(a.makeExpectedType(types.TypeBool{}, condition.Data.Type(), condition.Base.Token))
-					continue
-				}
-
-				block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
-					return tast.BlockExpression{}, res
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.WhileStatement{
-					Condition: condition,
-					Block: block,
-				}))
 			}
 
 			case ast.ForStatement: {
 				res := a.forStmt(stmt, &generatedTast, newStmt, printDiag); if res == RES_ERROR {
-					return tast.BlockExpression{}, res
+					continue
 				}
 			}
 
@@ -80,19 +64,6 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
             // TODO: remove code repetition
 			// when mode is loop, it set the type to void, otherwise, never.
 			case ast.BreakStatement: {
-				if !a.isInsideLoop {
-					printDiag(a.makeBreakContinueOutsideLoop(s.Base.Token))
-				}
-
-				if mode == MODE_LOOP {
-					var infer types.TypeData = types.TypeVoid{}
-					inferredType = &infer
-				} else {
-					var infer types.TypeData = types.TypeNever{}
-					inferredType = &infer
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.BreakStatement{}))
 			}
 
 			// when mode is loop, it set the type to void, otherwise, never.
@@ -270,4 +241,53 @@ func (a *Analyzer) forStmt(
 	}))
 
 	return RES_OK
+}
+
+func (a *Analyzer) whileStmt(
+	stmt ast.WhileStatement,
+	generatedTast *tast.Tast,
+	newStmt func(tast.StmtData) tast.Statement,
+) diagnostic.Diagnostic {
+	condition, diag := a.analyzeExpression(stmt.Condition, false); if diag != nil {
+		return diag
+	}
+
+	// check if it's a boolean or it can coerce to it.
+	if !typeCanCoerceTo(condition.Data.Type(), types.TypeBool{}) {
+		return a.makeExpectedType(types.TypeBool{}, condition.Data.Type(), condition.Base.Token)
+	}
+
+	block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
+		return diagnostic.HandledDiagnostic{}
+	}
+
+	*generatedTast = append(*generatedTast, newStmt(tast.WhileStatement{
+		Condition: condition,
+		Block: block,
+	}))
+
+	return nil
+}
+
+func (a *Analyzer) breakStmt(
+	s ast.Statement,
+	generatedTast *tast.Tast,
+	newStmt func(tast.StmtData) tast.Statement,
+	inferredType **types.TypeData,
+	mode BlockAnalyzeMode,
+) diagnostic.Diagnostic {
+	if !a.isInsideLoop {
+		return a.makeBreakContinueOutsideLoop(s.Base.Token)
+	}
+
+	if mode == MODE_LOOP {
+		var infer types.TypeData = types.TypeVoid{}
+		*inferredType = &infer
+	} else {
+		var infer types.TypeData = types.TypeNever{}
+		*inferredType = &infer
+	}
+
+	*generatedTast = append(*generatedTast, newStmt(tast.BreakStatement{}))
+	return nil
 }
