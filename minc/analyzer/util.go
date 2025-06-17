@@ -49,10 +49,34 @@ func getIteratorType(iterable tast.Expression) types.TypeData {
 }
 
 // this also returns true if the types are equal, or the types inside them can coerce into the other too.
-func typeCanCoerceTo(from, to types.TypeData) bool {
-
+// this returns t twice in two expressions in order for the caller to be able to call this in an assignment switch
+// if t, ok := tryCoercing(.., ..); ok { .. }
+func tryCoercing(from, to types.TypeData) (types.TypeData, bool) {
+	t := mergeTypes(from, to)
+	return t, t != nil
 }
 
-func mergeTypes(a, b types.TypeData) types.TypeData {
+func mergeTypes(from, to types.TypeData) types.TypeData {
+	switch from.(type) {
+		// int -> float
+		case types.TypeInt: {
+			if _, ok := to.(types.TypeFloat); ok {
+				return to
+			}
+		}
 
+		// nil -> any?
+		case types.TypeUntypedNil: {
+			if _, ok := to.(types.TypeOptional); ok {
+				return to
+			}
+		}
+
+		// unknown -> any
+		case types.TypeUnknown: {
+			return to
+		}
+	}
+
+	return nil
 }

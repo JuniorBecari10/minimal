@@ -36,13 +36,16 @@ func (a *Analyzer) fnDecl(
 		return diagnostic.HandledDiagnostic{}
 	}
 
-	// if the return type is unknoen, it will coerce.
-	if !typeCanCoerceTo(body.Type(), returnType.Data) {
+	// if the return type is unknown, it will coerce.
+	var mergedType types.TypeData
+	var ok bool
+
+	if mergedType, ok = tryCoercing(body.Type(), returnType.Data); !ok {
 		return a.makeExpectedType(returnType.Data, body.Type(), returnType.Token)
 	}
 
 	// merge the types to one that supports both.
-	returnType.Data = mergeTypes(returnType.Data, body.Type())
+	returnType.Data = mergedType
 	
 	*generatedTast = append(*generatedTast, newStmt(tast.FnDeclaration{
 		Name: decl.Name,
@@ -73,7 +76,7 @@ func (a *Analyzer) varDecl(
 			Type: types.DummyType(expr.Data.Type()),
 		}))
 	} else {
-        if !typeCanCoerceTo(expr.Data.Type(), decl.Type.Data) {
+		if _, ok := tryCoercing(expr.Data.Type(), decl.Type.Data); !ok {
 			return a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
 		}
 

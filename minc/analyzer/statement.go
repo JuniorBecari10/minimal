@@ -69,7 +69,9 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 
 			// do this later
 			case ast.ForVarStatement: {
-				panic("Unimplemented")
+				// dummy error; not yet supported.
+				printDiag(a.makeExpectedTypeAnnotation(stmt.Condition.Base.Token))
+				continue
 			}
 			
             // TODO: remove code repetition
@@ -256,7 +258,7 @@ func (a *Analyzer) whileStmt(
 	}
 
 	// check if it's a boolean or it can coerce to it.
-	if !typeCanCoerceTo(condition.Data.Type(), types.TypeBool{}) {
+	if _, ok := tryCoercing(condition.Data.Type(), types.TypeBool{}); !ok {
 		return a.makeExpectedType(types.TypeBool{}, condition.Data.Type(), condition.Base.Token)
 	}
 
