@@ -33,14 +33,14 @@ func (a *Analyzer) makeExpectedIterableType(t types.Type) diagnostic.Diagnostic 
 
 func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
-		fmt.Sprintf("Expected type '%s', but got '%s'.", expected.String(), got.String()),
+		fmt.Sprintf("Expected type '%s' (or one that can be coerced to it), but got '%s', which cannot.", expected.String(), got.String()),
 		tok,
 	)
 }
 
 func (a *Analyzer) makeBreakContinueOutsideLoop(tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
-		fmt.Sprintf("'%s' is outside of a loop.", tok.Lexeme),
+		fmt.Sprintf("'%s' statement is outside of a loop.", tok.Lexeme),
 		tok,
 	)
 }

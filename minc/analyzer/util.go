@@ -52,3 +52,7 @@ func getIteratorType(iterable tast.Expression) types.TypeData {
 func typeCanCoerceTo(from, to types.TypeData) bool {
 
 }
+
+func mergeTypes(a, b types.TypeData) types.TypeData {
+
+}

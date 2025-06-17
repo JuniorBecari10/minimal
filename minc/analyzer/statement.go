@@ -31,7 +31,10 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 		
 		switch stmt := s.Data.(type) {
 			case ast.FnDeclaration: {
-				
+				diag := a.fnDecl(stmt, &generatedTast, newStmt); if diag != nil {
+					printDiag(diag)
+					continue
+				}
 			}
 
 			case ast.RecordDeclaration: {
@@ -44,43 +47,46 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 			case ast.OutStatement: a.outStmt(s, stmt, &generatedTast, newStmt, printDiag, &inferredType)
 
 			case ast.VarDeclaration: {
-
+				diag := a.varDecl(stmt, &generatedTast, newStmt); if diag != nil {
+					printDiag(diag)
+					continue
+				}
 			}
 
 			case ast.WhileStatement: {
-				res := a.whileStmt(stmt, &generatedTast, newStmt, printDiag); if res == RES_ERROR {
+				diag := a.whileStmt(stmt, &generatedTast, newStmt); if diag != nil {
+					printDiag(diag)
 					continue
 				}
 			}
 
 			case ast.ForStatement: {
-				res := a.forStmt(stmt, &generatedTast, newStmt, printDiag); if res == RES_ERROR {
+				diag := a.forStmt(stmt, &generatedTast, newStmt); if diag != nil {
+					printDiag(diag)
 					continue
 				}
 			}
 
-			case ast.ForVarStatement: {}
+			// do this later
+			case ast.ForVarStatement: {
+				panic("Unimplemented")
+			}
 			
             // TODO: remove code repetition
 			// when mode is loop, it set the type to void, otherwise, never.
 			case ast.BreakStatement: {
+				diag := a.breakStmt(s, &generatedTast, newStmt, &inferredType, mode); if diag != nil {
+					printDiag(diag)
+					continue
+				}
 			}
 
 			// when mode is loop, it set the type to void, otherwise, never.
 			case ast.ContinueStatement: {
-				if !a.isInsideLoop {
-					printDiag(a.makeBreakContinueOutsideLoop(s.Base.Token))
+				diag := a.continueStmt(s, &generatedTast, newStmt, &inferredType, mode); if diag != nil {
+					printDiag(diag)
+					continue
 				}
-
-				if mode == MODE_LOOP {
-					var infer types.TypeData = types.TypeVoid{}
-					inferredType = &infer
-				} else {
-					var infer types.TypeData = types.TypeNever{}
-					inferredType = &infer
-				}
-
-				generatedTast = append(generatedTast, newStmt(tast.ContinueStatement{}))
 			}
 
 			case ast.ExprStatement: {
@@ -212,25 +218,22 @@ func (a *Analyzer) forStmt(
 	stmt ast.ForStatement,
 	generatedTast *tast.Tast,
 	newStmt func(tast.StmtData) tast.Statement,
-	printDiag func(diagnostic.Diagnostic),
-) AnalyzerResult {
+) diagnostic.Diagnostic {
 	iterable, diag := a.analyzeExpression(stmt.Iterable, false); if diag != nil {
-		printDiag(diag)
-		return RES_OK
+		return diag
 	}
 
 	if !typeIsIterable(iterable.Data.Type()) {
-		printDiag(a.makeExpectedIterableType(types.Type{
+		return a.makeExpectedIterableType(types.Type{
 			Token: iterable.Base.Token,
 			Data: iterable.Data.Type(),
-		}))
-		return RES_OK
+		})
 	}
 
 	varType := getIteratorType(iterable)
 
 	block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
-		return res
+		return diagnostic.HandledDiagnostic{}
 	}
 
 	*generatedTast = append(*generatedTast, newStmt(tast.ForStatement{
@@ -240,7 +243,7 @@ func (a *Analyzer) forStmt(
 		Block: block,
 	}))
 
-	return RES_OK
+	return nil
 }
 
 func (a *Analyzer) whileStmt(
@@ -289,5 +292,28 @@ func (a *Analyzer) breakStmt(
 	}
 
 	*generatedTast = append(*generatedTast, newStmt(tast.BreakStatement{}))
+	return nil
+}
+
+func (a *Analyzer) continueStmt(
+	s ast.Statement,
+	generatedTast *tast.Tast,
+	newStmt func(tast.StmtData) tast.Statement,
+	inferredType **types.TypeData,
+	mode BlockAnalyzeMode,
+) diagnostic.Diagnostic {
+	if !a.isInsideLoop {
+		return a.makeBreakContinueOutsideLoop(s.Base.Token)
+	}
+
+	if mode == MODE_LOOP {
+		var infer types.TypeData = types.TypeVoid{}
+		*inferredType = &infer
+	} else {
+		var infer types.TypeData = types.TypeNever{}
+		*inferredType = &infer
+	}
+
+	*generatedTast = append(*generatedTast, newStmt(tast.ContinueStatement{}))
 	return nil
 }
