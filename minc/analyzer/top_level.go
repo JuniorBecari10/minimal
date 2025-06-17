@@ -22,43 +22,17 @@ func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 		switch decl := d.Data.(type) {
 			// In 'fn' statements we check only the declaration. All types must be explicitly annotated and concrete.
 			case ast.FnDeclaration: {
+				diag := a.topLevelFnDecl(decl); if diag != nil {
+					printDiag(diag)
+					continue
+				}
 			}
 			
 			// In 'var'/'let' declarations we check the type and if omitted, we try to infer it shallowly.
 			case ast.VarDeclaration: {
-				if decl.Type == nil {
-					// type isn't annotated. infer it shallowly.
-                    expr, diag := a.analyzeExpression(decl.Init, true); if diag != nil {
-						printDiag(diag)
-						continue
-					}
-
-					// type of expr will be the type of the variable, if applicable (checked later).
-					// must be concrete; otherwise, it will require a type annotation.
-
-					if !typeIsConcrete(expr.Data.Type()) {
-                        printDiag(a.makeExpectedTypeAnnotation(decl.Name))
-						continue
-					}
-                    
-					// type must be dummy because it is inferred and therefore not in the source code.
-					a.globals = append(a.globals, Global{
-                        name: decl.Name,
-						globalType: types.DummyType(expr.Data.Type()),
-
-						immutable: decl.Immutable,
-						initialized: false,
-					})
-				} else {
-					// type is annotated; add the variable with its type.
-					// actual type checking is done later.
-					a.globals = append(a.globals, Global{
-						name: decl.Name,
-						globalType: *decl.Type,
-
-						immutable: decl.Immutable,
-						initialized: false,
-					})
+				diag := a.topLevelVarDecl(decl); if diag != nil {
+					printDiag(diag)
+					continue
 				}
 			}
 
@@ -106,7 +80,9 @@ func (a *Analyzer) addNatives() {
 	}))
 }
 
-func topLevelFnDecl() diagnostic.Diagnostic {
+func (a *Analyzer) topLevelFnDecl(
+	decl ast.FnDeclaration,
+) diagnostic.Diagnostic {
 	// Check the return type. Maybe extract this in a different and reusable function.
 
 	// the token can be a dummy one, since this won't be printed in the diagnostic, since void is concrete.
@@ -118,25 +94,17 @@ func topLevelFnDecl() diagnostic.Diagnostic {
 	}
 
 	if !typeIsConcrete(returnType.Data) {
-		printDiag(a.makeExpectedConcreteType(returnType))
-		continue
+		return a.makeExpectedConcreteType(returnType)
 	}
-
-	cont := false
+	
 	paramTypes := []types.Type{}
 
 	for _, param := range decl.Parameters {
 		if param.Type == nil {
-			printDiag(a.makeExpectedTypeAnnotation(param.Name))
-			cont = true
-			break
+			return a.makeExpectedTypeAnnotation(param.Name)
 		}
 
 		paramTypes = append(paramTypes, *param.Type)
-	}
-
-	if cont {
-		continue
 	}
 
 	a.globals = append(a.globals, Global{
@@ -149,4 +117,45 @@ func topLevelFnDecl() diagnostic.Diagnostic {
 		immutable: true,
 		initialized: false,
 	})
+
+	return nil
+}
+
+func (a *Analyzer) topLevelVarDecl(
+	decl ast.VarDeclaration,
+) diagnostic.Diagnostic {
+	if decl.Type == nil {
+		// type isn't annotated. infer it shallowly.
+		expr, diag := a.analyzeExpression(decl.Init, true); if diag != nil {
+			return diag
+		}
+
+		// type of expr will be the type of the variable, if applicable (checked later).
+		// must be concrete; otherwise, it will require a type annotation.
+
+		if !typeIsConcrete(expr.Data.Type()) {
+			return a.makeExpectedTypeAnnotation(decl.Name)
+		}
+		
+		// type must be dummy because it is inferred and therefore not in the source code.
+		a.globals = append(a.globals, Global{
+			name: decl.Name,
+			globalType: types.DummyType(expr.Data.Type()),
+
+			immutable: decl.Immutable,
+			initialized: false,
+		})
+	} else {
+		// type is annotated; add the variable with its type.
+		// actual type checking is done later.
+		a.globals = append(a.globals, Global{
+			name: decl.Name,
+			globalType: *decl.Type,
+
+			immutable: decl.Immutable,
+			initialized: false,
+		})
+	}
+
+	return nil
 }
