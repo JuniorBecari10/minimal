@@ -22,48 +22,6 @@ func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 		switch decl := d.Data.(type) {
 			// In 'fn' statements we check only the declaration. All types must be explicitly annotated and concrete.
 			case ast.FnDeclaration: {
-				// Check the return type. Maybe extract this in a different and reusable function.
-
-				// the token can be a dummy one, since this won't be printed in the diagnostic, since void is concrete.
-				// at least inside this one.
-				returnType := types.DummyType(types.TypeVoid{})
-
-				if decl.Return != nil {
-					returnType = *decl.Return
-				}
-
-				if !typeIsConcrete(returnType.Data) {
-					printDiag(a.makeExpectedConcreteType(returnType))
-					continue
-				}
-
-				cont := false
-				paramTypes := []types.Type{}
-
-				for _, param := range decl.Parameters {
-					if param.Type == nil {
-						printDiag(a.makeExpectedTypeAnnotation(param.Name))
-						cont = true
-						break
-					}
-
-					paramTypes = append(paramTypes, *param.Type)
-				}
-
-				if cont {
-					continue
-				}
-
-				a.globals = append(a.globals, Global{
-					name: decl.Name,
-					globalType: types.DummyType(types.TypeFunction{
-						Parameters: paramTypes,
-						Return: returnType,
-					}),
-
-					immutable: true,
-					initialized: false,
-				})
 			}
 			
 			// In 'var'/'let' declarations we check the type and if omitted, we try to infer it shallowly.
@@ -146,4 +104,49 @@ func (a *Analyzer) addNatives() {
 		Parameters: []types.Type{},
 		Return: types.DummyType(types.TypeVoid{}),
 	}))
+}
+
+func topLevelFnDecl() diagnostic.Diagnostic {
+	// Check the return type. Maybe extract this in a different and reusable function.
+
+	// the token can be a dummy one, since this won't be printed in the diagnostic, since void is concrete.
+	// at least inside this one.
+	returnType := types.DummyType(types.TypeVoid{})
+
+	if decl.Return != nil {
+		returnType = *decl.Return
+	}
+
+	if !typeIsConcrete(returnType.Data) {
+		printDiag(a.makeExpectedConcreteType(returnType))
+		continue
+	}
+
+	cont := false
+	paramTypes := []types.Type{}
+
+	for _, param := range decl.Parameters {
+		if param.Type == nil {
+			printDiag(a.makeExpectedTypeAnnotation(param.Name))
+			cont = true
+			break
+		}
+
+		paramTypes = append(paramTypes, *param.Type)
+	}
+
+	if cont {
+		continue
+	}
+
+	a.globals = append(a.globals, Global{
+		name: decl.Name,
+		globalType: types.DummyType(types.TypeFunction{
+			Parameters: paramTypes,
+			Return: returnType,
+		}),
+
+		immutable: true,
+		initialized: false,
+	})
 }

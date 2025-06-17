@@ -164,7 +164,7 @@ func (p *Parser) outStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagn
 }
 
 func (p *Parser) exprStmt() (ast.Statement, diagnostic.Diagnostic) {
-	pos := p.current.Pos
+	// save current.Pos if needed.
 
 	// TODO: maybe pass a flag here saying that this is supposed to be a statement, and therefore refine the error message,
 	// to say 'expected statement', instead of 'expected expression'.
@@ -177,10 +177,7 @@ func (p *Parser) exprStmt() (ast.Statement, diagnostic.Diagnostic) {
 	}
 
 	return ast.Statement{
-		Base: ast.AstBase{
-			Pos:    pos,
-			Length: expr.Base.Length,
-		},
+		Base: expr.Base,
 
 		Data: ast.ExprStatement{
 			Expr: expr,

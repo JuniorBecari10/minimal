@@ -139,8 +139,7 @@ func (p *Parser) varDecl(isLet bool, requireSemicolon bool) (ast.Statement, diag
 func newStmt(keyword token.Token, data ast.StmtData) ast.Statement {
 	return ast.Statement{
 		Base: ast.AstBase{
-			Pos:    keyword.Pos,
-			Length: len(keyword.Lexeme),
+			Token: keyword,
 		},
 
 		Data: data,

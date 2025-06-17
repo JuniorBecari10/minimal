@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	"minc/diagnostic"
 	"minc/tast"
 	"minc/types"
 	"minlib/token"

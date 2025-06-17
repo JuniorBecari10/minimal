@@ -210,7 +210,7 @@ func (p *Parser) parseFloat() (ast.Expression, diagnostic.Diagnostic) {
 func (p *Parser) parseStr() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
 
-	return newExprLength(tok.Pos, len(tok.Lexeme) + 2, ast.StringExpression{
+	return newExpr(tok, ast.StringExpression{
 		Literal: tok.Lexeme,
 	}), nil
 }
@@ -218,7 +218,7 @@ func (p *Parser) parseStr() (ast.Expression, diagnostic.Diagnostic) {
 func (p *Parser) parseChar() (ast.Expression, diagnostic.Diagnostic) {
 	tok, _ := p.advance()
 
-	return newExprLength(tok.Pos, len(tok.Lexeme) + 2, ast.CharExpression{
+	return newExpr(tok, ast.CharExpression{
 		Literal: uint8(tok.Lexeme[0]), // guaranteed to be one character long
 	}), nil
 }
@@ -298,7 +298,7 @@ func (p *Parser) parseGroup() (ast.Expression, diagnostic.Diagnostic) {
 		return ast.Expression{}, diag
 	}
 
-	return newExprLength(pos, expr.Base.Length + 2, ast.GroupExpression{
+	return newExprToken(pos, expr.Base.Token, ast.GroupExpression{ // add 2 to the length?
 		Expr: expr,
 	}), nil
 }
@@ -340,9 +340,7 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 			else_ = &ast.BlockExpression{
 				Stmts: []ast.Statement{
 					{
-						Base: ast.AstBase{
-							Pos: elseIfExpr.Base.Pos,
-						},
+						Base: elseIfExpr.Base,
 
 						Data: ast.ExprStatement{
 							Expr: elseIfExpr,
@@ -482,7 +480,7 @@ func (p *Parser) parseUnary(kind token.TokenKind) (ast.Expression, diagnostic.Di
 		return ast.Expression{}, diag
 	}
 	
-	return newExprLength(pos, len(operator.Lexeme), ast.UnaryExpression{
+	return newExprToken(pos, operator, ast.UnaryExpression{
 		Operand: operand,
 		Operator: operator,
 	}), nil
@@ -552,18 +550,18 @@ func (p *Parser) parseLogical(left ast.Expression, op token.TokenKind) (ast.Expr
 func newExpr(tok token.Token, data ast.ExprData) ast.Expression {
 	return ast.Expression{
 		Base: ast.AstBase{
-			Pos:    tok.Pos,
-			Length: len(tok.Lexeme),
+			Token: tok,
 		},
 		Data: data,
 	}
 }
 
-func newExprLength(pos token.Position, length int, data ast.ExprData) ast.Expression {
+func newExprToken(pos token.Position, tok token.Token, data ast.ExprData) ast.Expression {
+	tok.Pos = pos
+
 	return ast.Expression{
 		Base: ast.AstBase{
-			Pos:    pos,
-			Length: length,
+			Token: tok,
 		},
 		Data: data,
 	}
