@@ -14,6 +14,9 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 	generatedTast := make(tast.Tast, 0, len(block))
 	res := RES_OK
 
+	a.newScope()
+	defer a.endScope()
+
 	var inferredType *types.TypeData = nil
 	
 	printDiag := func(diag diagnostic.Diagnostic) {

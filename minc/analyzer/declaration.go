@@ -56,6 +56,15 @@ func (a *Analyzer) fnDecl(
 		Return: returnType,
 		Body: body,
 	}))
+
+	a.addVariable(decl.Name, types.Type{
+		Token: decl.Name,
+		Data: types.TypeFunction{
+			Parameters: paramTypes,
+			Return: returnType,
+		},
+	}, true)
+
 	return nil
 }
 
@@ -79,11 +88,15 @@ func (a *Analyzer) varDecl(
 			return a.makeExpectedTypeAnnotation(decl.Name)
 		}
 
+		varType := types.DummyType(expr.Data.Type())
+
 		*generatedTast = append(*generatedTast, newStmt(tast.VarDeclaration{
 			Name: decl.Name,
 			Init: expr,
-			Type: types.DummyType(expr.Data.Type()),
+			Type: varType,
 		}))
+
+		a.addVariable(decl.Name, varType, decl.Immutable)
 	} else {
 		if _, ok := tryCoercing(expr.Data.Type(), decl.Type.Data); !ok {
 			return a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
@@ -94,6 +107,8 @@ func (a *Analyzer) varDecl(
 			Init: expr,
 			Type: *decl.Type,
 		}))
+
+		a.addVariable(decl.Name, *decl.Type, decl.Immutable)
 	}
 
 	return nil

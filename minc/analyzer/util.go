@@ -80,3 +80,42 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
 
 	return nil
 }
+
+func (a *Analyzer) newScope() {
+	a.scopeDepth++
+}
+
+func (a *Analyzer) endScope() {
+	a.scopeDepth--
+
+	// remove all variables from the current scope
+	for i := len(a.locals) - 1; i >= 0; i-- {
+		if a.locals[i].depth <= a.scopeDepth {
+			// this means all above this variable belongs to the removed scope.
+			a.locals = a.locals[:i + 1]
+			return
+		}
+	}
+
+	a.locals = []Local{}
+}
+
+func (a *Analyzer) addVariable(name token.Token, varType types.Type, immutable bool) {
+	if a.scopeDepth == 0 {
+		// don't add; mark the variable as initialized.
+		for i, global := range a.globals {
+			if global.name.Lexeme == name.Lexeme {
+				a.globals[i].initialized = true
+				return
+			}
+		}
+	} else {
+		// add.
+		a.locals = append(a.locals, Local{
+			name: name,
+			localType: varType,
+			immutable: immutable,
+			depth: a.scopeDepth,
+		})
+	}
+}

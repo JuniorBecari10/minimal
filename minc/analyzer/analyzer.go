@@ -28,9 +28,8 @@ type Local struct {
 	name token.Token
 	localType types.Type
 
-	depth uint32
-	isCaptured bool
 	immutable bool
+	depth uint32
 }
 
 type Global struct {
