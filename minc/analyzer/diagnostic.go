@@ -7,6 +7,14 @@ import (
 	"minlib/token"
 )
 
+func (a *Analyzer) makeWarnUnreachable(tok token.Token) diagnostic.Diagnostic {
+	return a.makeWarningDiagnostic(
+		"Unreachable code.",
+		diagnostic.WARN_UNREACHABLE,
+		tok,
+	)
+}
+
 func (a *Analyzer) makeExpectedConcreteType(t types.Type) diagnostic.Diagnostic {
 	return a.makeHelpDiagnostic(
 		fmt.Sprintf("Expected concrete type, but '%s' is abstract.", t),
@@ -69,5 +77,19 @@ func (a *Analyzer) makeHelpDiagnostic(message string, help []string, token token
 			FileData: a.fileData,
 		},
 		Help: help,
+	}
+}
+
+func (a *Analyzer) makeWarningDiagnostic(message string, warnType diagnostic.WarningType, token token.Token) diagnostic.WarningDiagnostic {
+	return diagnostic.WarningDiagnostic{
+		DiagnosticBase: diagnostic.DiagnosticBase{
+			Message: message,
+			Span: diagnostic.Span{
+				Pos: token.Pos,
+				Length: len(token.Lexeme),
+			},
+			FileData: a.fileData,
+		},
+		WarnType: warnType,
 	}
 }

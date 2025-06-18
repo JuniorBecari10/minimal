@@ -33,6 +33,16 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 			case ast.FnDeclaration: {
 				diag := a.fnDecl(stmt, &generatedTast, newStmt); if diag != nil {
 					printDiag(diag)
+					
+					// check for the unreachable kind of warning, which makes the analyzer take a different behavior
+					// of bailing out and poisoning the outer block.
+					if warn, ok := diag.(diagnostic.WarningDiagnostic); ok && warn.WarnType == diagnostic.WARN_UNREACHABLE {
+						return tast.BlockExpression{
+							Stmts: generatedTast,
+							BlockType: types.DummyType(types.TypeNever{}), // the outer block's type is never.
+						}, res
+					}
+					
 					continue
 				}
 			}
@@ -43,12 +53,47 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 				continue
 			}
 
-			case ast.ReturnStatement: a.returnStmt(s, stmt, &generatedTast, newStmt, printDiag, &inferredType, mode)
-			case ast.OutStatement: a.outStmt(s, stmt, &generatedTast, newStmt, printDiag, &inferredType)
+			case ast.ReturnStatement: {
+				diag := a.returnStmt(s, stmt, &generatedTast, newStmt, printDiag, &inferredType, mode); if diag != nil {
+					printDiag(diag)
+
+					if warn, ok := diag.(diagnostic.WarningDiagnostic); ok && warn.WarnType == diagnostic.WARN_UNREACHABLE {
+						return tast.BlockExpression{
+							Stmts: generatedTast,
+							BlockType: types.DummyType(types.TypeNever{}),
+						}, res
+					}
+
+					continue
+				}
+			}
+
+			case ast.OutStatement: {
+				diag := a.outStmt(s, stmt, &generatedTast, newStmt, printDiag, &inferredType); if diag != nil {
+					printDiag(diag)
+
+					if warn, ok := diag.(diagnostic.WarningDiagnostic); ok && warn.WarnType == diagnostic.WARN_UNREACHABLE {
+						return tast.BlockExpression{
+							Stmts: generatedTast,
+							BlockType: types.DummyType(types.TypeNever{}),
+						}, res
+					}
+
+					continue
+				}
+			}
 
 			case ast.VarDeclaration: {
 				diag := a.varDecl(stmt, &generatedTast, newStmt); if diag != nil {
 					printDiag(diag)
+
+					if warn, ok := diag.(diagnostic.WarningDiagnostic); ok && warn.WarnType == diagnostic.WARN_UNREACHABLE {
+						return tast.BlockExpression{
+							Stmts: generatedTast,
+							BlockType: types.DummyType(types.TypeNever{}),
+						}, res
+					}
+
 					continue
 				}
 			}
@@ -56,6 +101,14 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 			case ast.WhileStatement: {
 				diag := a.whileStmt(stmt, &generatedTast, newStmt); if diag != nil {
 					printDiag(diag)
+					
+					if warn, ok := diag.(diagnostic.WarningDiagnostic); ok && warn.WarnType == diagnostic.WARN_UNREACHABLE {
+						return tast.BlockExpression{
+							Stmts: generatedTast,
+							BlockType: types.DummyType(types.TypeNever{}),
+						}, res
+					}
+					
 					continue
 				}
 			}
@@ -63,6 +116,14 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 			case ast.ForStatement: {
 				diag := a.forStmt(stmt, &generatedTast, newStmt); if diag != nil {
 					printDiag(diag)
+					
+					if warn, ok := diag.(diagnostic.WarningDiagnostic); ok && warn.WarnType == diagnostic.WARN_UNREACHABLE {
+						return tast.BlockExpression{
+							Stmts: generatedTast,
+							BlockType: types.DummyType(types.TypeNever{}),
+						}, res
+					}
+					
 					continue
 				}
 			}
@@ -92,14 +153,18 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 			}
 
 			case ast.ExprStatement: {
-				expr, diag := a.analyzeExpression(stmt.Expr, false); if diag != nil {
+				diag := a.exprStmt(stmt, &generatedTast, newStmt); if diag != nil {
 					printDiag(diag)
+					
+					if warn, ok := diag.(diagnostic.WarningDiagnostic); ok && warn.WarnType == diagnostic.WARN_UNREACHABLE {
+						return tast.BlockExpression{
+							Stmts: generatedTast,
+							BlockType: types.DummyType(types.TypeNever{}), // the outer block's type is never.
+						}, res
+					}
+                    
 					continue
 				}
-
-				generatedTast = append(generatedTast, newStmt(tast.ExprStatement{
-					Expr: expr,
-				}))
 			}
 		}
 	}
@@ -128,7 +193,7 @@ func (a *Analyzer) returnStmt(
 	printDiag func(diagnostic.Diagnostic),
 	inferredType **types.TypeData,
 	mode BlockAnalyzeMode,
-) {
+) diagnostic.Diagnostic {
 	if stmt.Expression == nil {
 		// no expression = void
 		*generatedTast = append(*generatedTast, newStmt(tast.ReturnStatement{
@@ -148,12 +213,16 @@ func (a *Analyzer) returnStmt(
 			*inferredType = &infer
 		}
 
-		return
+		// ok
+		return nil
 	}
 
 	expr, diag := a.analyzeExpression(*stmt.Expression, false); if diag != nil {
-		printDiag(diag)
-		return
+		return diag
+	}
+
+	if _, ok := expr.Data.Type().(types.TypeNever); ok {
+		return a.makeWarnUnreachable(expr.Base.Token)
 	}
 	
 	// set the inferred type to be the type of the expression, if it's a function's body.
@@ -171,6 +240,8 @@ func (a *Analyzer) returnStmt(
 	*generatedTast = append(*generatedTast, newStmt(tast.ReturnStatement{
 		Expression: expr,
 	}))
+
+	return nil
 }
 
 // this always tells the type of the block.
@@ -181,7 +252,7 @@ func (a *Analyzer) outStmt(
 	newStmt func(tast.StmtData) tast.Statement,
 	printDiag func(diagnostic.Diagnostic),
 	inferredType **types.TypeData,
-) {
+) diagnostic.Diagnostic {
 	if stmt.Expression == nil {
 		// no expression = void
 		*generatedTast = append(*generatedTast, newStmt(tast.OutStatement{
@@ -197,12 +268,16 @@ func (a *Analyzer) outStmt(
 			*inferredType = &infer
 		}
 
-		return
+		// ok
+		return nil
 	}
 
 	expr, diag := a.analyzeExpression(*stmt.Expression, false); if diag != nil {
-		printDiag(diag)
-		return
+		return diag
+	}
+
+	if _, ok := expr.Data.Type().(types.TypeNever); ok {
+		return a.makeWarnUnreachable(expr.Base.Token)
 	}
 
 	// set the inferred type to be the type of the expression
@@ -214,6 +289,8 @@ func (a *Analyzer) outStmt(
 	*generatedTast = append(*generatedTast, newStmt(tast.OutStatement{
 		Expression: expr,
 	}))
+
+	return nil
 }
 
 func (a *Analyzer) forStmt(
@@ -236,6 +313,10 @@ func (a *Analyzer) forStmt(
 
 	block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
 		return diagnostic.HandledDiagnostic{}
+	}
+
+	if _, ok := block.Type().(types.TypeNever); ok {
+		return a.makeWarnUnreachable(block.BlockType.Token)
 	}
 
 	*generatedTast = append(*generatedTast, newStmt(tast.ForStatement{
@@ -264,6 +345,10 @@ func (a *Analyzer) whileStmt(
 
 	block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
 		return diagnostic.HandledDiagnostic{}
+	}
+
+	if _, ok := block.Type().(types.TypeNever); ok {
+		return a.makeWarnUnreachable(block.BlockType.Token)
 	}
 
 	*generatedTast = append(*generatedTast, newStmt(tast.WhileStatement{
@@ -317,5 +402,24 @@ func (a *Analyzer) continueStmt(
 	}
 
 	*generatedTast = append(*generatedTast, newStmt(tast.ContinueStatement{}))
+	return nil
+}
+
+func (a *Analyzer) exprStmt(
+	stmt ast.ExprStatement,
+	generatedTast *tast.Tast,
+	newStmt func(tast.StmtData) tast.Statement,
+) diagnostic.Diagnostic {
+	expr, diag := a.analyzeExpression(stmt.Expr, false); if diag != nil {
+		if _, ok := expr.Data.Type().(types.TypeNever); ok {
+			return a.makeWarnUnreachable(expr.Base.Token)
+		}
+
+		return diag
+	}
+
+	*generatedTast = append(*generatedTast, newStmt(tast.ExprStatement{
+		Expr: expr,
+	}))
 	return nil
 }

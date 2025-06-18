@@ -15,6 +15,13 @@ const (
 	TYPE_WARNING = "Warning"
 )
 
+type WarningType int
+
+const (
+	WARN_COMMON WarningType = iota
+	WARN_UNREACHABLE
+)
+
 type Diagnostic interface {
 	PrintDiagnostic()
 	diagnosticType() DiagnosticType
@@ -39,6 +46,7 @@ type HelpDiagnostic struct {
 
 type WarningDiagnostic struct {
 	DiagnosticBase
+	WarnType WarningType
 }
 
 // Used to return an empty diagnostic, signaling all its related ones have alread been handled.

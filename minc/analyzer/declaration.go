@@ -10,6 +10,7 @@ import (
 // the return type can be unknown, but inferrable from its block.
 // the parameters need to be explicitly typed, since we can't infer their types from context,
 // because this is a statement, and not an expression, like a lambda.
+// can return a warning.
 func (a *Analyzer) fnDecl(
 	decl ast.FnDeclaration,
 	generatedTast *tast.Tast,
@@ -36,11 +37,13 @@ func (a *Analyzer) fnDecl(
 		return diagnostic.HandledDiagnostic{}
 	}
 
-	// if the return type is unknown, it will coerce.
-	var mergedType types.TypeData
-	var ok bool
+	// check for unreachable code.
+	if _, ok := body.Type().(types.TypeNever); ok {
+		return a.makeWarnUnreachable(decl.Name)
+	}
 
-	if mergedType, ok = tryCoercing(body.Type(), returnType.Data); !ok {
+	// if the return type is unknown, it will coerce.
+	mergedType, ok := tryCoercing(body.Type(), returnType.Data); if !ok {
 		return a.makeExpectedType(returnType.Data, body.Type(), returnType.Token)
 	}
 
@@ -56,6 +59,7 @@ func (a *Analyzer) fnDecl(
 	return nil
 }
 
+// can return a warning.
 func (a *Analyzer) varDecl(
 	decl ast.VarDeclaration,
 	generatedTast *tast.Tast,
@@ -63,6 +67,11 @@ func (a *Analyzer) varDecl(
 ) diagnostic.Diagnostic {
 	expr, diag := a.analyzeExpression(decl.Init, false); if diag != nil {
 		return diag
+	}
+
+	// check for unreachable code.
+	if _, ok := expr.Data.Type().(types.TypeNever); ok {
+		return a.makeWarnUnreachable(decl.Name)
 	}
 	
 	if decl.Type == nil {
