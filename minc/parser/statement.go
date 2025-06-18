@@ -137,22 +137,26 @@ func (p *Parser) continueStmt(requireSemicolon bool) (ast.Statement, diagnostic.
 func (p *Parser) returnStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance()
 	var expr *ast.Expression = nil
-	
-	if !p.match(token.TokenSemicolon) {
-		var diag diagnostic.Diagnostic
-		exprVal, diag := p.parseExpression(); if diag != nil {
-			return ast.Statement{}, diag
-		}
 
-		expr = &exprVal
+	// Check for a semicolon *immediately* after return
+	if p.match(token.TokenSemicolon) {
+		return newStmt(keyword, ast.ReturnStatement{
+			Expression: nil,
+		}), nil
 	}
 
+	exprVal, diag := p.parseExpression(); if diag != nil {
+		return ast.Statement{}, diag
+	}
+	expr = &exprVal
+
+	// Now we require semicolon *after* the return value
 	if requireSemicolon {
 		diag := p.expectSemicolon(); if diag != nil {
 			return ast.Statement{}, diag
 		}
 	}
-	
+
 	return newStmt(keyword, ast.ReturnStatement{
 		Expression: expr,
 	}), nil

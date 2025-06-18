@@ -1,0 +1,5 @@
+fn main() {
+    let x = {
+        return; // this poisons the block with the 'never' type, making the compiler warn the user.
+    };
+}
