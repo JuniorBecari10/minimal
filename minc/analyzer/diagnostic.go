@@ -15,9 +15,18 @@ func (a *Analyzer) makeWarnUnreachable(tok token.Token) diagnostic.Diagnostic {
 	)
 }
 
+func (a *Analyzer) makeWarnNotModified(name token.Token) diagnostic.Diagnostic {
+	return a.makeWarningHelpDiagnostic(
+		fmt.Sprintf("'%s' is mutable but is not modified.", name.Lexeme),
+		diagnostic.WARN_UNREACHABLE,
+		[]string{ "Declare it with 'let' if you don't plan to modify it." },
+		name,
+	)
+}
+
 func (a *Analyzer) makeExpectedConcreteType(t types.Type) diagnostic.Diagnostic {
 	return a.makeHelpDiagnostic(
-		fmt.Sprintf("Expected concrete type, but '%s' is abstract.", t),
+		fmt.Sprintf("Expected concrete type, but '%s' is abstract.", t.Token.FormatError()),
 		[]string{ "Please annotate this with a concrete type." },
 		t.Token,
 	)
@@ -91,5 +100,25 @@ func (a *Analyzer) makeWarningDiagnostic(message string, warnType diagnostic.War
 			FileData: a.fileData,
 		},
 		WarnType: warnType,
+	}
+}
+
+func (a *Analyzer) makeWarningHelpDiagnostic(
+	message string,
+	warnType diagnostic.WarningType,
+	help []string,
+	token token.Token,
+) diagnostic.WarningHelpDiagnostic {
+	return diagnostic.WarningHelpDiagnostic{
+		DiagnosticBase: diagnostic.DiagnosticBase{
+			Message: message,
+			Span: diagnostic.Span{
+				Pos: token.Pos,
+				Length: len(token.Lexeme),
+			},
+			FileData: a.fileData,
+		},
+		WarnType: warnType,
+		Help: help,
 	}
 }

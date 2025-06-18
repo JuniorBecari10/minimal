@@ -30,6 +30,7 @@ type Local struct {
 
 	immutable bool
 	depth uint32
+	modified bool
 }
 
 type Global struct {
@@ -38,6 +39,7 @@ type Global struct {
 
 	immutable bool
 	initialized bool // to check if it has already been declared or just hoisted
+	modified bool
 }
 
 type Upvalue struct {

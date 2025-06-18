@@ -1,18 +1,47 @@
 package analyzer
 
 import (
+	"fmt"
 	"minc/ast"
 	"minc/diagnostic"
 	"minc/tast"
 )
 
-func (a *Analyzer) analyzeExpression(expr ast.Expression, shallow bool) (tast.Expression, diagnostic.Diagnostic) {
-	switch expr.Data.(type) {
-		case ast.IntExpression: {}
-		case ast.FloatExpression: {}
-		case ast.StringExpression: {}
-		case ast.CharExpression: {}
-		case ast.BoolExpression: {}
+func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool) (tast.Expression, diagnostic.Diagnostic) {
+	newExpr := func(data tast.ExprData) tast.Expression {
+		return tast.Expression{
+			Base: tast.AstBase(e.Base),
+			Data: data,
+		}
+	}
+
+	switch expr := e.Data.(type) {
+		case ast.IntExpression:
+			return newExpr(tast.IntExpression{
+				Literal: expr.Literal,
+			}), nil
+
+		case ast.FloatExpression:
+			return newExpr(tast.FloatExpression{
+				Literal: expr.Literal,
+			}), nil
+		
+		case ast.StringExpression:
+			return newExpr(tast.StringExpression{
+				Literal: expr.Literal,
+			}), nil
+		
+		case ast.CharExpression:
+			return newExpr(tast.CharExpression{
+				Literal: expr.Literal,
+			}), nil
+		
+		
+		case ast.BoolExpression:
+			return newExpr(tast.BoolExpression{
+				Literal: expr.Literal,
+			}), nil
+		
 		case ast.RangeExpression: {}
 		case ast.AsExpression: {}
 		case ast.NilExpression: {}
@@ -31,4 +60,6 @@ func (a *Analyzer) analyzeExpression(expr ast.Expression, shallow bool) (tast.Ex
 		case ast.GetPropertyExpression: {}
 		case ast.SetPropertyExpression: {}
 	}
+
+	panic(fmt.Sprintf("Internal: invalid expression: %#v", e))
 }

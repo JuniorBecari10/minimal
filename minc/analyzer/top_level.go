@@ -45,7 +45,7 @@ func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 
 			// Should not reach here.
 			default:
-				panic(fmt.Sprintf("Unknown declaration %v of type %T", decl, decl))
+				panic(fmt.Sprintf("Unknown declaration %#v of type %T", decl, decl))
 		}
 	}
 
@@ -116,6 +116,7 @@ func (a *Analyzer) topLevelFnDecl(
 
 		immutable: true,
 		initialized: false,
+		modified: false,
 	})
 
 	return nil
@@ -144,6 +145,7 @@ func (a *Analyzer) topLevelVarDecl(
 
 			immutable: decl.Immutable,
 			initialized: false,
+			modified: false,
 		})
 	} else {
 		// type is annotated; add the variable with its type.
@@ -154,6 +156,7 @@ func (a *Analyzer) topLevelVarDecl(
 
 			immutable: decl.Immutable,
 			initialized: false,
+			modified: false,
 		})
 	}
 

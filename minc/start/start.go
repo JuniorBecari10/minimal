@@ -48,11 +48,13 @@ func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
 		os.Exit(1)
 	}
 
-	tast, res := analyzer.New(ast).Analyze()
+	tast, res := analyzer.New(ast, fileData).Analyze()
 	
 	if res == analyzer.RES_ERROR {
 		os.Exit(1)
 	}
+
+	fmt.Println(tast)
 
 	return value.Chunk{}, true
 }

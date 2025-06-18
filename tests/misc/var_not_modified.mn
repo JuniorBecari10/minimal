@@ -1,0 +1,4 @@
+fn main() {
+    let immutable = 10;
+    var mutable = 20;
+}

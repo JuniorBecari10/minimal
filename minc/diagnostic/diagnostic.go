@@ -49,6 +49,12 @@ type WarningDiagnostic struct {
 	WarnType WarningType
 }
 
+type WarningHelpDiagnostic struct {
+	DiagnosticBase
+	WarnType WarningType
+	Help []string
+}
+
 // Used to return an empty diagnostic, signaling all its related ones have alread been handled.
 // its print function is no-op.
 type HandledDiagnostic struct { }
@@ -79,7 +85,7 @@ func (s SimpleDiagnostic) PrintDiagnostic() {
 	eprintln("[-]")
 }
 
-func (s SimpleDiagnostic) diagnosticType() DiagnosticType {
+func (SimpleDiagnostic) diagnosticType() DiagnosticType {
 	return TYPE_ERROR
 }
 
@@ -89,17 +95,10 @@ func (h HelpDiagnostic) PrintDiagnostic() {
 	padding := strings.Repeat(" ", len(strconv.Itoa(int(h.Span.Pos.Line + 1))))
 
 	h.DiagnosticBase.printDiagnostic(h.diagnosticType())
-	eprintf(" | %s [-] Help\n", padding)
-	
-	for _, line := range h.Help {
-		eprintf(" | %s  | %s\n", padding, line)
-	}
-
-	eprintf(" | %s [-]\n", padding)
-	eprintln("[-]")
+	printHelp(h.Help, padding)
 }
 
-func (s HelpDiagnostic) diagnosticType() DiagnosticType {
+func (HelpDiagnostic) diagnosticType() DiagnosticType {
 	return TYPE_ERROR
 }
 
@@ -110,16 +109,29 @@ func (w WarningDiagnostic) PrintDiagnostic() {
 	eprintln("[-]")
 }
 
-func (w WarningDiagnostic) diagnosticType() DiagnosticType {
+func (WarningDiagnostic) diagnosticType() DiagnosticType {
+	return TYPE_WARNING
+}
+
+// ---
+
+func (w WarningHelpDiagnostic) PrintDiagnostic() {
+	padding := strings.Repeat(" ", len(strconv.Itoa(int(w.Span.Pos.Line + 1))))
+
+	w.DiagnosticBase.printDiagnostic(w.diagnosticType())
+	printHelp(w.Help, padding)
+}
+
+func (WarningHelpDiagnostic) diagnosticType() DiagnosticType {
 	return TYPE_WARNING
 }
 
 // ---
 
 
-func (h HandledDiagnostic) PrintDiagnostic() { }
+func (HandledDiagnostic) PrintDiagnostic() { }
 
-func (h HandledDiagnostic) diagnosticType() DiagnosticType {
+func (HandledDiagnostic) diagnosticType() DiagnosticType {
 	return TYPE_ERROR
 }
 
@@ -131,4 +143,22 @@ func eprintln(s string) {
 
 func eprintf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format, args...)
+}
+
+func printHelp(help []string, padding string) {
+	eprintln(" |")
+
+    if len(help) == 1 {
+		eprintf(" | %s [-] Help: %s\n", padding, help[0])
+	} else {
+		eprintf(" | %s [-] Help:\n", padding)
+		
+		for _, line := range help {
+			eprintf(" | %s  | %s\n", padding, line)
+		}
+
+		eprintf(" | %s [-]\n", padding)
+	}
+
+	eprintln("[-]")
 }

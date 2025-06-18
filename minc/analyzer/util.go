@@ -57,6 +57,11 @@ func tryCoercing(from, to types.TypeData) (types.TypeData, bool) {
 }
 
 func mergeTypes(from, to types.TypeData) types.TypeData {
+	// if types are equal, they can be merged.
+	if from == to {
+        return from
+	}
+
 	switch from.(type) {
 		// int -> float
 		case types.TypeInt: {
@@ -95,6 +100,11 @@ func (a *Analyzer) endScope() {
 			a.locals = a.locals[:i + 1]
 			return
 		}
+
+		// var + not modified
+		if !a.locals[i].immutable && !a.locals[i].modified {
+			a.makeWarnNotModified(a.locals[i].name).PrintDiagnostic()
+		}
 	}
 
 	a.locals = []Local{}
@@ -116,6 +126,7 @@ func (a *Analyzer) addVariable(name token.Token, varType types.Type, immutable b
 			localType: varType,
 			immutable: immutable,
 			depth: a.scopeDepth,
+			modified: false,
 		})
 	}
 }
