@@ -421,5 +421,6 @@ func (a *Analyzer) exprStmt(
 	*generatedTast = append(*generatedTast, newStmt(tast.ExprStatement{
 		Expr: expr,
 	}))
+
 	return nil
 }
