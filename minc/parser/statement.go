@@ -9,7 +9,7 @@ import (
 func (p *Parser) statement(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	switch p.current.Kind {
 		case token.TokenWhileKw: return p.whileStmt()
-		case token.TokenForKw: return p.forStmtCheck()
+		case token.TokenForKw: return p.forStmt()
 		case token.TokenLoopKw: return p.loopStmt()
 		case token.TokenBreakKw: return p.breakStmt(requireSemicolon)
 		case token.TokenContinueKw: return p.continueStmt(requireSemicolon)
@@ -39,17 +39,9 @@ func (p *Parser) whileStmt() (ast.Statement, diagnostic.Diagnostic) {
 	}), nil
 }
 
-func (p *Parser) forStmtCheck() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) forStmt() (ast.Statement, diagnostic.Diagnostic) {
 	keyword, _ := p.advance()
 
-	if p.check(token.TokenVarKw) || p.check(token.TokenLetKw) {
-		return p.forVarStmt(keyword, p.current.Kind == token.TokenLetKw)
-	} else {
-		return p.forStmt(keyword)
-	}
-}
-
-func (p *Parser) forStmt(keyword token.Token) (ast.Statement, diagnostic.Diagnostic) {
 	name, varType, diag := p.parseVariableBinding(); if diag != nil {
 		return ast.Statement{}, diag
 	}
@@ -71,38 +63,6 @@ func (p *Parser) forStmt(keyword token.Token) (ast.Statement, diagnostic.Diagnos
 		Type: varType,
 		Iterable: iterable,
 		Block: block,
-	}), nil
-}
-
-func (p *Parser) forVarStmt(keyword token.Token, isLet bool) (ast.Statement, diagnostic.Diagnostic) {
-	decl, diag := p.varDecl(isLet, true); if diag != nil {
-		return ast.Statement{}, diag
-	}
-
-	condition, diag := p.parseExpression(); if diag != nil {
-		return ast.Statement{}, diag
-	}
-
-	var increment *ast.Expression = nil
-	
-	if p.match(token.TokenSemicolon) {
-		incrementDecl, diag := p.parseExpression(); if diag != nil {
-			return ast.Statement{}, diag
-		}
-
-		increment = &incrementDecl
-	}
-
-	block, diag := p.parseBlock(); if diag != nil {
-		return ast.Statement{}, diag
-	}
-
-	return newStmt(keyword, ast.ForVarStatement{
-		Declaration: decl,
-		Condition: condition,
-		Increment: increment,
-		Block: block,
-		Immutable: isLet,
 	}), nil
 }
 

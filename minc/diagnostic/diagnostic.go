@@ -24,7 +24,7 @@ const (
 
 type Diagnostic interface {
 	PrintDiagnostic()
-	diagnosticType() DiagnosticType
+	DiagnosticType() DiagnosticType
 }
 
 type DiagnosticBase struct {
@@ -81,11 +81,11 @@ func (b *DiagnosticBase) printDiagnostic(diagType DiagnosticType) {
 // ---
 
 func (s SimpleDiagnostic) PrintDiagnostic() {
-	s.DiagnosticBase.printDiagnostic(s.diagnosticType())
+	s.DiagnosticBase.printDiagnostic(s.DiagnosticType())
 	eprintln("[-]")
 }
 
-func (SimpleDiagnostic) diagnosticType() DiagnosticType {
+func (SimpleDiagnostic) DiagnosticType() DiagnosticType {
 	return TYPE_ERROR
 }
 
@@ -94,22 +94,22 @@ func (SimpleDiagnostic) diagnosticType() DiagnosticType {
 func (h HelpDiagnostic) PrintDiagnostic() {
 	padding := strings.Repeat(" ", len(strconv.Itoa(int(h.Span.Pos.Line + 1))))
 
-	h.DiagnosticBase.printDiagnostic(h.diagnosticType())
+	h.DiagnosticBase.printDiagnostic(h.DiagnosticType())
 	printHelp(h.Help, padding)
 }
 
-func (HelpDiagnostic) diagnosticType() DiagnosticType {
+func (HelpDiagnostic) DiagnosticType() DiagnosticType {
 	return TYPE_ERROR
 }
 
 // ---
 
 func (w WarningDiagnostic) PrintDiagnostic() {
-	w.DiagnosticBase.printDiagnostic(w.diagnosticType())
+	w.DiagnosticBase.printDiagnostic(w.DiagnosticType())
 	eprintln("[-]")
 }
 
-func (WarningDiagnostic) diagnosticType() DiagnosticType {
+func (WarningDiagnostic) DiagnosticType() DiagnosticType {
 	return TYPE_WARNING
 }
 
@@ -118,11 +118,11 @@ func (WarningDiagnostic) diagnosticType() DiagnosticType {
 func (w WarningHelpDiagnostic) PrintDiagnostic() {
 	padding := strings.Repeat(" ", len(strconv.Itoa(int(w.Span.Pos.Line + 1))))
 
-	w.DiagnosticBase.printDiagnostic(w.diagnosticType())
+	w.DiagnosticBase.printDiagnostic(w.DiagnosticType())
 	printHelp(w.Help, padding)
 }
 
-func (WarningHelpDiagnostic) diagnosticType() DiagnosticType {
+func (WarningHelpDiagnostic) DiagnosticType() DiagnosticType {
 	return TYPE_WARNING
 }
 
@@ -131,7 +131,7 @@ func (WarningHelpDiagnostic) diagnosticType() DiagnosticType {
 
 func (HandledDiagnostic) PrintDiagnostic() { }
 
-func (HandledDiagnostic) diagnosticType() DiagnosticType {
+func (HandledDiagnostic) DiagnosticType() DiagnosticType {
 	return TYPE_ERROR
 }
 

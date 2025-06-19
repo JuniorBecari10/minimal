@@ -54,14 +54,6 @@ type ForStatement struct {
 	Block BlockExpression
 }
 
-type ForVarStatement struct {
-	Declaration Statement
-	Condition Expression
-	Increment *Expression // optional
-	Block BlockExpression
-	Immutable bool
-}
-
 type LoopStatement struct {
 	Block BlockExpression
 }

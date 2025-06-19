@@ -10,12 +10,7 @@ import (
 // the return type can be unknown, but inferrable from its block.
 // the parameters need to be explicitly typed, since we can't infer their types from context,
 // because this is a statement, and not an expression, like a lambda.
-// can return a warning.
-func (a *Analyzer) fnDecl(
-	decl ast.FnDeclaration,
-	generatedTast *tast.Tast,
-	newStmt func(tast.StmtData) tast.Statement,
-) diagnostic.Diagnostic {
+func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnostic.Diagnostic) {
 	returnType := types.DummyType(types.TypeVoid{})
 
 	if decl.Return != nil {
@@ -26,7 +21,7 @@ func (a *Analyzer) fnDecl(
 
 	for _, param := range decl.Parameters {
 		if param.Type == nil {
-			return a.makeExpectedTypeAnnotation(param.Name)
+			return tast.FnDeclaration{}, a.makeExpectedTypeAnnotation(param.Name)
 		}
 
 		paramTypes = append(paramTypes, *param.Type)
@@ -34,28 +29,16 @@ func (a *Analyzer) fnDecl(
 
 	// return type may be unknown. check the body and see if the type can be coerced to it.
 	body, res := a.analyzeBlock(decl.Body.Stmts, MODE_FUNCTION); if res == RES_ERROR {
-		return diagnostic.HandledDiagnostic{}
-	}
-
-	// check for unreachable code.
-	if _, ok := body.Type().(types.TypeNever); ok {
-		return a.makeWarnUnreachable(decl.Name)
+		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
 	}
 
 	// if the return type is unknown, it will coerce.
 	mergedType, ok := tryCoercing(body.Type(), returnType.Data); if !ok {
-		return a.makeExpectedType(returnType.Data, body.Type(), returnType.Token)
+		return tast.FnDeclaration{}, a.makeExpectedType(returnType.Data, body.Type(), returnType.Token)
 	}
 
 	// merge the types to one that supports both.
 	returnType.Data = mergedType
-	
-	*generatedTast = append(*generatedTast, newStmt(tast.FnDeclaration{
-		Name: decl.Name,
-		Parameters: decl.Parameters,
-		Return: returnType,
-		Body: body,
-	}))
 
 	a.addVariable(decl.Name, types.Type{
 		Token: decl.Name,
@@ -65,51 +48,43 @@ func (a *Analyzer) fnDecl(
 		},
 	}, true)
 
-	return nil
+	return tast.FnDeclaration{
+		Name: decl.Name,
+		Parameters: decl.Parameters,
+		Return: returnType,
+		Body: body,
+	}, nil
 }
 
-// can return a warning.
-func (a *Analyzer) varDecl(
-	decl ast.VarDeclaration,
-	generatedTast *tast.Tast,
-	newStmt func(tast.StmtData) tast.Statement,
-) diagnostic.Diagnostic {
+func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagnostic.Diagnostic) {
 	expr, diag := a.analyzeExpression(decl.Init, false); if diag != nil {
-		return diag
+		return tast.VarDeclaration{}, diag
 	}
 
-	// check for unreachable code.
-	if _, ok := expr.Data.Type().(types.TypeNever); ok {
-		return a.makeWarnUnreachable(decl.Name)
-	}
-	
 	if decl.Type == nil {
 		if !typeIsConcrete(expr.Data.Type()) {
-			return a.makeExpectedTypeAnnotation(decl.Name)
+			return tast.VarDeclaration{}, a.makeExpectedTypeAnnotation(decl.Name)
 		}
 
 		varType := types.DummyType(expr.Data.Type())
+		a.addVariable(decl.Name, varType, decl.Immutable)
 
-		*generatedTast = append(*generatedTast, newStmt(tast.VarDeclaration{
+		return tast.VarDeclaration{
 			Name: decl.Name,
 			Init: expr,
 			Type: varType,
-		}))
-
-		a.addVariable(decl.Name, varType, decl.Immutable)
+		}, nil
 	} else {
 		if _, ok := tryCoercing(expr.Data.Type(), decl.Type.Data); !ok {
-			return a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
+			return tast.VarDeclaration{}, a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
 		}
+		
+		a.addVariable(decl.Name, *decl.Type, decl.Immutable)
 
-		*generatedTast = append(*generatedTast, newStmt(tast.VarDeclaration{
+		return tast.VarDeclaration{
 			Name: decl.Name,
 			Init: expr,
 			Type: *decl.Type,
-		}))
-
-		a.addVariable(decl.Name, *decl.Type, decl.Immutable)
+		}, nil
 	}
-
-	return nil
 }

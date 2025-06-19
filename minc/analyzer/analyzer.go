@@ -24,6 +24,8 @@ const (
 	MODE_LOOP
 )
 
+// TODO: add flags canBeMutable (for functions and refine the error message)
+// and used, to throw the not used warning.
 type Local struct {
 	name token.Token
 	localType types.Type
