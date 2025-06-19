@@ -74,7 +74,6 @@ func (x OutStatement) stmt()      {}
 func (x VarDeclaration) stmt()      {}
 func (x WhileStatement) stmt()    {}
 func (x ForStatement) stmt()      {}
-func (x ForVarStatement) stmt()   {}
 func (x LoopStatement) stmt()     {}
 func (x ExprStatement) stmt()     {}
 func (x BreakStatement) stmt()    {}

@@ -19,7 +19,7 @@ func newNative(name string, globalType types.TypeData) Global {
 
 func typeIsConcrete(t types.TypeData) bool {
 	switch t.(type) {
-		case types.TypeUntypedNil, types.TypeUnknown, types.TypeNever:
+		case types.TypeUntypedNil, types.TypeUnknown:
 			return false
 
 		default:
@@ -106,6 +106,8 @@ func (a *Analyzer) endScope() {
 		// var + not modified
 		if !a.locals[i].immutable && !a.locals[i].modified {
 			a.makeWarnNotModified(a.locals[i].name).PrintDiagnostic()
+		} else if !a.locals[i].used {
+			a.makeWarnNotUsed(a.locals[i].name).PrintDiagnostic()
 		}
 	}
 

@@ -24,6 +24,14 @@ func (a *Analyzer) makeWarnNotModified(name token.Token) diagnostic.Diagnostic {
 	)
 }
 
+func (a *Analyzer) makeWarnNotUsed(name token.Token) diagnostic.Diagnostic {
+	return a.makeWarningDiagnostic(
+		fmt.Sprintf("'%s' is declared but is not used.", name.Lexeme),
+		diagnostic.WARN_UNREACHABLE,
+		name,
+	)
+}
+
 func (a *Analyzer) makeExpectedConcreteType(t types.Type) diagnostic.Diagnostic {
 	return a.makeHelpDiagnostic(
 		fmt.Sprintf("Expected concrete type, but '%s' is abstract.", t.Token.FormatError()),
@@ -32,9 +40,9 @@ func (a *Analyzer) makeExpectedConcreteType(t types.Type) diagnostic.Diagnostic 
 	)
 }
 
-func (a *Analyzer) makeExpectedTypeAnnotation(token token.Token) diagnostic.Diagnostic {
+func (a *Analyzer) makeTypeAnnotationsNeeded(token token.Token) diagnostic.Diagnostic {
 	return a.makeHelpDiagnostic(
-		"Expected type annotation here.",
+		"Type annotations needed here.",
 		[]string{ "Please annotate this with an actual type." },
 		token,
 	)

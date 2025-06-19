@@ -63,7 +63,7 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 
 		case ast.RecordDeclaration: {
 			// dummy error; not yet supported.
-			return tast.Statement{}, a.makeExpectedTypeAnnotation(stmt.Name)
+			return tast.Statement{}, a.makeTypeAnnotationsNeeded(stmt.Name)
 		}
 
 		case ast.ReturnStatement: {

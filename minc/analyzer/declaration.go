@@ -21,7 +21,7 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 
 	for _, param := range decl.Parameters {
 		if param.Type == nil {
-			return tast.FnDeclaration{}, a.makeExpectedTypeAnnotation(param.Name)
+			return tast.FnDeclaration{}, a.makeTypeAnnotationsNeeded(param.Name)
 		}
 
 		paramTypes = append(paramTypes, *param.Type)
@@ -63,7 +63,7 @@ func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagno
 
 	if decl.Type == nil {
 		if !typeIsConcrete(expr.Data.Type()) {
-			return tast.VarDeclaration{}, a.makeExpectedTypeAnnotation(decl.Name)
+			return tast.VarDeclaration{}, a.makeTypeAnnotationsNeeded(decl.Name)
 		}
 
 		varType := types.DummyType(expr.Data.Type())

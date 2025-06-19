@@ -53,7 +53,7 @@ func (a *Analyzer) analyzeTopLevelDecl(d ast.Statement) (Global, diagnostic.Diag
 			// In records, all types must be explicitly annotated and concrete.
 			case ast.RecordDeclaration: {
 				// not for now. this is a dummy error.
-				return Global{}, a.makeExpectedTypeAnnotation(decl.Name)
+				return Global{}, a.makeTypeAnnotationsNeeded(decl.Name)
 			}
 
 			// Should not reach here.
@@ -109,7 +109,7 @@ func (a *Analyzer) topLevelFnDecl(decl ast.FnDeclaration) (Global, diagnostic.Di
 
 	for _, param := range decl.Parameters {
 		if param.Type == nil {
-			return Global{}, a.makeExpectedTypeAnnotation(param.Name)
+			return Global{}, a.makeTypeAnnotationsNeeded(param.Name)
 		}
 
 		paramTypes = append(paramTypes, *param.Type)
@@ -139,7 +139,7 @@ func (a *Analyzer) topLevelVarDecl(decl ast.VarDeclaration) (Global, diagnostic.
 		// must be concrete; otherwise, it will require a type annotation.
 
 		if !typeIsConcrete(expr.Data.Type()) {
-			return Global{}, a.makeExpectedTypeAnnotation(decl.Name)
+			return Global{}, a.makeTypeAnnotationsNeeded(decl.Name)
 		}
 		
 		// type must be dummy because it is inferred and therefore not in the source code.
