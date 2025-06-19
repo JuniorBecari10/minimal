@@ -1,0 +1,8 @@
+let x: str = 10;
+let y: int = 20.3;
+
+fn main() { }
+
+fn wrong_implicit_return_void() {
+    return 20;
+}
