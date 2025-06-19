@@ -12,6 +12,8 @@ func newNative(name string, globalType types.TypeData) Global {
 		globalType: types.DummyType(globalType),
 		immutable: true, // all native types should be immutable.
 		initialized: true,
+		modified: false,
+		used: false,
 	}
 }
 
@@ -49,7 +51,7 @@ func getIteratorType(iterable tast.Expression) types.TypeData {
 }
 
 // this also returns true if the types are equal, or the types inside them can coerce into the other too.
-// this returns t twice in two expressions in order for the caller to be able to call this in an assignment switch
+// this returns t twice in two expressions in order for the caller to be able to call this in an assignment if
 // if t, ok := tryCoercing(.., ..); ok { .. }
 func tryCoercing(from, to types.TypeData) (types.TypeData, bool) {
 	t := mergeTypes(from, to)
@@ -127,6 +129,7 @@ func (a *Analyzer) addVariable(name token.Token, varType types.Type, immutable b
 			immutable: immutable,
 			depth: a.scopeDepth,
 			modified: false,
+			used: false,
 		})
 	}
 }

@@ -25,7 +25,6 @@ const (
 )
 
 // TODO: add flags canBeMutable (for functions and refine the error message)
-// and used, to throw the not used warning.
 type Local struct {
 	name token.Token
 	localType types.Type
@@ -33,6 +32,7 @@ type Local struct {
 	immutable bool
 	depth uint32
 	modified bool
+	used bool
 }
 
 type Global struct {
@@ -42,6 +42,7 @@ type Global struct {
 	immutable bool
 	initialized bool // to check if it has already been declared or just hoisted
 	modified bool
+	used bool
 }
 
 type Upvalue struct {

@@ -8,6 +8,42 @@ import (
 	"minc/types"
 )
 
+// synchronization point. this function prints the diagnostics and doesn't bubble them up
+// this returns a block, with its type inferred by its statements.
+// the first statement that can set the type of the block directly inside it will do it.
+func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
+	generatedTast := make(tast.Tast, 0, len(block))
+	res := RES_OK
+
+	a.newScope()
+	var inferredType *types.TypeData = nil
+	
+	for _, s := range block {
+		stmt, diag := a.analyzeStatement(s, &inferredType, mode); if diag != nil {
+			diag.PrintDiagnostic()
+
+			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
+				res = RES_ERROR
+			}
+		}
+
+		generatedTast = append(generatedTast, stmt)
+	}
+
+	var blockType types.TypeData = types.TypeVoid{}
+
+	if inferredType != nil {
+		blockType = *inferredType
+	}
+
+	a.endScope()
+
+	return tast.BlockExpression{
+		Stmts: generatedTast,
+		BlockType: types.DummyType(blockType), // dummy because it's inferred.
+	}, res
+}
+
 func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeData, mode BlockAnalyzeMode) (tast.Statement, diagnostic.Diagnostic) {
 	newStmt := func(data tast.StmtData) tast.Statement {
 		return tast.Statement{
@@ -97,42 +133,6 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 	}
 
 	panic(fmt.Sprintf("Unhandled statement type: %#v", s))
-}
-
-// synchronization point. this function prints the diagnostics and doesn't bubble them up
-// this returns a block, with its type inferred by its statements.
-// the first statement that can set the type of the block directly inside it will do it.
-func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
-	generatedTast := make(tast.Tast, 0, len(block))
-	res := RES_OK
-
-	a.newScope()
-	var inferredType *types.TypeData = nil
-	
-	for _, s := range block {
-		stmt, diag := a.analyzeStatement(s, &inferredType, mode); if diag != nil {
-			diag.PrintDiagnostic()
-
-			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
-				res = RES_ERROR
-			}
-		}
-
-		generatedTast = append(generatedTast, stmt)
-	}
-
-	var blockType types.TypeData = types.TypeVoid{}
-
-	if inferredType != nil {
-		blockType = *inferredType
-	}
-
-	a.endScope()
-
-	return tast.BlockExpression{
-		Stmts: generatedTast,
-		BlockType: types.DummyType(blockType), // dummy because it's inferred.
-	}, res
 }
 
 // ---

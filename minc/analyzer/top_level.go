@@ -13,47 +13,57 @@ import (
 func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 	res := RES_OK
 
-	printDiag := func(diag diagnostic.Diagnostic) {
-		diag.PrintDiagnostic()
-		res = RES_ERROR
+	for _, d := range a.ast {
+		global, diag := a.analyzeTopLevelDecl(d); if diag != nil {
+			diag.PrintDiagnostic()
+
+			if diag.DiagnosticType() == diagnostic.TYPE_WARNING {
+				res = RES_ERROR
+			}
+
+			continue
+		}
+
+		a.globals = append(a.globals, global)
 	}
 
-	for _, d := range a.ast {
+	return res
+}
+
+func (a *Analyzer) analyzeTopLevelDecl(d ast.Statement) (Global, diagnostic.Diagnostic) {
 		switch decl := d.Data.(type) {
 			// In 'fn' statements we check only the declaration. All types must be explicitly annotated and concrete.
 			case ast.FnDeclaration: {
-				diag := a.topLevelFnDecl(decl); if diag != nil {
-					printDiag(diag)
-					continue
+				global, diag := a.topLevelFnDecl(decl); if diag != nil {
+					return Global{}, diag
 				}
+
+				return global, nil
 			}
 			
 			// In 'var'/'let' declarations we check the type and if omitted, we try to infer it shallowly.
 			case ast.VarDeclaration: {
-				diag := a.topLevelVarDecl(decl); if diag != nil {
-					printDiag(diag)
-					continue
+				global, diag := a.topLevelVarDecl(decl); if diag != nil {
+					return Global{}, diag
 				}
+
+				return global, nil
 			}
 
 			// In records, all types must be explicitly annotated and concrete.
 			case ast.RecordDeclaration: {
 				// not for now. this is a dummy error.
-				printDiag(a.makeExpectedTypeAnnotation(decl.Name))
-				continue
+				return Global{}, a.makeExpectedTypeAnnotation(decl.Name)
 			}
 
 			// Should not reach here.
 			default:
 				panic(fmt.Sprintf("Unknown declaration %#v of type %T", decl, decl))
 		}
-	}
-
-	return res
 }
 
 // Adds native functions and variables to the global scope.
-// These can be dummy types because they won't go in diagnostics.
+// These can have dummy types because they won't go in diagnostics.
 func (a *Analyzer) addNatives() {
 	// fn print()
 	a.globals = append(a.globals, newNative("print", types.TypeFunction{
@@ -80,9 +90,7 @@ func (a *Analyzer) addNatives() {
 	}))
 }
 
-func (a *Analyzer) topLevelFnDecl(
-	decl ast.FnDeclaration,
-) diagnostic.Diagnostic {
+func (a *Analyzer) topLevelFnDecl(decl ast.FnDeclaration) (Global, diagnostic.Diagnostic) {
 	// Check the return type. Maybe extract this in a different and reusable function.
 
 	// the token can be a dummy one, since this won't be printed in the diagnostic, since void is concrete.
@@ -94,20 +102,20 @@ func (a *Analyzer) topLevelFnDecl(
 	}
 
 	if !typeIsConcrete(returnType.Data) {
-		return a.makeExpectedConcreteType(returnType)
+		return Global{}, a.makeExpectedConcreteType(returnType)
 	}
 	
 	paramTypes := []types.Type{}
 
 	for _, param := range decl.Parameters {
 		if param.Type == nil {
-			return a.makeExpectedTypeAnnotation(param.Name)
+			return Global{}, a.makeExpectedTypeAnnotation(param.Name)
 		}
 
 		paramTypes = append(paramTypes, *param.Type)
 	}
 
-	a.globals = append(a.globals, Global{
+	return Global{
 		name: decl.Name,
 		globalType: types.DummyType(types.TypeFunction{
 			Parameters: paramTypes,
@@ -117,48 +125,42 @@ func (a *Analyzer) topLevelFnDecl(
 		immutable: true,
 		initialized: false,
 		modified: false,
-	})
-
-	return nil
+	}, nil
 }
 
-func (a *Analyzer) topLevelVarDecl(
-	decl ast.VarDeclaration,
-) diagnostic.Diagnostic {
+func (a *Analyzer) topLevelVarDecl(decl ast.VarDeclaration) (Global, diagnostic.Diagnostic) {
 	if decl.Type == nil {
 		// type isn't annotated. infer it shallowly.
 		expr, diag := a.analyzeExpression(decl.Init, true); if diag != nil {
-			return diag
+			return Global{}, diag
 		}
 
 		// type of expr will be the type of the variable, if applicable (checked later).
 		// must be concrete; otherwise, it will require a type annotation.
 
 		if !typeIsConcrete(expr.Data.Type()) {
-			return a.makeExpectedTypeAnnotation(decl.Name)
+			return Global{}, a.makeExpectedTypeAnnotation(decl.Name)
 		}
 		
 		// type must be dummy because it is inferred and therefore not in the source code.
-		a.globals = append(a.globals, Global{
+		return Global{
 			name: decl.Name,
 			globalType: types.DummyType(expr.Data.Type()),
 
 			immutable: decl.Immutable,
 			initialized: false,
 			modified: false,
-		})
+		}, nil
 	} else {
 		// type is annotated; add the variable with its type.
 		// actual type checking is done later.
-		a.globals = append(a.globals, Global{
+		return Global{
 			name: decl.Name,
 			globalType: *decl.Type,
 
 			immutable: decl.Immutable,
 			initialized: false,
 			modified: false,
-		})
+		}, nil
 	}
-
-	return nil
 }
