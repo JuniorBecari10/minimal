@@ -124,11 +124,8 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 		}
 
 		case ast.ExprStatement: {
-			stmt, diag := a.exprStmt(stmt); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(stmt), nil
+			stmt, diag := a.exprStmt(stmt)
+			return newStmt(stmt), diag
 		}
 	}
 
@@ -166,7 +163,9 @@ func (a *Analyzer) returnStmt(
 		}, nil
 	}
 
-	expr, diag := a.analyzeExpression(*stmt.Expression, false); if diag != nil {
+	// TODO: use the function's expected return type to help inferring this type.
+	// also, add an expected type parameter to analyzeBlock, analyzeStatement and some statements, such as return and out.
+	expr, diag := a.analyzeExpression(*stmt.Expression, false, nil); if diag != nil {
 		return tast.ReturnStatement{}, diag
 	}
 	
@@ -211,7 +210,8 @@ func (a *Analyzer) outStmt(
 		}, nil
 	}
 
-	expr, diag := a.analyzeExpression(*stmt.Expression, false); if diag != nil {
+	// TODO: use the block's expected return type to help inferring this type.
+	expr, diag := a.analyzeExpression(*stmt.Expression, false, nil); if diag != nil {
 		return tast.OutStatement{}, diag
 	}
 
@@ -227,7 +227,7 @@ func (a *Analyzer) outStmt(
 }
 
 func (a *Analyzer) forStmt(stmt ast.ForStatement) (tast.ForStatement, diagnostic.Diagnostic) {
-	iterable, diag := a.analyzeExpression(stmt.Iterable, false); if diag != nil {
+	iterable, diag := a.analyzeExpression(stmt.Iterable, false, nil); if diag != nil {
 		return tast.ForStatement{}, diag
 	}
 
@@ -254,7 +254,7 @@ func (a *Analyzer) forStmt(stmt ast.ForStatement) (tast.ForStatement, diagnostic
 }
 
 func (a *Analyzer) whileStmt(stmt ast.WhileStatement) (tast.WhileStatement, diagnostic.Diagnostic) {
-	condition, diag := a.analyzeExpression(stmt.Condition, false); if diag != nil {
+	condition, diag := a.analyzeExpression(stmt.Condition, false, nil); if diag != nil {
 		return tast.WhileStatement{}, diag
 	}
 
@@ -303,11 +303,16 @@ func (a *Analyzer) continueStmt(
 }
 
 func (a *Analyzer) exprStmt(stmt ast.ExprStatement) (tast.ExprStatement, diagnostic.Diagnostic) {
-	expr, diag := a.analyzeExpression(stmt.Expr, false); if diag != nil {
+	expr, diag := a.analyzeExpression(stmt.Expr, false, nil); if diag != nil {
 		return tast.ExprStatement{}, diag
+	}
+
+	var retDiag diagnostic.Diagnostic = nil
+	if _, ok := expr.Data.Type().(types.TypeVoid); !ok {
+		retDiag = a.makeWarnUnusedValueExprStmt(expr.Data.Type(), expr.Base.Token)
 	}
 
 	return tast.ExprStatement{
 		Expr: expr,
-	}, nil
+	}, retDiag
 }

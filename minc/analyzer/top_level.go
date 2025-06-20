@@ -131,7 +131,7 @@ func (a *Analyzer) topLevelFnDecl(decl ast.FnDeclaration) (Global, diagnostic.Di
 func (a *Analyzer) topLevelVarDecl(decl ast.VarDeclaration) (Global, diagnostic.Diagnostic) {
 	if decl.Type == nil {
 		// type isn't annotated. infer it shallowly.
-		expr, diag := a.analyzeExpression(decl.Init, true); if diag != nil {
+		expr, diag := a.analyzeExpression(decl.Init, true, nil); if diag != nil {
 			return Global{}, diag
 		}
 

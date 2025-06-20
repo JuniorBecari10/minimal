@@ -57,7 +57,7 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 }
 
 func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagnostic.Diagnostic) {
-	expr, diag := a.analyzeExpression(decl.Init, false); if diag != nil {
+	expr, diag := a.analyzeExpression(decl.Init, false, nil); if diag != nil {
 		return tast.VarDeclaration{}, diag
 	}
 

@@ -32,6 +32,15 @@ func (a *Analyzer) makeWarnNotUsed(name token.Token) diagnostic.Diagnostic {
 	)
 }
 
+func (a *Analyzer) makeWarnUnusedValueExprStmt(gotType types.TypeData, tok token.Token) diagnostic.Diagnostic {
+	return a.makeWarningHelpDiagnostic(
+		fmt.Sprintf("Unused value of expression of type '%s'.", gotType.String()),
+		diagnostic.WARN_UNREACHABLE,
+		[]string{ "Wrap it with 'void()' to intentionally discard it." },
+		tok,
+	)
+}
+
 func (a *Analyzer) makeExpectedConcreteType(t types.Type) diagnostic.Diagnostic {
 	return a.makeHelpDiagnostic(
 		fmt.Sprintf("Expected concrete type, but '%s' is abstract.", t.Token.FormatError()),

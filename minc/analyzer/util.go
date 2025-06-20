@@ -107,6 +107,11 @@ func (a *Analyzer) endScope() {
 		if !a.locals[i].immutable && !a.locals[i].modified {
 			a.makeWarnNotModified(a.locals[i].name).PrintDiagnostic()
 		} else if !a.locals[i].used {
+			println(a.locals[i].depth)
+			if a.locals[i].depth == 1 && a.locals[i].name.Lexeme == "main" {
+				continue
+			}
+
 			a.makeWarnNotUsed(a.locals[i].name).PrintDiagnostic()
 		}
 	}

@@ -8,7 +8,8 @@ import (
 	"minc/types"
 )
 
-func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool) (tast.Expression, diagnostic.Diagnostic) {
+// expectedType is optional
+func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedType *types.TypeData) (tast.Expression, diagnostic.Diagnostic) {
 	newExpr := func(data tast.ExprData) tast.Expression {
 		return tast.Expression{
 			Base: tast.AstBase(e.Base),
@@ -51,7 +52,7 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool) (tast.Expre
 			return newExpr(tast.NilExpression{}), nil
 		
 		case ast.VoidExpression: {
-			expr, diag := a.analyzeVoidExpr(expr, shallow); if diag != nil {
+			expr, diag := a.analyzeVoidExpr(expr, shallow, expectedType); if diag != nil {
 				return tast.Expression{}, nil
 			}
 
@@ -122,13 +123,13 @@ func (a *Analyzer) analyzeAsExpr(expr ast.AsExpression, shallow bool) (tast.AsEx
     return tast.AsExpression{}, nil
 }
 
-func (a *Analyzer) analyzeVoidExpr(expr ast.VoidExpression, shallow bool) (tast.VoidExpression, diagnostic.Diagnostic) {
+func (a *Analyzer) analyzeVoidExpr(expr ast.VoidExpression, shallow bool, expectedType *types.TypeData) (tast.VoidExpression, diagnostic.Diagnostic) {
 	if expr.Expr == nil {
 		return tast.VoidExpression{
 			Expr: nil,
 		}, nil
 	} else {
-		expr, diag := a.analyzeExpression(*expr.Expr, shallow); if diag != nil {
+		expr, diag := a.analyzeExpression(*expr.Expr, shallow, expectedType); if diag != nil {
 			return tast.VoidExpression{}, diag
 		}
 
