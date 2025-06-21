@@ -6,6 +6,7 @@ import (
 	"minc/diagnostic"
 	"minc/tast"
 	"minc/types"
+	"minlib/token"
 )
 
 // expectedType is optional
@@ -34,32 +35,27 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			return newExpr(a.analyzeBoolExpr(expr)), nil
 		
 		case ast.RangeExpression: {
-			expr, diag := a.analyzeRangeExpr(expr, shallow); if diag != nil {
-                return tast.Expression{}, diag
-			}
-
-			return newExpr(expr), nil
+			expr, diag := a.analyzeRangeExpr(expr, shallow)
+			return newExpr(expr), diag
 		}
 		case ast.AsExpression: {
-			expr, diag := a.analyzeAsExpr(expr, shallow); if diag != nil {
-				return tast.Expression{}, nil
-			}
-
-			return newExpr(expr), nil
+			expr, diag := a.analyzeAsExpr(expr, shallow)
+			return newExpr(expr), diag
 		}
 
 		case ast.NilExpression:
 			return newExpr(tast.NilExpression{}), nil
 		
 		case ast.VoidExpression: {
-			expr, diag := a.analyzeVoidExpr(expr, shallow, expectedType); if diag != nil {
-				return tast.Expression{}, nil
-			}
-
-			return newExpr(expr), nil
+			expr, diag := a.analyzeVoidExpr(expr, shallow, expectedType)
+			return newExpr(expr), diag
 		}
 
-		case ast.UnaryExpression: {}
+		case ast.UnaryExpression: {
+			expr, diag := a.analyzeUnaryExpr(expr, shallow, expectedType)
+			return newExpr(expr), diag
+		}
+
 		case ast.LogicalExpression: {}
 		case ast.BinaryExpression: {}
 		case ast.CallExpression: {}
@@ -137,6 +133,41 @@ func (a *Analyzer) analyzeVoidExpr(expr ast.VoidExpression, shallow bool, expect
 			Expr: &expr,
 		}, nil
 	}
+}
+
+func (a *Analyzer) analyzeUnaryExpr(expr ast.UnaryExpression, shallow bool, expectedType *types.TypeData) (tast.UnaryExpression, diagnostic.Diagnostic) {
+	// not and -. assuming the parser checked this.
+
+	operand, diag := a.analyzeExpression(expr.Operand, shallow, expectedType); if diag != nil {
+		return tast.UnaryExpression{}, diag
+	}
+
+	if expr.Operator.Kind == token.TokenNotKw {
+		// must be boolean.
+		if _, ok := operand.Data.Type().(types.TypeBool); !ok {
+			return tast.UnaryExpression{}, a.makeExpectedType(types.TypeBool{}, operand.Data.Type(), operand.Base.Token)
+		}
+	} else if expr.Operator.Kind == token.TokenMinus {
+		// must be numeric (int / float).
+		if typeIsNumeric(operand.Data.Type()) {
+			return tast.UnaryExpression{}, a.makeExpectedType(types.TypeBool{}, operand.Data.Type(), operand.Base.Token)
+		}
+	} else {
+		panic(fmt.Sprintf("Internal: Invalid unary operator: '%s'", expr.Operator.Kind))
+	}
+
+	return tast.UnaryExpression{
+		Operand: operand,
+		Operator: expr.Operator,
+	}, nil
+}
+
+func (a *Analyzer) analyzeLogicalExpr(
+	expr ast.LogicalExpression,
+	shallow bool,
+	expectedType *types.TypeData,
+) (tast.LogicalExpression, diagnostic.Diagnostic) {
+	// all logical expressions have their operands as booleans.
 }
 
 func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tast.BlockExpression, diagnostic.Diagnostic) {

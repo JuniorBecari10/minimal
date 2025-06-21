@@ -1,10 +1,32 @@
 package analyzer
 
 import (
+	"minc/ast"
+	"minc/diagnostic"
 	"minc/tast"
 	"minc/types"
 	"minlib/token"
 )
+
+func (a *Analyzer) analyzeBinary(
+	left, right ast.Expression,
+	shallow bool,
+	expectedType types.TypeData,
+) (tast.Expression, tast.Expression, diagnostic.Diagnostic) {
+	errReturn := func(diag diagnostic.Diagnostic) (tast.Expression, tast.Expression, diagnostic.Diagnostic) {
+		return tast.Expression{}, tast.Expression{}, diag
+	}
+
+	leftTyped, diag := a.analyzeExpression(left, shallow, &expectedType); if diag != nil {
+		return errReturn(diag)
+	}
+
+	rightTyped, diag := a.analyzeExpression(right, shallow, &expectedType); if diag != nil {
+		return errReturn(diag)
+	}
+
+	
+}
 
 func newNative(name string, globalType types.TypeData) Global {
 	return Global{
@@ -34,6 +56,11 @@ func typeIsIterable(t types.TypeData) bool {
 		default:
 			return false
 	}
+}
+
+func typeIsNumeric(t types.TypeData) bool {
+	_, ok := tryCoercing(t, types.TypeFloat{}) // int and float will succeed.
+	return ok
 }
 
 // assumes that 'iterable' has an iterable type.

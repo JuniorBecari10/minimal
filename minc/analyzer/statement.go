@@ -54,11 +54,8 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 
 	switch stmt := s.Data.(type) {
 		case ast.FnDeclaration: {
-			decl, diag := a.fnDecl(stmt); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(decl), nil
+			decl, diag := a.fnDecl(stmt)
+			return newStmt(decl), diag
 		}
 
 		case ast.RecordDeclaration: {
@@ -67,60 +64,38 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 		}
 
 		case ast.ReturnStatement: {
-			stmt, diag := a.returnStmt(s, stmt, inferredType, mode); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(stmt), nil
+			stmt, diag := a.returnStmt(s, stmt, inferredType, mode)
+			return newStmt(stmt), diag
 		}
 
 		case ast.OutStatement: {
-			stmt, diag := a.outStmt(s, stmt, inferredType); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(stmt), nil
+			stmt, diag := a.outStmt(s, stmt, inferredType)
+			return newStmt(stmt), diag
 		}
 
 		case ast.VarDeclaration: {
-			decl, diag := a.varDecl(stmt); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(decl), nil
+			decl, diag := a.varDecl(stmt)
+			return newStmt(decl), diag
 		}
 
 		case ast.WhileStatement: {
-			stmt, diag := a.whileStmt(stmt); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(stmt), nil
+			stmt, diag := a.whileStmt(stmt)
+			return newStmt(stmt), diag
 		}
 
 		case ast.ForStatement: {
-			stmt, diag := a.forStmt(stmt); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(stmt), nil
+			stmt, diag := a.forStmt(stmt)
+			return newStmt(stmt), diag
 		}
 
-		// when mode is loop, it sets its type to void, otherwise, never.
 		case ast.BreakStatement: {
-			stmt, diag := a.breakStmt(s, inferredType, mode); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(stmt), nil
+			stmt, diag := a.breakStmt(s, inferredType, mode)
+			return newStmt(stmt), diag
 		}
 
 		case ast.ContinueStatement: {
-			stmt, diag := a.continueStmt(s, inferredType, mode); if diag != nil {
-				return tast.Statement{}, diag
-			}
-
-			return newStmt(stmt), nil
+			stmt, diag := a.continueStmt(s, inferredType, mode)
+			return newStmt(stmt), diag
 		}
 
 		case ast.ExprStatement: {
@@ -170,7 +145,7 @@ func (a *Analyzer) returnStmt(
 	}
 	
 	// set the inferred type to be the type of the expression, if it's a function's body.
-	if inferredType == nil {
+	if *inferredType == nil {
 		if mode == MODE_FUNCTION {
 			infer := expr.Data.Type()
 			*inferredType = &infer
