@@ -4,13 +4,13 @@
 
 # Usage:
 
-# make                - builds everything
-# make clean          - removes all built binaries
-# make min            - just builds 'min'
-# make minc           - just builds 'minc'
-# make minvm          - builds 'minc' in both debug and release mode
-# make minvm-debug    - builds 'minvm' in debug mode
-# make minvm-release  - builds 'minvm' in release mode
+# make                - builds all binaries.
+# make clean          - removes all built binaries.
+# make min            - just builds 'min'.
+# make minc           - just builds 'minc'.
+# make minvm          - builds 'minvm' in both debug and release mode.
+# make minvm-debug    - builds 'minvm' in debug mode.
+# make minvm-release  - builds 'minvm' in release mode.
 
 OUT := bin
 
@@ -45,4 +45,3 @@ minvmr: $(OUT)
 	$(MAKE) -C minvm release
 
 .PHONY: all clean min minc minvmd minvmr
-

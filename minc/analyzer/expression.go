@@ -56,21 +56,34 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			return newExpr(expr), diag
 		}
 
-		case ast.LogicalExpression: {}
-		case ast.BinaryExpression: {}
-		case ast.CallExpression: {}
-		case ast.GroupExpression: {}
+		case ast.LogicalExpression: {
+			expr, diag := a.analyzeLogicalExpr(expr, shallow)
+			return newExpr(expr), diag
+		}
+
+		case ast.BinaryExpression: {
+			expr, diag := a.analyzeBinaryExpr(expr, shallow, expectedType)
+			return newExpr(expr), diag
+		}
+
+		case ast.CallExpression: {
+			expr, diag := a.analyzeCallExpr(expr, shallow, expectedType)
+			return newExpr(expr), diag
+		}
+
+		case ast.GroupExpression: {
+			expr, diag := a.analyzeGroupExpr(expr, shallow, expectedType)
+			return newExpr(expr), diag
+		}
+
 		case ast.IdentifierExpression: {}
 		case ast.SelfExpression: {}
 		case ast.IdentifierAssignmentExpression: {}
 		case ast.FnExpression: {}
 
 		case ast.BlockExpression: {
-			expr, diag := a.analyzeBlockExpr(expr, shallow); if diag != nil {
-				return tast.Expression{}, nil
-			}
-
-			return newExpr(expr), nil
+			expr, diag := a.analyzeBlockExpr(expr, shallow)
+			return newExpr(expr), diag
 		}
 		
 		case ast.IfExpression: {}
@@ -78,7 +91,7 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 		case ast.SetPropertyExpression: {}
 	}
 
-	panic(fmt.Sprintf("Internal: invalid expression: %#v", e))
+	panic(fmt.Sprintf("Internal: Invalid expression: %#v", e))
 }
 
 func (a *Analyzer) analyzeIntExpr(expr ast.IntExpression) tast.IntExpression {
@@ -162,12 +175,72 @@ func (a *Analyzer) analyzeUnaryExpr(expr ast.UnaryExpression, shallow bool, expe
 	}, nil
 }
 
-func (a *Analyzer) analyzeLogicalExpr(
-	expr ast.LogicalExpression,
-	shallow bool,
-	expectedType *types.TypeData,
-) (tast.LogicalExpression, diagnostic.Diagnostic) {
+// expected type is 'bool'.
+func (a *Analyzer) analyzeLogicalExpr(expr ast.LogicalExpression, shallow bool) (tast.LogicalExpression, diagnostic.Diagnostic) {
 	// all logical expressions have their operands as booleans.
+	left, right, diag := a.analyzeBinary(expr.Left, expr.Right, shallow, types.TypeBool{})
+
+	return tast.LogicalExpression{
+		Left: left,
+		Right: right,
+		Operator: expr.Operator,
+		ShortCircuit: expr.ShortCircuit,
+	}, diag
+}
+
+func (a *Analyzer) analyzeBinaryExpr(expr ast.BinaryExpression, shallow bool, expectedType *types.TypeData) (tast.BinaryExpression, diagnostic.Diagnostic) {
+	// the type of this expression will set the expected type of the binary expression.
+	left, diag := a.analyzeExpression(expr.Left, shallow, expectedType); if diag != nil {
+		return tast.BinaryExpression{}, diag
+	}
+
+	left, right, diag := a.analyzeBinary(expr.Left, expr.Right, shallow, left.Data.Type())
+
+	return tast.BinaryExpression{
+		Left: left,
+		Right: right,
+		Operator: expr.Operator,
+	}, diag
+}
+
+func (a *Analyzer) analyzeCallExpr(expr ast.CallExpression, shallow bool, expectedType *types.TypeData) (tast.CallExpression, diagnostic.Diagnostic) {
+	callee, diag := a.analyzeExpression(expr.Callee, shallow, expectedType); if diag != nil {
+		return tast.CallExpression{}, diag
+	}
+
+	// TODO: coerce?
+	// for now we won't coerce.
+
+	fn, ok := callee.Data.Type().(types.TypeFunction); if !ok {
+		return tast.CallExpression{}, a.makeExpectedCallableType(callee.Data.Type(), callee.Base.Token)
+	}
+
+	typedArgs := []tast.Expression{}
+
+	for i, param := range expr.Arguments {
+		arg, diag := a.analyzeExpression(param, shallow, &fn.Parameters[i].Data); if diag != nil {
+			return tast.CallExpression{}, diag
+		}
+
+		if ok := canCoerce(arg.Data.Type(), fn.Parameters[i].Data); !ok {
+			return tast.CallExpression{}, a.makeExpectedType(fn.Parameters[i].Data, arg.Data.Type(), arg.Base.Token)
+		}
+
+		typedArgs = append(typedArgs, arg)
+	}
+
+	return tast.CallExpression{
+		Callee: callee,
+		Arguments: typedArgs,
+	}, nil
+}
+
+func (a *Analyzer) analyzeGroupExpr(expr ast.GroupExpression, shallow bool, expectedType *types.TypeData) (tast.GroupExpression, diagnostic.Diagnostic) {
+	inside, diag := a.analyzeExpression(expr.Expr, shallow, expectedType)
+			
+	return tast.GroupExpression{
+		Expr: inside,
+	}, diag
 }
 
 func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tast.BlockExpression, diagnostic.Diagnostic) {

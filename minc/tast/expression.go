@@ -36,6 +36,12 @@ type AsExpression struct {
 	ConvertType types.Type
 }
 
+// almost the same as AsExpression (the type does not contain token information), but represents an implicit, restricted conversion.
+type CoerceExpression struct {
+	Operand Expression
+	ConvertType types.TypeData
+}
+
 type NilExpression ast.NilExpression
 
 type VoidExpression struct {
@@ -116,11 +122,11 @@ type SetPropertyExpression struct {
 
 // ---
 
-func (x IntExpression) Type() types.TypeData   { return types.TypeInt{} }
-func (x FloatExpression) Type() types.TypeData { return types.TypeFloat{} }
-func (x StringExpression) Type() types.TypeData { return types.TypeStr{} }
-func (x CharExpression) Type() types.TypeData  { return types.TypeChar{} }
-func (x BoolExpression) Type() types.TypeData  { return types.TypeBool{} }
+func (IntExpression) Type() types.TypeData    { return types.TypeInt{} }
+func (FloatExpression) Type() types.TypeData  { return types.TypeFloat{} }
+func (StringExpression) Type() types.TypeData { return types.TypeStr{} }
+func (CharExpression) Type() types.TypeData   { return types.TypeChar{} }
+func (BoolExpression) Type() types.TypeData   { return types.TypeBool{} }
 
 func (x RangeExpression) Type() types.TypeData {
 	return types.TypeRange{
@@ -136,8 +142,13 @@ func (x AsExpression) Type() types.TypeData {
 	return types.TypeInt{}
 }
 
-func (x NilExpression) Type() types.TypeData   { return types.TypeUntypedNil{} }
-func (x VoidExpression) Type() types.TypeData  { return types.TypeVoid{} }
+func (x CoerceExpression) Type() types.TypeData {
+	// TODO: add helper function that calculates the actual type
+	return types.TypeInt{}
+}
+
+func (NilExpression) Type() types.TypeData   { return types.TypeUntypedNil{} }
+func (VoidExpression) Type() types.TypeData  { return types.TypeVoid{} }
 
 func (x UnaryExpression) Type() types.TypeData {
 	return x.Operand.Data.Type()
@@ -170,7 +181,7 @@ func (x SelfExpression) Type() types.TypeData {
 	return x.VariableType.Data
 }
 
-func (x IdentifierAssignmentExpression) Type() types.TypeData {
+func (IdentifierAssignmentExpression) Type() types.TypeData {
 	return types.TypeVoid{}
 }
 
@@ -211,6 +222,6 @@ func (x GetPropertyExpression) Type() types.TypeData {
 	return x.PropertyType.Data
 }
 
-func (x SetPropertyExpression) Type() types.TypeData {
+func (SetPropertyExpression) Type() types.TypeData {
 	return types.TypeVoid{}
 }

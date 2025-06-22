@@ -25,7 +25,18 @@ func (a *Analyzer) analyzeBinary(
 		return errReturn(diag)
 	}
 
-	
+	leftCoerced, ok := coerceExpr(leftTyped, expectedType); if !ok {
+		return errReturn(a.makeExpectedType(expectedType, leftTyped.Data.Type(), left.Base.Token))
+	}
+
+	rightCoerced, ok := coerceExpr(rightTyped, expectedType); if !ok {
+		return errReturn(a.makeExpectedType(expectedType, rightTyped.Data.Type(), right.Base.Token))
+	}
+
+	leftTyped = leftCoerced
+	rightTyped = rightCoerced
+
+	return leftTyped, rightTyped, nil
 }
 
 func newNative(name string, globalType types.TypeData) Global {
@@ -41,6 +52,7 @@ func newNative(name string, globalType types.TypeData) Global {
 
 func typeIsConcrete(t types.TypeData) bool {
 	switch t.(type) {
+		// the abstract types (nil and unknown).
 		case types.TypeUntypedNil, types.TypeUnknown:
 			return false
 
@@ -59,9 +71,19 @@ func typeIsIterable(t types.TypeData) bool {
 }
 
 func typeIsNumeric(t types.TypeData) bool {
-	_, ok := tryCoercing(t, types.TypeFloat{}) // int and float will succeed.
+	ok := canCoerce(t, types.TypeFloat{}) // int and float will succeed.
 	return ok
 }
+
+/*
+func (a *Analyzer) assertType(t, expected types.TypeData, tok token.Token) diagnostic.Diagnostic {
+	if !canCoerce(t, expected) {
+		return a.makeExpectedType(expected, t, tok)
+	}
+
+	return nil
+}
+*/
 
 // assumes that 'iterable' has an iterable type.
 func getIteratorType(iterable tast.Expression) types.TypeData {
@@ -77,12 +99,31 @@ func getIteratorType(iterable tast.Expression) types.TypeData {
 	}
 }
 
-// this also returns true if the types are equal, or the types inside them can coerce into the other too.
-// this returns t twice in two expressions in order for the caller to be able to call this in an assignment if
-// if t, ok := tryCoercing(.., ..); ok { .. }
-func tryCoercing(from, to types.TypeData) (types.TypeData, bool) {
+// wraps the given expression in a CoerceExpression, if the types can be coerced, but not equal.
+func coerceExpr(expr tast.Expression, convertType types.TypeData) (tast.Expression, bool) {
+	// if the types are equal, there's no need to coerce.
+	if expr.Data.Type() == convertType {
+		return expr, true
+	}
+
+	ok := canCoerce(expr.Data.Type(), convertType)
+
+	if !ok {
+		return tast.Expression{}, ok
+	}
+
+	return tast.Expression{
+		Base: expr.Base,
+		Data: tast.CoerceExpression{
+			Operand: expr,
+			ConvertType: convertType,
+		},
+	}, true
+}
+
+func canCoerce(from, to types.TypeData) bool {
 	t := mergeTypes(from, to)
-	return t, t != nil
+	return t != nil
 }
 
 func mergeTypes(from, to types.TypeData) types.TypeData {
@@ -130,11 +171,15 @@ func (a *Analyzer) endScope() {
 			return
 		}
 
+		// show warnings.
+
 		// var + not modified
 		if !a.locals[i].immutable && !a.locals[i].modified {
 			a.makeWarnNotModified(a.locals[i].name).PrintDiagnostic()
 		} else if !a.locals[i].used {
 			println(a.locals[i].depth)
+
+			// ignore main function
 			if a.locals[i].depth == 1 && a.locals[i].name.Lexeme == "main" {
 				continue
 			}

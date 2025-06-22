@@ -234,9 +234,11 @@ func (a *Analyzer) whileStmt(stmt ast.WhileStatement) (tast.WhileStatement, diag
 	}
 
 	// check if it's a boolean or it can coerce to it (future-proof, since currently there is no type that can coerce to a bool).
-	if _, ok := tryCoercing(condition.Data.Type(), types.TypeBool{}); !ok {
+	coerced, ok := coerceExpr(condition, types.TypeBool{}); if !ok {
 		return tast.WhileStatement{}, a.makeExpectedType(types.TypeBool{}, condition.Data.Type(), condition.Base.Token)
 	}
+
+	condition = coerced
 
 	block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
 		return tast.WhileStatement{}, diagnostic.HandledDiagnostic{}

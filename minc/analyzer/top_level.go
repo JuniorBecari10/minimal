@@ -9,7 +9,6 @@ import (
 
 // pre-declares all top-level declarations in order to properly do name resolution.
 // it doesn't do all the required setup, it just adds the name to the list with its type, using shallow inference.
-// TODO: make the top-level not get analyzed twice
 func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 	res := RES_OK
 

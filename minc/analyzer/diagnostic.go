@@ -58,16 +58,22 @@ func (a *Analyzer) makeTypeAnnotationsNeeded(token token.Token) diagnostic.Diagn
 }
 
 func (a *Analyzer) makeExpectedIterableType(t types.Type) diagnostic.Diagnostic {
-	return a.makeHelpDiagnostic(
+	return a.makeDiagnostic(
 		fmt.Sprintf("Expected iterable type, but '%s' is not.", t.Token.FormatError()),
-		[]string{ "Please annotate this with an actual type." },
 		t.Token,
+	)
+}
+
+func (a *Analyzer) makeExpectedCallableType(t types.TypeData, tok token.Token) diagnostic.Diagnostic {
+	return a.makeDiagnostic(
+		fmt.Sprintf("Expected callable type, but '%s' is not.", t.String()),
+		tok,
 	)
 }
 
 func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
-		fmt.Sprintf("Expected type '%s' (or one that can be coerced to it), but got '%s', which cannot.", expected.String(), got.String()),
+		fmt.Sprintf("Expected type '%s', but got '%s', which cannot be coerced to it.", expected.String(), got.String()),
 		tok,
 	)
 }
@@ -85,7 +91,7 @@ func (a *Analyzer) makeDiagnostic(message string, token token.Token) diagnostic.
 			Message: message,
 			Span: diagnostic.Span{
 				Pos: token.Pos,
-				Length: len(token.Lexeme),
+				Length: token.Length(),
 			},
 			FileData: a.fileData,
 		},
@@ -98,7 +104,7 @@ func (a *Analyzer) makeHelpDiagnostic(message string, help []string, token token
 			Message: message,
 			Span: diagnostic.Span{
 				Pos: token.Pos,
-				Length: len(token.Lexeme),
+				Length: token.Length(),
 			},
 			FileData: a.fileData,
 		},
@@ -112,7 +118,7 @@ func (a *Analyzer) makeWarningDiagnostic(message string, warnType diagnostic.War
 			Message: message,
 			Span: diagnostic.Span{
 				Pos: token.Pos,
-				Length: len(token.Lexeme),
+				Length: token.Length(),
 			},
 			FileData: a.fileData,
 		},
@@ -131,7 +137,7 @@ func (a *Analyzer) makeWarningHelpDiagnostic(
 			Message: message,
 			Span: diagnostic.Span{
 				Pos: token.Pos,
-				Length: len(token.Lexeme),
+				Length: token.Length(),
 			},
 			FileData: a.fileData,
 		},

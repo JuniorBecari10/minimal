@@ -45,17 +45,11 @@ type Global struct {
 	used bool
 }
 
-type Upvalue struct {
-	index int
-	isLocal bool
-}
-
 type Analyzer struct {
 	ast ast.Ast
 
 	locals []Local
 	globals []Global
-	upvalues []Upvalue
 
 	scopeDepth uint32
 	isInsideLoop bool
@@ -69,7 +63,6 @@ func New(ast ast.Ast, fileData *file.FileData) *Analyzer {
 		
 		locals: []Local{},
 		globals: []Global{},
-		upvalues: []Upvalue{},
 
 		scopeDepth: 0,
 		isInsideLoop: false,

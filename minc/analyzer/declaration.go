@@ -33,12 +33,14 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 	}
 
 	// if the return type is unknown, it will coerce.
-	mergedType, ok := tryCoercing(body.Type(), returnType.Data); if !ok {
+	coerced, ok := coerceExpr(tast.Expression{
+		Base: tast.AstBase{},
+		Data: body,
+	}, returnType.Data); if !ok {
 		return tast.FnDeclaration{}, a.makeExpectedType(returnType.Data, body.Type(), returnType.Token)
 	}
 
-	// merge the types to one that supports both.
-	returnType.Data = mergedType
+	returnType.Data = coerced.Data.Type()
 
 	a.addVariable(decl.Name, types.Type{
 		Token: decl.Name,
@@ -75,10 +77,15 @@ func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagno
 			Type: varType,
 		}, nil
 	} else {
-		if _, ok := tryCoercing(expr.Data.Type(), decl.Type.Data); !ok {
+		if ok := canCoerce(expr.Data.Type(), decl.Type.Data); !ok {
 			return tast.VarDeclaration{}, a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
 		}
-		
+
+		var ok bool
+		expr, ok = coerceExpr(expr, decl.Type.Data); if !ok {
+			return tast.VarDeclaration{}, a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
+		}
+
 		a.addVariable(decl.Name, *decl.Type, decl.Immutable)
 
 		return tast.VarDeclaration{

@@ -33,3 +33,11 @@ func (t Token) FormatError() string {
 			return string(t.Kind)
 	}
 }
+
+func (t Token) Length() int {
+	if t.Kind == TokenStringLiteral {
+		return len(t.Lexeme) + 2
+	} else {
+		return len(t.Lexeme)
+	}
+}

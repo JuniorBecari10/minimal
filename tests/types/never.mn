@@ -1,4 +1,7 @@
 fn main() {
+    // This variable should be removed in dead-code analysis.
+    // All statements past return inside the block should be removed too.
+    
     let x = {
         return; // this poisons the block with the 'never' type, making the compiler warn the user.
     };

@@ -38,7 +38,7 @@ func (p *Parser) makeDiagnostic(message string) diagnostic.SimpleDiagnostic {
 			Message: message,
 			Span: diagnostic.Span{
 				Pos: p.current.Pos,
-				Length: len(p.current.Lexeme),
+				Length: p.current.Length(),
 			},
 			FileData: p.fileData,
 		},

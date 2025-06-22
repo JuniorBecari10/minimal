@@ -1,3 +1,6 @@
 fn main() {
-    println(1 + false); // Runtime error - type error
+    // Type errors.
+
+    20 and false;
+    true and "hi";
 }
