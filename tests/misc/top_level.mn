@@ -2,4 +2,3 @@ var x; // Error
 let y = 10;
 
 fn main() { }
-

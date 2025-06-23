@@ -1,0 +1,3 @@
+// (line 2, col 5) Expected identifier after 'let' keyword, but got end.
+let
+//  ^ here

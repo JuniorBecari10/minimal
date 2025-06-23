@@ -26,7 +26,7 @@ func (p *Parser) advance() (token.Token, diagnostic.Diagnostic) {
 	p.previous = p.current
 	p.current = p.next
 	
-	next, diag := p.lexer.Lex()
+	next, diag := p.lexer.Lex(p.next)
 
 	if diag != nil {
 		p.hadLexerError = true

@@ -48,7 +48,7 @@ func New(source string, fileData *file.FileData) *Parser {
 }
 
 func (p *Parser) setInitialTokens() ParserResult {
-	current, diag := p.lexer.Lex()
+	current, diag := p.lexer.Lex(token.StartToken())
 	
 	if diag != nil {
 		diag.PrintDiagnostic()
@@ -59,7 +59,7 @@ func (p *Parser) setInitialTokens() ParserResult {
 
 	// ---
 
-	next, diag := p.lexer.Lex()
+	next, diag := p.lexer.Lex(p.current)
 	
 	if diag != nil {
 		diag.PrintDiagnostic()

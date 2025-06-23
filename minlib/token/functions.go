@@ -2,7 +2,6 @@ package token
 
 import (
 	"fmt"
-	"minlib/file"
 )
 
 func StartToken() Token {
@@ -11,13 +10,15 @@ func StartToken() Token {
 	}
 }
 
-func EndToken(data *file.FileData) Token {
+func EndToken(lastToken Token) Token {
+	// 1 more to keep a space between the tokens and guarantee they won't merge, if both are made of letters (keywords and identifiers).
+	// let _
+	//     ^ here
+	lastToken.Pos.Col += uint32(len(lastToken.Lexeme) + 1)
+
 	return Token{
 		Kind: TokenEnd,
-		Pos: Position{
-			Line: uint32(len(data.Lines) + 1),
-			Col: uint32(len(data.Lines[len(data.Lines)-1]) + 2),
-		},
+		Pos: lastToken.Pos,
 		Lexeme: "",
 	}
 }

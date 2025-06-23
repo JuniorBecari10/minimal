@@ -34,7 +34,7 @@ func New(source string, fileData *file.FileData) *Lexer {
 	}
 }
 
-func (l *Lexer) Lex() (token.Token, diagnostic.Diagnostic) {
+func (l *Lexer) Lex(lastToken token.Token) (token.Token, diagnostic.Diagnostic) {
 	for strings.IndexByte(" \r\t\n", l.peek(0)) != -1 {
 		l.advance()
 	}
@@ -45,7 +45,7 @@ func (l *Lexer) Lex() (token.Token, diagnostic.Diagnostic) {
 	c := l.advance()
 	
 	if c == 0 {
-		return token.EndToken(l.fileData), nil
+		return token.EndToken(lastToken), nil
 	}
 
 	switch c {
@@ -83,7 +83,7 @@ func (l *Lexer) Lex() (token.Token, diagnostic.Diagnostic) {
 				}
 
 				// Try to lex again another token
-				return l.Lex()
+				return l.Lex(lastToken)
 			} else if l.match('=') {
 				return l.makeToken(token.TokenSlashEqual), nil
 			} else {
