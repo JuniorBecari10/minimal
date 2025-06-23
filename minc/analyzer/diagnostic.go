@@ -78,6 +78,13 @@ func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Toke
 	)
 }
 
+func (a *Analyzer) makeExpectedMain() diagnostic.Diagnostic {
+	return a.makeHeadDiagnostic(
+		"File must have a main function.",
+		[]string { "Declare it using the following signature: 'fn main()'." },
+	)
+}
+
 func (a *Analyzer) makeBreakContinueOutsideLoop(tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
 		fmt.Sprintf("'%s' statement is outside of a loop.", tok.Lexeme),
@@ -95,6 +102,14 @@ func (a *Analyzer) makeDiagnostic(message string, token token.Token) diagnostic.
 			},
 			FileData: a.fileData,
 		},
+	}
+}
+
+func (a *Analyzer) makeHeadDiagnostic(message string, help []string) diagnostic.HeadHelpDiagnostic {
+	return diagnostic.HeadHelpDiagnostic{
+		Message: message,
+		FileData: a.fileData,
+		Help: help,
 	}
 }
 

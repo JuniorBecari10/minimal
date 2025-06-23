@@ -1,6 +1,9 @@
 package token
 
-import "fmt"
+import (
+	"fmt"
+	"minlib/file"
+)
 
 func StartToken() Token {
 	return Token{
@@ -8,9 +11,14 @@ func StartToken() Token {
 	}
 }
 
-func EndToken() Token {
+func EndToken(data *file.FileData) Token {
 	return Token{
 		Kind: TokenEnd,
+		Pos: Position{
+			Line: uint32(len(data.Lines) + 1),
+			Col: uint32(len(data.Lines[len(data.Lines)-1]) + 2),
+		},
+		Lexeme: "",
 	}
 }
 

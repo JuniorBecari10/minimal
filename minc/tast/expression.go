@@ -130,10 +130,7 @@ func (BoolExpression) Type() types.TypeData   { return types.TypeBool{} }
 
 func (x RangeExpression) Type() types.TypeData {
 	return types.TypeRange{
-		Inside: types.Type{
-			Token: token.EndToken(),
-			Data: x.Start.Data.Type(),
-		},
+		Inside: types.DummyType(x.Start.Data.Type()),
 	}
 }
 
@@ -189,10 +186,7 @@ func (x FnExpression) Type() types.TypeData {
 	parameterTypes := make([]types.Type, 0, len(x.Parameters))
 	
 	for _, param := range x.Parameters {
-		type_ := types.Type{
-			Token: token.EndToken(),
-			Data: types.TypeUnknown{},
-		}
+		type_ := types.DummyType(types.TypeUnknown{})
 
 		if param.Type != nil {
             type_ = *param.Type

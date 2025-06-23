@@ -12,7 +12,7 @@ type DiagnosticType string
 
 const (
 	TYPE_ERROR DiagnosticType = "Error"
-	TYPE_WARNING = "Warning"
+	TYPE_WARNING DiagnosticType = "Warning"
 )
 
 type WarningType int
@@ -53,6 +53,12 @@ type WarningHelpDiagnostic struct {
 	DiagnosticBase
 	WarnType WarningType
 	Help []string
+}
+
+type HeadHelpDiagnostic struct {
+	Message string
+	Help []string
+	FileData *file.FileData
 }
 
 // Used to return an empty diagnostic, signaling all its related ones have alread been handled.
@@ -132,6 +138,20 @@ func (WarningHelpDiagnostic) DiagnosticType() DiagnosticType {
 func (HandledDiagnostic) PrintDiagnostic() { }
 
 func (HandledDiagnostic) DiagnosticType() DiagnosticType {
+	return TYPE_ERROR
+}
+
+// ---
+
+func (h HeadHelpDiagnostic) PrintDiagnostic() {
+	eprintln("")
+	eprintf("[-] %s: %s\n", h.DiagnosticType(), h.Message)
+	eprintf(" |  [-] %s\n", h.FileData.Name)
+
+	printHelp(h.Help, "")
+}
+
+func (HeadHelpDiagnostic) DiagnosticType() DiagnosticType {
 	return TYPE_ERROR
 }
 

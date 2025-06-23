@@ -1,2 +1,4 @@
 var not_main = 10;
 fn also_not_main() { }
+
+fn main()

@@ -71,7 +71,8 @@ func New(ast ast.Ast, fileData *file.FileData) *Analyzer {
 	}
 }
 
-// Analyzes the code, does a lot of checkings, and if necessary or it's better, modify it, and returns a typed AST.
+// Analyzes the code, does a lot of checkings, and if necessary or it's better, modifies it,
+// and returns a typed AST, ready to be compiled.
 func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
 	a.addNatives()
 
@@ -80,5 +81,10 @@ func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
 	}
 
 	block, res := a.analyzeBlock(a.ast, MODE_NORMAL)
+	
+	endRes := a.endTopLevel(); if endRes == RES_ERROR {
+		res = endRes
+	}
+
 	return block.Stmts, res
 }

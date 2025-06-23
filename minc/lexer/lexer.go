@@ -45,7 +45,7 @@ func (l *Lexer) Lex() (token.Token, diagnostic.Diagnostic) {
 	c := l.advance()
 	
 	if c == 0 {
-		return token.EndToken(), nil
+		return token.EndToken(l.fileData), nil
 	}
 
 	switch c {

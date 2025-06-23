@@ -177,8 +177,6 @@ func (a *Analyzer) endScope() {
 		if !a.locals[i].immutable && !a.locals[i].modified {
 			a.makeWarnNotModified(a.locals[i].name).PrintDiagnostic()
 		} else if !a.locals[i].used {
-			println(a.locals[i].depth)
-
 			// ignore main function
 			if a.locals[i].depth == 1 && a.locals[i].name.Lexeme == "main" {
 				continue
@@ -189,6 +187,34 @@ func (a *Analyzer) endScope() {
 	}
 
 	a.locals = []Local{}
+}
+
+func (a *Analyzer) endTopLevel() AnalyzerResult {
+	res := RES_OK
+	foundMain := false
+
+	for _, global := range a.globals {
+		if global.name.Lexeme == "main" {
+			foundMain = true
+
+			mainType := types.TypeFunction{
+				Parameters: []types.Type{}, // no parameters
+				Return: types.DummyType(types.TypeVoid{}), // void
+			}
+
+			if !canCoerce(global.globalType.Data, mainType) {
+				a.makeExpectedType(mainType, global.globalType.Data, global.name).PrintDiagnostic()
+				res = RES_ERROR
+			}
+		}
+	}
+
+	if !foundMain {
+		a.makeExpectedMain().PrintDiagnostic()
+		res = RES_ERROR
+	}
+
+	return res
 }
 
 func (a *Analyzer) addVariable(name token.Token, varType types.Type, immutable bool) {
