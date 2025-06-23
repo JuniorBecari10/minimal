@@ -140,8 +140,7 @@ func (x AsExpression) Type() types.TypeData {
 }
 
 func (x CoerceExpression) Type() types.TypeData {
-	// TODO: add helper function that calculates the actual type
-	return types.TypeInt{}
+	return x.ConvertType
 }
 
 func (NilExpression) Type() types.TypeData   { return types.TypeUntypedNil{} }

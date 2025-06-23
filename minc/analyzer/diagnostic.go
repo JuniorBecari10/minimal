@@ -71,6 +71,13 @@ func (a *Analyzer) makeExpectedCallableType(t types.TypeData, tok token.Token) d
 	)
 }
 
+func (a *Analyzer) makeIncompatibleTypes(left, right types.TypeData, tok token.Token) diagnostic.Diagnostic {
+	return a.makeDiagnostic(
+		fmt.Sprintf("Incompatible types: '%s' and '%s'.", left.String(), right.String()),
+		tok,
+	)
+}
+
 func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
 		fmt.Sprintf("Expected type '%s', but got '%s', which cannot be coerced to it.", expected.String(), got.String()),

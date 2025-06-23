@@ -1,6 +1,12 @@
 fn main() {
     // Type errors.
-
     20 and false;
-    true and "hi";
+    // true and "hi";
+
+    true and false;
+    false and true;
+
+    1 + 1; // ok
+    1.5 + 1; // ok (1 is coerced)
+    1 + 1.5; // same
 }

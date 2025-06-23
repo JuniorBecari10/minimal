@@ -6,37 +6,48 @@ import (
 	"minc/tast"
 	"minc/types"
 	"minlib/token"
+	"reflect"
 )
 
+// if this outputs successfully, both expressions should have the same type, either coerced or not.
 func (a *Analyzer) analyzeBinary(
 	left, right ast.Expression,
+	operator token.Token,
 	shallow bool,
-	expectedType types.TypeData,
 ) (tast.Expression, tast.Expression, diagnostic.Diagnostic) {
 	errReturn := func(diag diagnostic.Diagnostic) (tast.Expression, tast.Expression, diagnostic.Diagnostic) {
 		return tast.Expression{}, tast.Expression{}, diag
 	}
 
-	leftTyped, diag := a.analyzeExpression(left, shallow, &expectedType); if diag != nil {
+	leftTyped, diag := a.analyzeExpression(left, shallow, nil); if diag != nil {
 		return errReturn(diag)
 	}
 
-	rightTyped, diag := a.analyzeExpression(right, shallow, &expectedType); if diag != nil {
+	rightTyped, diag := a.analyzeExpression(right, shallow, nil); if diag != nil {
 		return errReturn(diag)
 	}
 
-	leftCoerced, ok := coerceExpr(leftTyped, expectedType); if !ok {
-		return errReturn(a.makeExpectedType(expectedType, leftTyped.Data.Type(), left.Base.Token))
+	merged := mergeTypes(leftTyped.Data.Type(), rightTyped.Data.Type())
+
+	// try again, coercing to the other side.
+    if merged == nil {
+		merged = mergeTypes(rightTyped.Data.Type(), leftTyped.Data.Type())
 	}
 
-	rightCoerced, ok := coerceExpr(rightTyped, expectedType); if !ok {
-		return errReturn(a.makeExpectedType(expectedType, rightTyped.Data.Type(), right.Base.Token))
+	// if they still can't coerce, throw an error.
+	if merged == nil {
+		return errReturn(a.makeIncompatibleTypes(leftTyped.Data.Type(), rightTyped.Data.Type(), operator))
 	}
 
-	leftTyped = leftCoerced
-	rightTyped = rightCoerced
+	leftCoerced, ok := coerceExpr(leftTyped, merged); if !ok {
+		return errReturn(a.makeExpectedType(merged, leftTyped.Data.Type(), left.Base.Token))
+	}
 
-	return leftTyped, rightTyped, nil
+	rightCoerced, ok := coerceExpr(rightTyped, merged); if !ok {
+		return errReturn(a.makeExpectedType(merged, rightTyped.Data.Type(), right.Base.Token))
+	}
+
+	return leftCoerced, rightCoerced, nil
 }
 
 func newNative(name string, globalType types.TypeData) Global {
@@ -128,7 +139,7 @@ func canCoerce(from, to types.TypeData) bool {
 
 func mergeTypes(from, to types.TypeData) types.TypeData {
 	// if types are equal, they can be merged.
-	if from == to {
+	if reflect.DeepEqual(from, to) {
         return from
 	}
 

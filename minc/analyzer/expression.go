@@ -62,7 +62,7 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 		}
 
 		case ast.BinaryExpression: {
-			expr, diag := a.analyzeBinaryExpr(expr, shallow, expectedType)
+			expr, diag := a.analyzeBinaryExpr(expr, shallow)
 			return newExpr(expr), diag
 		}
 
@@ -178,23 +178,25 @@ func (a *Analyzer) analyzeUnaryExpr(expr ast.UnaryExpression, shallow bool, expe
 // expected type is 'bool'.
 func (a *Analyzer) analyzeLogicalExpr(expr ast.LogicalExpression, shallow bool) (tast.LogicalExpression, diagnostic.Diagnostic) {
 	// all logical expressions have their operands as booleans.
-	left, right, diag := a.analyzeBinary(expr.Left, expr.Right, shallow, types.TypeBool{})
+	left, right, diag := a.analyzeBinary(expr.Left, expr.Right, expr.Operator, shallow); if diag != nil {
+		return tast.LogicalExpression{}, diag
+	}
+
+	// expect boolean type
+	if _, ok := left.Data.Type().(types.TypeBool); !ok {
+		return tast.LogicalExpression{}, a.makeExpectedType(types.TypeBool{}, left.Data.Type(), left.Base.Token)
+	}
 
 	return tast.LogicalExpression{
 		Left: left,
 		Right: right,
 		Operator: expr.Operator,
 		ShortCircuit: expr.ShortCircuit,
-	}, diag
+	}, nil
 }
 
-func (a *Analyzer) analyzeBinaryExpr(expr ast.BinaryExpression, shallow bool, expectedType *types.TypeData) (tast.BinaryExpression, diagnostic.Diagnostic) {
-	// the type of this expression will set the expected type of the binary expression.
-	left, diag := a.analyzeExpression(expr.Left, shallow, expectedType); if diag != nil {
-		return tast.BinaryExpression{}, diag
-	}
-
-	left, right, diag := a.analyzeBinary(expr.Left, expr.Right, shallow, left.Data.Type())
+func (a *Analyzer) analyzeBinaryExpr(expr ast.BinaryExpression, shallow bool) (tast.BinaryExpression, diagnostic.Diagnostic) {
+	left, right, diag := a.analyzeBinary(expr.Left, expr.Right, expr.Operator, shallow)
 
 	return tast.BinaryExpression{
 		Left: left,
