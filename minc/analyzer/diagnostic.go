@@ -10,7 +10,6 @@ import (
 func (a *Analyzer) makeWarnUnreachable(tok token.Token) diagnostic.Diagnostic {
 	return a.makeWarningDiagnostic(
 		"Unreachable code.",
-		diagnostic.WARN_UNREACHABLE,
 		tok,
 	)
 }
@@ -18,7 +17,6 @@ func (a *Analyzer) makeWarnUnreachable(tok token.Token) diagnostic.Diagnostic {
 func (a *Analyzer) makeWarnNotModified(name token.Token) diagnostic.Diagnostic {
 	return a.makeWarningHelpDiagnostic(
 		fmt.Sprintf("'%s' is mutable but is not modified.", name.Lexeme),
-		diagnostic.WARN_UNREACHABLE,
 		[]string{ "Declare it with 'let' if you don't plan to modify it." },
 		name,
 	)
@@ -27,7 +25,6 @@ func (a *Analyzer) makeWarnNotModified(name token.Token) diagnostic.Diagnostic {
 func (a *Analyzer) makeWarnNotUsed(name token.Token) diagnostic.Diagnostic {
 	return a.makeWarningDiagnostic(
 		fmt.Sprintf("'%s' is declared but is not used.", name.Lexeme),
-		diagnostic.WARN_UNREACHABLE,
 		name,
 	)
 }
@@ -35,7 +32,6 @@ func (a *Analyzer) makeWarnNotUsed(name token.Token) diagnostic.Diagnostic {
 func (a *Analyzer) makeWarnUnusedValueExprStmt(gotType types.TypeData, tok token.Token) diagnostic.Diagnostic {
 	return a.makeWarningHelpDiagnostic(
 		fmt.Sprintf("Unused value of expression of type '%s'.", gotType.String()),
-		diagnostic.WARN_UNREACHABLE,
 		[]string{ "Wrap it with 'void()' to intentionally discard it." },
 		tok,
 	)
@@ -134,7 +130,7 @@ func (a *Analyzer) makeHelpDiagnostic(message string, help []string, token token
 	}
 }
 
-func (a *Analyzer) makeWarningDiagnostic(message string, warnType diagnostic.WarningType, token token.Token) diagnostic.WarningDiagnostic {
+func (a *Analyzer) makeWarningDiagnostic(message string, token token.Token) diagnostic.WarningDiagnostic {
 	return diagnostic.WarningDiagnostic{
 		DiagnosticBase: diagnostic.DiagnosticBase{
 			Message: message,
@@ -144,13 +140,11 @@ func (a *Analyzer) makeWarningDiagnostic(message string, warnType diagnostic.War
 			},
 			FileData: a.fileData,
 		},
-		WarnType: warnType,
 	}
 }
 
 func (a *Analyzer) makeWarningHelpDiagnostic(
 	message string,
-	warnType diagnostic.WarningType,
 	help []string,
 	token token.Token,
 ) diagnostic.WarningHelpDiagnostic {
@@ -163,7 +157,6 @@ func (a *Analyzer) makeWarningHelpDiagnostic(
 			},
 			FileData: a.fileData,
 		},
-		WarnType: warnType,
 		Help: help,
 	}
 }

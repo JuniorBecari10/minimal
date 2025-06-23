@@ -252,11 +252,28 @@ func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tas
 			Stmts: []tast.Statement{},
 			BlockType: types.DummyType(types.TypeUnknown{}),
 		}, nil
-	} else {
-        block, res := a.analyzeBlock(expr.Stmts, MODE_NORMAL); if res == RES_ERROR {
-			return tast.BlockExpression{}, diagnostic.HandledDiagnostic{}
+	// Special case where the block has one statement and it is an expression statement.
+	} else if len(expr.Stmts) == 1 {
+		// Confirmation of length needs to be before checking the type of the statement.
+		if stmt, ok := expr.Stmts[0].Data.(ast.ExprStatement); ok {
+			exprInside, diag := a.analyzeExpression(stmt.Expr, shallow, nil)
+			return tast.BlockExpression{
+				Stmts: []tast.Statement{
+					{
+						Base: exprInside.Base,
+						Data: tast.OutStatement{
+						    Expression: exprInside,
+						},
+					},
+				},
+			}, diag
 		}
-
-		return block, nil
 	}
+
+	// both else blocks
+	block, res := a.analyzeBlock(expr.Stmts, MODE_NORMAL); if res == RES_ERROR {
+		return tast.BlockExpression{}, diagnostic.HandledDiagnostic{}
+	}
+
+	return block, nil
 }

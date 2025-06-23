@@ -6,6 +6,15 @@ import (
 	"minlib/token"
 )
 
+func (p *Parser) makeWarnSemicolonNotNeeded() diagnostic.WarningHelpDiagnostic {
+	return p.makeWarnHelpDiagnostic(
+		"This semicolon is not necessary.",
+		[]string{
+			"",
+		},
+	)
+}
+
 func (p *Parser) makeExpectedTokenDiagnostic(expected token.TokenKind) diagnostic.SimpleDiagnostic {
 	return p.makeDiagnostic(
 		fmt.Sprintf("Expected %s after %s, but got %s.",
@@ -42,5 +51,19 @@ func (p *Parser) makeDiagnostic(message string) diagnostic.SimpleDiagnostic {
 			},
 			FileData: p.fileData,
 		},
+	}
+}
+
+func (p *Parser) makeWarnHelpDiagnostic(message string, help []string) diagnostic.WarningHelpDiagnostic {
+	return diagnostic.WarningHelpDiagnostic{
+		DiagnosticBase: diagnostic.DiagnosticBase{
+			Message: message,
+			Span: diagnostic.Span{
+				Pos: p.current.Pos,
+				Length: p.current.Length(),
+			},
+			FileData: p.fileData,
+		},
+		Help: help,
 	}
 }

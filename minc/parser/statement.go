@@ -16,7 +16,7 @@ func (p *Parser) statement(requireSemicolon bool) (ast.Statement, diagnostic.Dia
 		case token.TokenReturnKw: return p.returnStmt(requireSemicolon)
 		case token.TokenOutKw: return p.outStmt(requireSemicolon)
 		
-		default: return p.exprStmt()
+		default: return p.exprStmt(requireSemicolon)
 	}
 }
 
@@ -127,7 +127,7 @@ func (p *Parser) outStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagn
 	return p.returnStmt(requireSemicolon)
 }
 
-func (p *Parser) exprStmt() (ast.Statement, diagnostic.Diagnostic) {
+func (p *Parser) exprStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
 	// save current.Pos if needed.
 
 	// TODO: maybe pass a flag here saying that this is supposed to be a statement, and therefore refine the error message,
@@ -136,8 +136,12 @@ func (p *Parser) exprStmt() (ast.Statement, diagnostic.Diagnostic) {
 		return ast.Statement{}, diag
 	}
 
-	diag = p.expectSemicolon(); if diag != nil {
-		return ast.Statement{}, diag
+	// If this is the last statement in a brace block (current token is '}'), don't require the semicolon.
+	// Don't skip it, since it will be required to close the block later.
+	if requireSemicolon && !p.check(token.TokenRightBrace) {
+		diag = p.expectSemicolon(); if diag != nil {
+			return ast.Statement{}, diag
+		}
 	}
 
 	return ast.Statement{

@@ -15,13 +15,6 @@ const (
 	TYPE_WARNING DiagnosticType = "Warning"
 )
 
-type WarningType int
-
-const (
-	WARN_COMMON WarningType = iota
-	WARN_UNREACHABLE
-)
-
 type Diagnostic interface {
 	PrintDiagnostic()
 	DiagnosticType() DiagnosticType
@@ -46,12 +39,10 @@ type HelpDiagnostic struct {
 
 type WarningDiagnostic struct {
 	DiagnosticBase
-	WarnType WarningType
 }
 
 type WarningHelpDiagnostic struct {
 	DiagnosticBase
-	WarnType WarningType
 	Help []string
 }
 

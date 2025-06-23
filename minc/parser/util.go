@@ -15,7 +15,7 @@ func (p *Parser) expectToken(kind token.TokenKind) (token.Token, diagnostic.Diag
 
 func (p *Parser) expectSemicolon() diagnostic.Diagnostic {
 	if !p.match(token.TokenSemicolon) {
-		// TODO: maybe make this error message more specific
+		// TODO: maybe make this error message more specific, like 'Expected semicolon after statement.'
 		return p.makeExpectedTokenDiagnostic(token.TokenSemicolon)
 	}
 
