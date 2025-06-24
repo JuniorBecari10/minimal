@@ -140,7 +140,7 @@ func (p *Parser) exprStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diag
 
 	// If this is the last statement in a brace block (current token is '}'), don't require the semicolon.
 	// Don't skip it, since it will be required to close the block later.
-	if requireSemicolon && !p.check(token.TokenRightBrace) {
+	if requireSemicolon && !p.check(token.TokenRightBrace) && !p.exprCanSkipSemicolon(expr.Data) {
 		semicolon = &p.current
 		
 		diag = p.expectSemicolon(); if diag != nil {

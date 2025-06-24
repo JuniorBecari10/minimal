@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"minc/ast"
 	"minc/diagnostic"
 	"minlib/token"
 )
@@ -20,6 +21,16 @@ func (p *Parser) expectSemicolon() diagnostic.Diagnostic {
 	}
 
 	return nil
+}
+
+func (p *Parser) exprCanSkipSemicolon(expr ast.ExprData) bool {
+	switch expr.(type) {
+		case ast.BlockExpression, ast.IfExpression:
+			return true
+
+		default:
+			return false
+	}
 }
 
 func (p *Parser) advance() (token.Token, diagnostic.Diagnostic) {
