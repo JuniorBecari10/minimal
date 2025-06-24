@@ -102,6 +102,7 @@ type FnExpression struct {
 
 type BlockExpression struct {
 	Stmts []Statement
+	Token token.Token
 }
 
 type IfExpression struct {

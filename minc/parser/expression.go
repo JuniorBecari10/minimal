@@ -347,6 +347,7 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 						},
 					},
 				},
+				Token: elseIfExpr.Base.Token,
 			}
 		} else {
 			elseBlock, diag := p.parseBlock(); if diag != nil {

@@ -30,7 +30,7 @@ func (p *Parser) parseFnBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
 }
 
 func (p *Parser) parseOneStmtBlock(start token.TokenKind, requireSemicolon bool) (ast.BlockExpression, diagnostic.Diagnostic) {
-	_, diag := p.expectToken(start); if diag != nil {
+	tok, diag := p.expectToken(start); if diag != nil {
 		return ast.BlockExpression{}, diag
 	}
 
@@ -38,16 +38,18 @@ func (p *Parser) parseOneStmtBlock(start token.TokenKind, requireSemicolon bool)
 		// returns as OK because the error has already been handled.
 		return ast.BlockExpression{
 			Stmts: []ast.Statement{},
+			Token: tok,
 		}, nil
 	}
 
 	return ast.BlockExpression{
 		Stmts: []ast.Statement{stmt},
+		Token: tok,
 	}, nil
 }
 
 func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
-	_, diag := p.expectToken(token.TokenLeftBrace); if diag != nil {
+	tok, diag := p.expectToken(token.TokenLeftBrace); if diag != nil {
 		return ast.BlockExpression{}, diag
 	}
 
@@ -69,6 +71,7 @@ func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) 
 
 	return ast.BlockExpression{
 		Stmts: stmts,
+		Token: tok,
 	}, nil
 }
 

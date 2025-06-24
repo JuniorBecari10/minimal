@@ -8,42 +8,6 @@ import (
 	"minc/types"
 )
 
-// synchronization point. this function prints the diagnostics and doesn't bubble them up
-// this returns a block, with its type inferred by its statements.
-// the first statement that can set the type of the block directly inside it will do it.
-func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
-	generatedTast := make(tast.Tast, 0, len(block))
-	res := RES_OK
-
-	a.newScope()
-	var inferredType *types.TypeData = nil
-	
-	for _, s := range block {
-		stmt, diag := a.analyzeStatement(s, &inferredType, mode); if diag != nil {
-			diag.PrintDiagnostic()
-
-			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
-				res = RES_ERROR
-			}
-		}
-
-		generatedTast = append(generatedTast, stmt)
-	}
-
-	var blockType types.TypeData = types.TypeVoid{}
-
-	if inferredType != nil {
-		blockType = *inferredType
-	}
-
-	a.endScope()
-
-	return tast.BlockExpression{
-		Stmts: generatedTast,
-		BlockType: blockType,
-	}, res
-}
-
 func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeData, mode BlockAnalyzeMode) (tast.Statement, diagnostic.Diagnostic) {
 	newStmt := func(data tast.StmtData) tast.Statement {
 		return tast.Statement{
@@ -85,6 +49,11 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 
 		case ast.ForStatement: {
 			stmt, diag := a.forStmt(stmt)
+			return newStmt(stmt), diag
+		}
+
+		case ast.LoopStatement: {
+			stmt, diag := a.loopStmt(stmt)
 			return newStmt(stmt), diag
 		}
 
@@ -217,14 +186,32 @@ func (a *Analyzer) forStmt(stmt ast.ForStatement) (tast.ForStatement, diagnostic
 
 	varType := getIteratorType(iterable)
 
-	block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
+	block, res := a.analyzeBlockAlone(stmt.Block, MODE_LOOP); if res == RES_ERROR {
 		return tast.ForStatement{}, diagnostic.HandledDiagnostic{}
+	}
+
+	if !canCoerce(block.BlockType, types.TypeVoid{}) {
+		return tast.ForStatement{}, a.makeExpectedType(types.TypeVoid{}, block.BlockType, block.Token)
 	}
 
 	return tast.ForStatement{
 		Variable: stmt.Variable,
 		VariableType: varType,
 		Iterable: iterable,
+		Block: block,
+	}, nil
+}
+
+func (a *Analyzer) loopStmt(stmt ast.LoopStatement) (tast.LoopStatement, diagnostic.Diagnostic) {
+	block, res := a.analyzeBlockAlone(stmt.Block, MODE_LOOP); if res == RES_ERROR {
+		return tast.LoopStatement{}, diagnostic.HandledDiagnostic{}
+	}
+
+	if !canCoerce(block.BlockType, types.TypeVoid{}) {
+		return tast.LoopStatement{}, a.makeExpectedType(types.TypeVoid{}, block.BlockType, block.Token)
+	}
+
+	return tast.LoopStatement{
 		Block: block,
 	}, nil
 }
@@ -241,8 +228,12 @@ func (a *Analyzer) whileStmt(stmt ast.WhileStatement) (tast.WhileStatement, diag
 
 	condition = coerced
 
-	block, res := a.analyzeBlock(stmt.Block.Stmts, MODE_LOOP); if res == RES_ERROR {
+	block, res := a.analyzeBlockAlone(stmt.Block, MODE_LOOP); if res == RES_ERROR {
 		return tast.WhileStatement{}, diagnostic.HandledDiagnostic{}
+	}
+
+	if !canCoerce(block.BlockType, types.TypeVoid{}) {
+		return tast.WhileStatement{}, a.makeExpectedType(types.TypeVoid{}, block.BlockType, block.Token)
 	}
 
 	return tast.WhileStatement{

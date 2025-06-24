@@ -98,6 +98,7 @@ type FnExpression struct {
 
 type BlockExpression struct {
 	Stmts []Statement
+	Token token.Token
 	BlockType types.TypeData
 }
 

@@ -28,7 +28,7 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 	}
 
 	// return type may be unknown. check the body and see if the type can be coerced to it.
-	body, res := a.analyzeBlock(decl.Body.Stmts, MODE_FUNCTION); if res == RES_ERROR {
+	body, res := a.analyzeBlockAlone(decl.Body, MODE_FUNCTION); if res == RES_ERROR {
 		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
 	}
 

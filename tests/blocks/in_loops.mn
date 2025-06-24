@@ -1,0 +1,9 @@
+fn main() {
+    // all blocks in loops are expected to return 'void'.
+    loop { }
+
+    loop {
+        // out 20; // error
+        20
+    }
+}

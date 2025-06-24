@@ -80,11 +80,19 @@ func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
 		return nil, res
 	}
 
-	block, res := a.analyzeBlock(a.ast, MODE_NORMAL)
+	tast, res := a.analyzeProgram()
 	
 	endRes := a.endTopLevel(); if endRes == RES_ERROR {
 		res = endRes
 	}
+
+	return tast, res
+}
+
+func (a *Analyzer) analyzeProgram() (tast.Tast, AnalyzerResult) {
+	block, res := a.analyzeBlockAlone(ast.BlockExpression{
+		Stmts: a.ast,
+	}, MODE_NORMAL)
 
 	return block.Stmts, res
 }
