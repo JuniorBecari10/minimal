@@ -98,7 +98,7 @@ type FnExpression struct {
 
 type BlockExpression struct {
 	Stmts []Statement
-	BlockType types.Type
+	BlockType types.TypeData
 }
 
 type IfExpression struct {
@@ -201,7 +201,7 @@ func (x FnExpression) Type() types.TypeData {
 }
 
 func (x BlockExpression) Type() types.TypeData {
-	return x.BlockType.Data
+	return x.BlockType
 }
 
 func (x IfExpression) Type() types.TypeData {

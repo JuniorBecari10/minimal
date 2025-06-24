@@ -40,7 +40,7 @@ func (a *Analyzer) analyzeBlock(block ast.Ast, mode BlockAnalyzeMode) (tast.Bloc
 
 	return tast.BlockExpression{
 		Stmts: generatedTast,
-		BlockType: types.DummyType(blockType), // dummy because it's inferred.
+		BlockType: blockType,
 	}, res
 }
 
@@ -193,6 +193,7 @@ func (a *Analyzer) outStmt(
 	// set the inferred type to be the type of the expression
 	if *inferredType == nil {
 		infer := expr.Data.Type()
+		fmt.Println(infer)
 		*inferredType = &infer
 	}
 

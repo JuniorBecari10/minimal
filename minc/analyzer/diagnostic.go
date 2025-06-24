@@ -14,6 +14,33 @@ func (a *Analyzer) makeWarnUnreachable(tok token.Token) diagnostic.Diagnostic {
 	)
 }
 
+func (a *Analyzer) makeWarnRedundantSemicolon(semicolon token.Token) diagnostic.Diagnostic {
+	return a.makeWarningHelpDiagnostic(
+		"This semicolon is redundant.",
+		[]string{
+			"Regardless of its presence, the expression will be returned",
+			"from the block, since there is no other statement there.",
+			"",
+			"If you don't want to return the expression, wrap it in 'void()'",
+			"and don't put a semicolon after it.",
+		},
+		semicolon,
+	)
+}
+
+func (a *Analyzer) makeExpectedSemicolon(tok token.Token) diagnostic.Diagnostic {
+	return a.makeHelpDiagnostic(
+		"Expected a semicolon after this expression.",
+		[]string{
+			"The expression won't be returned regardless of the semicolon,",
+			"but you need to put it there to terminate the statement.",
+			"",
+			"If you want to return this expression from this block, use the 'out' statement.",
+		},
+		tok,
+	)
+}
+
 func (a *Analyzer) makeWarnNotModified(name token.Token) diagnostic.Diagnostic {
 	return a.makeWarningHelpDiagnostic(
 		fmt.Sprintf("'%s' is mutable but is not modified.", name.Lexeme),

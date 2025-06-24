@@ -250,13 +250,23 @@ func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tas
 		// don't enter the block; return an empty one with unknown type.
 		return tast.BlockExpression{
 			Stmts: []tast.Statement{},
-			BlockType: types.DummyType(types.TypeUnknown{}),
+			BlockType: types.TypeUnknown{},
 		}, nil
 	// Special case where the block has one statement and it is an expression statement.
 	} else if len(expr.Stmts) == 1 {
 		// Confirmation of length needs to be before checking the type of the statement.
 		if stmt, ok := expr.Stmts[0].Data.(ast.ExprStatement); ok {
-			exprInside, diag := a.analyzeExpression(stmt.Expr, shallow, nil)
+			var diag diagnostic.Diagnostic
+
+            // if it has a semicolon here, report it as a warning, since it is redundant.
+			if stmt.Semicolon != nil {
+				diag = a.makeWarnRedundantSemicolon(*stmt.Semicolon)
+			}
+
+			exprInside, exprDiag := a.analyzeExpression(stmt.Expr, shallow, nil); if diag == nil {
+				diag = exprDiag
+			}
+
 			return tast.BlockExpression{
 				Stmts: []tast.Statement{
 					{
@@ -266,6 +276,7 @@ func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tas
 						},
 					},
 				},
+				BlockType: exprInside.Data.Type(),
 			}, diag
 		}
 	}
@@ -273,6 +284,15 @@ func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tas
 	// both else blocks
 	block, res := a.analyzeBlock(expr.Stmts, MODE_NORMAL); if res == RES_ERROR {
 		return tast.BlockExpression{}, diagnostic.HandledDiagnostic{}
+	}
+
+	if len(expr.Stmts) > 1 {
+		if stmt, ok := expr.Stmts[len(expr.Stmts)-1].Data.(ast.ExprStatement); ok {
+			// if it doesn't have a semicolon, report an error.
+			if stmt.Semicolon == nil {
+				return block, a.makeExpectedSemicolon(stmt.Expr.Base.Token)
+			}
+		}
 	}
 
 	return block, nil

@@ -63,6 +63,7 @@ type ContinueStatement struct {}
 
 type ExprStatement struct {
 	Expr Expression
+	Semicolon *token.Token // optional
 }
 
 // ---
