@@ -3,7 +3,6 @@ package analyzer
 import (
 	"minc/ast"
 	"minc/parser"
-	"minc/tast"
 	"minc/types"
 	"minlib/file"
 	"minlib/token"

@@ -249,3 +249,37 @@ func (a *Analyzer) addVariable(name token.Token, varType types.Type, immutable b
 		})
 	}
 }
+
+func (a *Analyzer) resolveVariable(name string) (tast.Variable, AnalyzerResult) {
+	// search in locals from back to forth.
+	for i := len(a.locals) - 1; i >= 0; i-- {
+		local := a.locals[i]
+
+		if local.name.Lexeme == name {
+			return tast.Variable{
+				Name: local.name,
+				VarType: local.localType,
+
+				Immutable: local.immutable,
+				Modified: &local.modified,
+				Used: &local.used,
+			}, RES_OK
+		}
+	}
+
+	// didn't find. search in globals.
+	for _, global := range a.globals {
+		if global.name.Lexeme == name {
+			return tast.Variable{
+				Name: global.name,
+				VarType: global.globalType,
+
+				Immutable: global.immutable,
+				Modified: &global.modified,
+				Used: &global.used,
+			}, RES_OK
+		}
+	}
+
+	return tast.Variable{}, RES_ERROR
+}

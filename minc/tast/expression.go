@@ -77,8 +77,7 @@ type GroupExpression struct {
 }
 
 type IdentifierExpression struct {
-	Token token.Token
-	VariableType types.Type // filled during type-checking and name-resolution phase
+	Variable Variable
 }
 
 type SelfExpression struct {
@@ -86,7 +85,7 @@ type SelfExpression struct {
 }
 
 type IdentifierAssignmentExpression struct {
-	Name token.Token
+	Variable Variable
 	Expr Expression
 }
 
@@ -171,7 +170,7 @@ func (x GroupExpression) Type() types.TypeData {
 }
 
 func (x IdentifierExpression) Type() types.TypeData {
-	return x.VariableType.Data
+	return x.Variable.VarType.Data
 }
 
 func (x SelfExpression) Type() types.TypeData {

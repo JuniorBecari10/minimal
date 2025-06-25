@@ -76,10 +76,25 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			return newExpr(expr), diag
 		}
 
-		case ast.IdentifierExpression: {}
-		case ast.SelfExpression: {}
-		case ast.IdentifierAssignmentExpression: {}
-		case ast.FnExpression: {}
+		case ast.IdentifierExpression: {
+			expr, diag := a.analyzeIdentifierExpr(expr)
+			return newExpr(expr), diag
+		}
+
+		case ast.SelfExpression: {
+			// dummy error. not yet supported.
+			return newExpr(tast.SelfExpression{}), a.makeExpectedSemicolon(token.StartToken())
+		}
+
+		case ast.IdentifierAssignmentExpression: {
+			expr, diag := a.analyzeIdentifierAssignExpr(expr, shallow, expectedType)
+			return newExpr(expr), diag
+		}
+
+		case ast.FnExpression: {
+			expr, diag := a.analyzeFnExpr(expr, shallow, expectedType)
+			return newExpr(expr), diag
+		}
 
 		case ast.BlockExpression: {
 			expr, diag := a.analyzeBlockExpr(expr, shallow)
@@ -87,8 +102,16 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 		}
 		
 		case ast.IfExpression: {}
-		case ast.GetPropertyExpression: {}
-		case ast.SetPropertyExpression: {}
+
+		case ast.GetPropertyExpression: {
+			// dummy error. not yet supported.
+			return newExpr(tast.GetPropertyExpression{}), a.makeExpectedSemicolon(token.StartToken())
+		}
+
+		case ast.SetPropertyExpression: {
+			// dummy error. not yet supported.
+			return newExpr(tast.SetPropertyExpression{}), a.makeExpectedSemicolon(token.StartToken())
+		}
 	}
 
 	panic(fmt.Sprintf("Internal: Invalid expression: %#v", e))
@@ -124,10 +147,12 @@ func (a *Analyzer) analyzeBoolExpr(expr ast.BoolExpression) tast.BoolExpression 
 	}
 }
 
+// TODO: finish
 func (a *Analyzer) analyzeRangeExpr(expr ast.RangeExpression, shallow bool) (tast.RangeExpression, diagnostic.Diagnostic) {
 	return tast.RangeExpression{}, nil
 }
 
+// TODO: finish
 func (a *Analyzer) analyzeAsExpr(expr ast.AsExpression, shallow bool) (tast.AsExpression, diagnostic.Diagnostic) {
     return tast.AsExpression{}, nil
 }
@@ -162,8 +187,8 @@ func (a *Analyzer) analyzeUnaryExpr(expr ast.UnaryExpression, shallow bool, expe
 		}
 	} else if expr.Operator.Kind == token.TokenMinus {
 		// must be numeric (int / float).
-		if typeIsNumeric(operand.Data.Type()) {
-			return tast.UnaryExpression{}, a.makeExpectedType(types.TypeBool{}, operand.Data.Type(), operand.Base.Token)
+		if !typeIsNumeric(operand.Data.Type()) {
+			return tast.UnaryExpression{}, a.makeExpectedType(types.TypeFloat{}, operand.Data.Type(), operand.Base.Token)
 		}
 	} else {
 		panic(fmt.Sprintf("Internal: Invalid unary operator: '%s'", expr.Operator.Kind))
@@ -243,6 +268,79 @@ func (a *Analyzer) analyzeGroupExpr(expr ast.GroupExpression, shallow bool, expe
 	return tast.GroupExpression{
 		Expr: inside,
 	}, diag
+}
+
+func (a *Analyzer) analyzeIdentifierExpr(expr ast.IdentifierExpression) (tast.IdentifierExpression, diagnostic.Diagnostic) {
+	variable, res := a.resolveVariable(expr.Token.Lexeme); if res == RES_ERROR {
+		return tast.IdentifierExpression{}, a.makeNameNotDefined(expr.Token)
+	}
+
+	*variable.Used = true
+
+	return tast.IdentifierExpression{
+		Variable: variable,
+	}, nil
+}
+
+func (a *Analyzer) analyzeIdentifierAssignExpr(
+	expr ast.IdentifierAssignmentExpression,
+	shallow bool,
+	expectedType *types.TypeData,
+) (tast.IdentifierAssignmentExpression, diagnostic.Diagnostic) {
+	variable, res := a.resolveVariable(expr.Name.Lexeme); if res == RES_ERROR {
+		return tast.IdentifierAssignmentExpression{}, a.makeNameNotDefined(expr.Name)
+	}
+
+	assignExpr, diag := a.analyzeExpression(expr.Expr, shallow, expectedType); if diag != nil {
+        return tast.IdentifierAssignmentExpression{}, diag
+	}
+
+	if variable.Immutable {
+		return tast.IdentifierAssignmentExpression{}, a.makeCannotModifyImmutable(expr.Name)
+	}
+
+	// TODO: toggle 'used' on?
+	*variable.Modified = true
+
+    return tast.IdentifierAssignmentExpression{
+		Variable: variable,
+		Expr: assignExpr,
+	}, nil
+}
+
+func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedType *types.TypeData) (tast.FnExpression, diagnostic.Diagnostic) {
+    // the return type is inferred if not annotated, not automatic 'void', like function declarations.
+	returnType := types.DummyType(types.TypeUnknown{})
+
+	if expr.Return != nil {
+		returnType = *expr.Return
+	}
+
+	expectedFn, okFn := (*expectedType).(types.TypeFunction)
+	paramTypes := []types.Type{}
+
+	for _, param := range expr.Parameters {
+		if param.Type == nil {
+			// try to infer the parameter type based on the inferred type, if it's a function.
+		}
+
+		paramTypes = append(paramTypes, *param.Type)
+	}
+
+	// return type may be unknown. check the body and see if the type can be coerced to it.
+	body, res := a.analyzeBlockAlone(decl.Body, MODE_FUNCTION); if res == RES_ERROR {
+		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
+	}
+
+	// if the return type is unknown, it will coerce.
+	coerced, ok := coerceExpr(tast.Expression{
+		Base: tast.AstBase{},
+		Data: body,
+	}, returnType.Data); if !ok {
+		return tast.FnDeclaration{}, a.makeExpectedType(returnType.Data, body.Type(), returnType.Token)
+	}
+
+	returnType.Data = coerced.Data.Type()
 }
 
 func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tast.BlockExpression, diagnostic.Diagnostic) {

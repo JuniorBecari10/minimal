@@ -11,7 +11,7 @@ import (
 // synchronization point. this function prints the diagnostics and doesn't bubble them up
 // this returns a block, with its type inferred by its statements.
 // the first statement that can set the type of the block directly inside it will do it.
-// this function is meant to analyze blocks alone in the statements.
+// this function is meant to analyze blocks stored alone in the AST nodes, like in 'while', 'for' and 'if'.
 func (a *Analyzer) analyzeBlockAlone(block ast.BlockExpression, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
 	res := RES_OK
 
@@ -78,14 +78,14 @@ func (a *Analyzer) analyzeBlock(block ast.BlockExpression, mode BlockAnalyzeMode
 	return blockRes, nil
 }
 
-func (a *Analyzer) analyzeStatements(block ast.Ast, tok token.Token, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
-	generatedTast := make(tast.Tast, 0, len(block))
+func (a *Analyzer) analyzeStatements(stmts ast.Ast, tok token.Token, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
+	generatedTast := make(tast.Tast, 0, len(stmts))
 	res := RES_OK
 
 	a.newScope()
 	var inferredType *types.TypeData = nil
 	
-	for _, s := range block {
+	for _, s := range stmts {
 		stmt, diag := a.analyzeStatement(s, &inferredType, mode); if diag != nil {
 			diag.PrintDiagnostic()
 

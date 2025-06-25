@@ -64,6 +64,21 @@ func (a *Analyzer) makeWarnUnusedValueExprStmt(gotType types.TypeData, tok token
 	)
 }
 
+func (a *Analyzer) makeNameNotDefined(name token.Token) diagnostic.Diagnostic {
+	return a.makeDiagnostic(
+		fmt.Sprintf("'%s' is not defined in scope.", name.Lexeme),
+		name,
+	)
+}
+
+func (a *Analyzer) makeCannotModifyImmutable(name token.Token) diagnostic.Diagnostic {
+	return a.makeHelpDiagnostic(
+		fmt.Sprintf("Cannot modify the value of '%s', as it's immutable.", name.Lexeme),
+		[]string { "If you plan to modify its value, declare it using 'var' instead." },
+		name,
+	)
+}
+
 func (a *Analyzer) makeExpectedConcreteType(t types.Type) diagnostic.Diagnostic {
 	return a.makeHelpDiagnostic(
 		fmt.Sprintf("Expected concrete type, but '%s' is abstract.", t.Token.FormatError()),
