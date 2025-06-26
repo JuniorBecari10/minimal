@@ -50,17 +50,6 @@ func (a *Analyzer) analyzeBinary(
 	return leftCoerced, rightCoerced, nil
 }
 
-func newNative(name string, globalType types.TypeData) Global {
-	return Global{
-		name: token.Token{ Lexeme: name },
-		globalType: types.DummyType(globalType),
-		immutable: true, // all native types should be immutable.
-		initialized: true,
-		modified: false,
-		used: false,
-	}
-}
-
 func typeIsConcrete(t types.TypeData) bool {
 	switch t.(type) {
 		// the abstract types (nil and unknown).
@@ -174,7 +163,8 @@ func (a *Analyzer) newScope() {
 func (a *Analyzer) endScope() {
 	a.scopeDepth--
 
-	// remove all variables from the current scope
+	// remove all variables from the current scope.
+	// for this, we'd need to traverse the locals array backwards.
 	for i := len(a.locals) - 1; i >= 0; i-- {
 		if a.locals[i].depth <= a.scopeDepth {
 			// this means all above this variable belongs to the removed scope.
@@ -188,11 +178,6 @@ func (a *Analyzer) endScope() {
 		if !a.locals[i].immutable && !a.locals[i].modified {
 			a.makeWarnNotModified(a.locals[i].name).PrintDiagnostic()
 		} else if !a.locals[i].used {
-			// ignore main function
-			if a.locals[i].depth == 1 && a.locals[i].name.Lexeme == "main" {
-				continue
-			}
-
 			a.makeWarnNotUsed(a.locals[i].name).PrintDiagnostic()
 		}
 	}
@@ -218,6 +203,16 @@ func (a *Analyzer) endTopLevel() AnalyzerResult {
 				res = RES_ERROR
 			}
 		}
+
+		if !global.immutable && !global.modified {
+			a.makeWarnNotModified(global.name).PrintDiagnostic()
+		} else if !global.used {
+			if !a.canSayNotUsed(global.name.Lexeme) {
+				continue
+			}
+
+			a.makeWarnNotUsed(global.name).PrintDiagnostic()
+		}
 	}
 
 	if !foundMain {
@@ -226,6 +221,23 @@ func (a *Analyzer) endTopLevel() AnalyzerResult {
 	}
 
 	return res
+}
+
+// assumes the name is from a global variable.
+func (a *Analyzer) canSayNotUsed(name string) bool {
+	// the main function, of course, won't be called by the user normally.
+	if name == "main" {
+		return false
+	}
+
+	// natives should also be suppressed.
+	for _, native := range a.natives {
+		if native.name.Lexeme == name {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (a *Analyzer) addVariable(name token.Token, varType types.Type, immutable bool) {
@@ -253,33 +265,20 @@ func (a *Analyzer) addVariable(name token.Token, varType types.Type, immutable b
 func (a *Analyzer) resolveVariable(name string) (tast.Variable, AnalyzerResult) {
 	// search in locals from back to forth.
 	for i := len(a.locals) - 1; i >= 0; i-- {
-		local := a.locals[i]
+		// get a pointer directly to not make a copy of it.
+		local := &a.locals[i]
 
 		if local.name.Lexeme == name {
-			return tast.Variable{
-				Name: local.name,
-				VarType: local.localType,
-
-				Immutable: local.immutable,
-				Modified: &local.modified,
-				Used: &local.used,
-			}, RES_OK
+			return local, RES_OK
 		}
 	}
 
 	// didn't find. search in globals.
 	for _, global := range a.globals {
 		if global.name.Lexeme == name {
-			return tast.Variable{
-				Name: global.name,
-				VarType: global.globalType,
-
-				Immutable: global.immutable,
-				Modified: &global.modified,
-				Used: &global.used,
-			}, RES_OK
+			return &global, RES_OK
 		}
 	}
 
-	return tast.Variable{}, RES_ERROR
+	return nil, RES_ERROR
 }

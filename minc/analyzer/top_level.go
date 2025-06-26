@@ -5,6 +5,7 @@ import (
 	"minc/ast"
 	"minc/diagnostic"
 	"minc/types"
+	"minlib/token"
 )
 
 // pre-declares all top-level declarations in order to properly do name resolution.
@@ -65,28 +66,46 @@ func (a *Analyzer) analyzeTopLevelDecl(d ast.Statement) (Global, diagnostic.Diag
 // These can have dummy types because they won't go in diagnostics.
 func (a *Analyzer) addNatives() {
 	// fn print()
-	a.globals = append(a.globals, newNative("print", types.TypeFunction{
+	a.addNative("print", types.TypeFunction{
 		Parameters: []types.Type{},
 		Return: types.DummyType(types.TypeVoid{}),
-	}))
+	})
 	
 	// fn println()
-	a.globals = append(a.globals, newNative("println", types.TypeFunction{
+	a.addNative("println", types.TypeFunction{
 		Parameters: []types.Type{},
 		Return: types.DummyType(types.TypeVoid{}),
-	}))
+	})
 	
 	// fn input(prompt: str): str
-	a.globals = append(a.globals, newNative("print", types.TypeFunction{
+	a.addNative("print", types.TypeFunction{
 		Parameters: []types.Type{ types.DummyType(types.TypeStr{}) },
 		Return: types.DummyType(types.TypeStr{}),
-	}))
+	})
 	
 	// fn time(): int
-	a.globals = append(a.globals, newNative("time", types.TypeFunction{
+	a.addNative("time", types.TypeFunction{
 		Parameters: []types.Type{},
 		Return: types.DummyType(types.TypeVoid{}),
-	}))
+	})
+}
+
+func (a *Analyzer) addNative(name string, nativeType types.TypeData) {
+	native := newNative(name, nativeType)
+
+	a.globals = append(a.globals, native)
+	a.natives = append(a.natives, native)
+}
+
+func newNative(name string, globalType types.TypeData) Global {
+	return Global{
+		name: token.Token{ Lexeme: name },
+		globalType: types.DummyType(globalType),
+		immutable: true, // all native types should be immutable.
+		initialized: true,
+		modified: false,
+		used: false,
+	}
 }
 
 func (a *Analyzer) topLevelFnDecl(decl ast.FnDeclaration) (Global, diagnostic.Diagnostic) {

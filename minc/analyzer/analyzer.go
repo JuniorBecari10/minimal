@@ -3,9 +3,8 @@ package analyzer
 import (
 	"minc/ast"
 	"minc/parser"
-	"minc/types"
+	"minc/tast"
 	"minlib/file"
-	"minlib/token"
 )
 
 type AnalyzerResult = parser.ParserResult
@@ -23,32 +22,12 @@ const (
 	MODE_LOOP
 )
 
-// TODO: add flags canBeMutable (for functions and refine the error message)
-type Local struct {
-	name token.Token
-	localType types.Type
-
-	immutable bool
-	depth uint32
-	modified bool
-	used bool
-}
-
-type Global struct {
-	name token.Token
-	globalType types.Type
-
-	immutable bool
-	initialized bool // to check if it has already been declared or just hoisted
-	modified bool
-	used bool
-}
-
 type Analyzer struct {
 	ast ast.Ast
 
 	locals []Local
 	globals []Global
+	natives []Global
 
 	scopeDepth uint32
 	isInsideLoop bool
@@ -62,6 +41,7 @@ func New(ast ast.Ast, fileData *file.FileData) *Analyzer {
 		
 		locals: []Local{},
 		globals: []Global{},
+		natives: []Global{},
 
 		scopeDepth: 0,
 		isInsideLoop: false,
@@ -79,19 +59,11 @@ func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
 		return nil, res
 	}
 
-	tast, res := a.analyzeProgram()
+	tast, res := a.analyzeTopLevelStatements()
 	
 	endRes := a.endTopLevel(); if endRes == RES_ERROR {
 		res = endRes
 	}
 
 	return tast, res
-}
-
-func (a *Analyzer) analyzeProgram() (tast.Tast, AnalyzerResult) {
-	block, res := a.analyzeBlockAlone(ast.BlockExpression{
-		Stmts: a.ast,
-	}, MODE_NORMAL)
-
-	return block.Stmts, res
 }

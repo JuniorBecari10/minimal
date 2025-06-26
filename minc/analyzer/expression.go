@@ -91,10 +91,10 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			return newExpr(expr), diag
 		}
 
-		case ast.FnExpression: {
+		case ast.FnExpression: {/*
 			expr, diag := a.analyzeFnExpr(expr, shallow, expectedType)
 			return newExpr(expr), diag
-		}
+		*/}
 
 		case ast.BlockExpression: {
 			expr, diag := a.analyzeBlockExpr(expr, shallow)
@@ -275,7 +275,7 @@ func (a *Analyzer) analyzeIdentifierExpr(expr ast.IdentifierExpression) (tast.Id
 		return tast.IdentifierExpression{}, a.makeNameNotDefined(expr.Token)
 	}
 
-	*variable.Used = true
+	variable.MarkUsed()
 
 	return tast.IdentifierExpression{
 		Variable: variable,
@@ -295,19 +295,19 @@ func (a *Analyzer) analyzeIdentifierAssignExpr(
         return tast.IdentifierAssignmentExpression{}, diag
 	}
 
-	if variable.Immutable {
+	if variable.IsImmutable() {
 		return tast.IdentifierAssignmentExpression{}, a.makeCannotModifyImmutable(expr.Name)
 	}
 
 	// TODO: toggle 'used' on?
-	*variable.Modified = true
+	variable.MarkModified()
 
     return tast.IdentifierAssignmentExpression{
 		Variable: variable,
 		Expr: assignExpr,
 	}, nil
 }
-
+/*
 func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedType *types.TypeData) (tast.FnExpression, diagnostic.Diagnostic) {
     // the return type is inferred if not annotated, not automatic 'void', like function declarations.
 	returnType := types.DummyType(types.TypeUnknown{})
@@ -342,7 +342,7 @@ func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedTy
 
 	returnType.Data = coerced.Data.Type()
 }
-
+*/
 func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tast.BlockExpression, diagnostic.Diagnostic) {
 	return a.analyzeBlock(expr, MODE_NORMAL, shallow)
 }

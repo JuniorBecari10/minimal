@@ -170,7 +170,7 @@ func (x GroupExpression) Type() types.TypeData {
 }
 
 func (x IdentifierExpression) Type() types.TypeData {
-	return x.Variable.VarType.Data
+	return x.Variable.Type().Data
 }
 
 func (x SelfExpression) Type() types.TypeData {

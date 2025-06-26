@@ -111,3 +111,22 @@ func (a *Analyzer) analyzeStatements(stmts ast.Ast, tok token.Token, mode BlockA
 		Token: tok,
 	}, res
 }
+
+func (a *Analyzer) analyzeTopLevelStatements() (tast.Tast, AnalyzerResult) {
+	generatedTast := make(tast.Tast, 0, len(a.ast))
+	res := RES_OK
+
+	for _, s := range a.ast {
+		stmt, diag := a.analyzeStatement(s, nil, MODE_NORMAL); if diag != nil {
+			diag.PrintDiagnostic()
+
+			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
+				res = RES_ERROR
+			}
+		}
+
+		generatedTast = append(generatedTast, stmt)
+	}
+
+	return generatedTast, res
+}
