@@ -101,7 +101,10 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			return newExpr(expr), diag
 		}
 		
-		case ast.IfExpression: {}
+		case ast.IfExpression: {
+			expr, diag := a.analyzeIfExpr(expr, shallow, expectedType)
+			return newExpr(expr), diag
+		}
 
 		case ast.GetPropertyExpression: {
 			// dummy error. not yet supported.
@@ -345,4 +348,62 @@ func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedTy
 */
 func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tast.BlockExpression, diagnostic.Diagnostic) {
 	return a.analyzeBlock(expr, MODE_NORMAL, shallow)
+}
+
+func (a *Analyzer) analyzeIfExpr(expr ast.IfExpression, shallow bool, expectedType *types.TypeData) (tast.IfExpression, diagnostic.Diagnostic) {
+	var expectedCondition types.TypeData = types.TypeBool{}
+	
+	condition, diag := a.analyzeExpression(expr.Condition, shallow, &expectedCondition); if diag != nil {
+		return tast.IfExpression{}, diag
+	}
+
+	then, diag := a.analyzeExpression(expr.Then, shallow, expectedType); if diag != nil {
+		return tast.IfExpression{}, diag
+	}
+
+	if expr.Else == nil {
+		// no 'else' clause, type is 'void'.
+
+		// TODO: warn about the unused value (type is void, but stil it is unused)
+		return tast.IfExpression{
+			Condition: condition,
+			Then: then,
+			Else: nil,
+
+			IfType: types.TypeVoid{},
+		}, nil
+	} else {
+		// type is merged from 'then' and 'else' blocks.
+		else_, diag := a.analyzeExpression(*expr.Else, shallow, expectedType); if diag != nil {
+			return tast.IfExpression{}, diag
+		}
+
+		merged := mergeTypes(then.Data.Type(), else_.Data.Type())
+
+		// try again, coercing to the other side.
+		if merged == nil {
+            merged = mergeTypes(else_.Data.Type(), then.Data.Type())
+		}
+		
+		// if they still can't coerce, throw an error.
+        if merged == nil {
+			return tast.IfExpression{}, a.makeIncompatibleTypes(then.Data.Type(), else_.Data.Type(), then.Base.Token)
+		}
+
+		thenCoerced, ok := coerceExpr(then, merged); if !ok {
+			return tast.IfExpression{}, a.makeIncompatibleTypes(merged, then.Data.Type(), then.Base.Token)
+		}
+
+		elseCoerced, ok := coerceExpr(else_, merged); if !ok {
+			return tast.IfExpression{}, a.makeIncompatibleTypes(merged, else_.Data.Type(), else_.Base.Token)
+		}
+
+		return tast.IfExpression{
+			Condition: condition,
+			Then: thenCoerced,
+			Else: &elseCoerced,
+
+			IfType: merged,
+		}, nil
+	}
 }

@@ -48,6 +48,8 @@ func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
 		os.Exit(1)
 	}
 
+	fmt.Printf("%#v\n", ast)
+
 	tast, res := analyzer.New(ast, fileData).Analyze()
 	
 	if res == analyzer.RES_ERROR {

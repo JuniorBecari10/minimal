@@ -98,6 +98,7 @@ type FnExpression struct {
 type BlockExpression struct {
 	Stmts []Statement
 	Token token.Token
+	
 	BlockType types.TypeData
 }
 
@@ -105,6 +106,8 @@ type IfExpression struct {
 	Condition Expression
 	Then Expression
 	Else *Expression // optional
+
+	IfType types.TypeData
 }
 
 type GetPropertyExpression struct {
@@ -205,10 +208,7 @@ func (x BlockExpression) Type() types.TypeData {
 }
 
 func (x IfExpression) Type() types.TypeData {
-	if x.Else == nil {
-		return types.TypeVoid{}
-	}
-	return x.Then.Data.Type()
+	return x.IfType
 }
 
 func (x GetPropertyExpression) Type() types.TypeData {
