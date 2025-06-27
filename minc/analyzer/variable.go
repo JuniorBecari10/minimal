@@ -44,6 +44,8 @@ func (v *Local) MarkUsed() {
 	v.used = true
 }
 
+// ---
+
 type Global struct {
 	name token.Token
 	globalType types.Type

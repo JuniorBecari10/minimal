@@ -1,8 +1,5 @@
 fn main() {
     if true {
-        // no else = void.
-        20
-    } else {
-        30
+        println("hi");
     }
 }

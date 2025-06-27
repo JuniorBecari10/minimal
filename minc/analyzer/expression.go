@@ -100,6 +100,12 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			expr, diag := a.analyzeBlockExpr(expr, shallow)
 			return newExpr(expr), diag
 		}
+
+		// because of 'else' blocks being optional.
+		case *ast.BlockExpression: {
+			expr, diag := a.analyzeBlockExpr(*expr, shallow)
+			return newExpr(expr), diag
+		}
 		
 		case ast.IfExpression: {
 			expr, diag := a.analyzeIfExpr(expr, shallow, expectedType)
@@ -252,11 +258,11 @@ func (a *Analyzer) analyzeCallExpr(expr ast.CallExpression, shallow bool, expect
 			return tast.CallExpression{}, diag
 		}
 
-		if ok := canCoerce(arg.Data.Type(), fn.Parameters[i].Data); !ok {
+		coerced, ok := coerceExpr(arg, fn.Parameters[i].Data); if !ok {
 			return tast.CallExpression{}, a.makeExpectedType(fn.Parameters[i].Data, arg.Data.Type(), arg.Base.Token)
 		}
 
-		typedArgs = append(typedArgs, arg)
+		typedArgs = append(typedArgs, coerced)
 	}
 
 	return tast.CallExpression{
@@ -357,6 +363,10 @@ func (a *Analyzer) analyzeIfExpr(expr ast.IfExpression, shallow bool, expectedTy
 		return tast.IfExpression{}, diag
 	}
 
+	conditionCoerced, ok := coerceExpr(condition, expectedCondition); if !ok {
+		return tast.IfExpression{}, a.makeExpectedType(expectedCondition, condition.Data.Type(), condition.Base.Token)
+	}
+
 	then, diag := a.analyzeExpression(expr.Then, shallow, expectedType); if diag != nil {
 		return tast.IfExpression{}, diag
 	}
@@ -364,10 +374,13 @@ func (a *Analyzer) analyzeIfExpr(expr ast.IfExpression, shallow bool, expectedTy
 	if expr.Else == nil {
 		// no 'else' clause, type is 'void'.
 
-		// TODO: warn about the unused value (type is void, but stil it is unused)
+		thenCoerced, ok := coerceExpr(then, types.TypeVoid{}); if !ok {
+			return tast.IfExpression{}, a.makeExpectedType(types.TypeVoid{}, then.Data.Type(), then.Base.Token)
+		}
+
 		return tast.IfExpression{
-			Condition: condition,
-			Then: then,
+			Condition: conditionCoerced,
+			Then: thenCoerced,
 			Else: nil,
 
 			IfType: types.TypeVoid{},
@@ -399,7 +412,7 @@ func (a *Analyzer) analyzeIfExpr(expr ast.IfExpression, shallow bool, expectedTy
 		}
 
 		return tast.IfExpression{
-			Condition: condition,
+			Condition: conditionCoerced,
 			Then: thenCoerced,
 			Else: &elseCoerced,
 

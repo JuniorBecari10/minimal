@@ -33,7 +33,8 @@ func (a *Analyzer) makeExpectedSemicolon(tok token.Token) diagnostic.Diagnostic 
 		"Expected a semicolon after this expression.",
 		[]string{
 			"The expression won't be returned regardless of the semicolon,",
-			"but you need to put it there to terminate the statement.",
+			"since there is more than one statement in this block;",
+			"but you need to put it there to terminate this last statement.",
 			"",
 			"If you want to return this expression from this block, use the 'out' statement.",
 		},

@@ -1,19 +1,64 @@
 /* Make all code blocks have the JetBrains Mono font, if possible. */
-code {
+.md-typeset code {
     font-family: "JetBrains Mono", monospace;
+
+    display: inline-block;
+    padding: 0 0.5em;
+    border-radius: 1em;
 }
 
 /* Put a background color in the book title on the left. */
 #__nav_1_label,
 #__nav_2_label,
 #__nav_3_label {
+    position: relative;
+    left: -0.5em;
+    margin-bottom: 0.5em;
+}
+
+#__nav_1_label,
+#__nav_2_label,
+#__nav_3_label,
+nav.md-nav--secondary:nth-child(1) > label:nth-child(1) {
     background-color: var(--md-default-fg-color--lightest);
     width: fit-content;
 
-    margin-bottom: 0.5em;
     padding: 0.5em 0.7em;
-
     border-radius: 0.7em;
+}
+
+nav.md-nav--secondary:nth-child(1) > label:nth-child(1) {
+    margin-bottom: 1.5em;
+}
+
+a.md-header__button > img:nth-child(1) {
     position: relative;
-    left: -0.5em;
+    left: 0.5em;
+}
+
+header.md-header {
+    margin: 0 5em;
+    padding: 1em 0;
+}
+
+header.md-header--shadow {
+    border-radius: 0 0 2em 2em;
+}
+
+nav.md-tabs {
+    margin: 0 5em 0;
+    width: auto;
+    border-radius: 0 0 2em 2em;
+    padding-bottom: 1em;
+}
+
+footer {
+    margin: 0 5em;
+}
+.md-footer__inner {
+    border-radius: 2em 2em 0 0;
+}
+
+table {
+    border-radius: 1em !important;
 }
