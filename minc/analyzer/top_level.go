@@ -65,15 +65,19 @@ func (a *Analyzer) analyzeTopLevelDecl(d ast.Statement) (Global, diagnostic.Diag
 // Adds native functions and variables to the global scope.
 // These can have dummy types because they won't go in diagnostics.
 func (a *Analyzer) addNatives() {
-	// fn print()
+	// fn print(x: any)
 	a.addNative("print", types.TypeFunction{
-		Parameters: []types.Type{},
+		Parameters: []types.Type{
+			types.DummyType(types.TypeAny{}),
+		},
 		Return: types.DummyType(types.TypeVoid{}),
 	})
 	
-	// fn println()
+	// fn println(x: any)
 	a.addNative("println", types.TypeFunction{
-		Parameters: []types.Type{},
+		Parameters: []types.Type{
+			types.DummyType(types.TypeAny{}),
+		},
 		Return: types.DummyType(types.TypeVoid{}),
 	})
 	

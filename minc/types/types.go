@@ -27,6 +27,9 @@ type TypeUntypedNil struct { }
 // for future use in generics and types intentionally omitted for inference.
 type TypeUnknown struct { }
 
+// for native functions
+type TypeAny struct { }
+
 // for blocks that don't return normally.
 type TypeNever struct { }
 
@@ -65,6 +68,7 @@ func (x TypeBool) String() string { return "bool" }
 func (x TypeUntypedNil) String() string { return "untyped nil" }
 func (x TypeNever) String() string { return "never" }
 func (x TypeUnknown) String() string { return "unknown" }
+func (x TypeAny) String() string { return "any" }
 func (x TypeVoid) String() string { return "void" }
 func (x TypeOptional) String() string { return fmt.Sprintf("%s?", x.Inside.Data.String()) }
 

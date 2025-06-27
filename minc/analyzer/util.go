@@ -126,6 +126,9 @@ func canCoerce(from, to types.TypeData) bool {
 	return t != nil
 }
 
+// merge both types so that the type returned emcompasses all types from one and from the other,
+// like (int, float) returns 'float', since it has every 'int' value as valid, along with all 'float' only valid ones.
+// returns 'nil' if it cannot be done.
 func mergeTypes(from, to types.TypeData) types.TypeData {
 	// if types are equal, they can be merged.
 	if reflect.DeepEqual(from, to) {
@@ -151,6 +154,11 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
 		case types.TypeUnknown: {
 			return to
 		}
+	}
+	
+	// any type -> any
+	if _, ok := to.(types.TypeAny); ok {
+		return to
 	}
 
 	return nil

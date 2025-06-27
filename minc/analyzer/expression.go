@@ -253,6 +253,10 @@ func (a *Analyzer) analyzeCallExpr(expr ast.CallExpression, shallow bool, expect
 
 	typedArgs := []tast.Expression{}
 
+	if len(expr.Arguments) != len(fn.Parameters) {
+        return tast.CallExpression{}, a.makeExpectedArity(len(fn.Parameters), len(expr.Arguments), expr.Callee.Base.Token)
+	}
+
 	for i, param := range expr.Arguments {
 		arg, diag := a.analyzeExpression(param, shallow, &fn.Parameters[i].Data); if diag != nil {
 			return tast.CallExpression{}, diag

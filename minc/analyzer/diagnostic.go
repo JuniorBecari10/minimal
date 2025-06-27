@@ -124,6 +124,13 @@ func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Toke
 	)
 }
 
+func (a *Analyzer) makeExpectedArity(expected, got int, tok token.Token) diagnostic.Diagnostic {
+	return a.makeDiagnostic(
+		fmt.Sprintf("Expected '%d' arguments, but got '%d' instead.", expected, got),
+		tok,
+	)
+}
+
 func (a *Analyzer) makeExpectedMain() diagnostic.Diagnostic {
 	return a.makeHeadDiagnostic(
 		"File must have a main function.",
