@@ -43,8 +43,10 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			return newExpr(expr), diag
 		}
 
-		case ast.NilExpression:
-			return newExpr(tast.NilExpression{}), nil
+		case ast.NilExpression: {
+			expr, diag := a.analyzeNilExpr(expr)
+			return newExpr(expr), diag
+		}
 		
 		case ast.VoidExpression: {
 			expr, diag := a.analyzeVoidExpr(expr, shallow, expectedType)
@@ -164,6 +166,34 @@ func (a *Analyzer) analyzeRangeExpr(expr ast.RangeExpression, shallow bool) (tas
 // TODO: finish
 func (a *Analyzer) analyzeAsExpr(expr ast.AsExpression, shallow bool) (tast.AsExpression, diagnostic.Diagnostic) {
     return tast.AsExpression{}, nil
+}
+
+func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression) (tast.NilExpression, diagnostic.Diagnostic) {
+	// there must be at most one type argument only.
+
+	t := types.DummyType(types.TypeUntypedNil{})
+	var inferredType *types.Type = &t
+
+	if len(expr.TypeArguments) == 1 {
+		// require argument to be an optional type.
+		// TODO: coerce?
+		if _, ok := expr.TypeArguments[0].Data.(types.TypeOptional); !ok {
+			return tast.NilExpression{}, a.makeExpectedType(types.TypeOptional{
+				Inside: types.DummyType(types.TypeAny{}),
+			}, expr.TypeArguments[0].Data, expr.TypeArguments[0].Token)
+		}
+
+		t := expr.TypeArguments[0]
+		inferredType = &t
+	} else if len(expr.TypeArguments) > 1 {
+		return tast.NilExpression{}, a.makeExpectedTypeArity(1, len(expr.TypeArguments), expr.Token)
+	}
+
+	return tast.NilExpression{
+		Token: expr.Token,
+		TypeArguments: expr.TypeArguments,
+		InferredType: inferredType,
+	}, nil
 }
 
 func (a *Analyzer) analyzeVoidExpr(expr ast.VoidExpression, shallow bool, expectedType *types.TypeData) (tast.VoidExpression, diagnostic.Diagnostic) {

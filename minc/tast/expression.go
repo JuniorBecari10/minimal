@@ -42,7 +42,11 @@ type CoerceExpression struct {
 	ConvertType types.TypeData
 }
 
-type NilExpression ast.NilExpression
+type NilExpression struct {
+	Token token.Token
+	TypeArguments []types.Type
+	InferredType *types.Type // must be optional
+}
 
 type VoidExpression struct {
 	Expr *Expression // optional
@@ -146,7 +150,14 @@ func (x CoerceExpression) Type() types.TypeData {
 	return x.ConvertType
 }
 
-func (NilExpression) Type() types.TypeData   { return types.TypeUntypedNil{} }
+func (x NilExpression) Type() types.TypeData {
+	if x.InferredType == nil {
+		return types.TypeUntypedNil{}
+	} else {
+		return x.InferredType.Data
+	}
+}
+
 func (VoidExpression) Type() types.TypeData  { return types.TypeVoid{} }
 
 func (x UnaryExpression) Type() types.TypeData {

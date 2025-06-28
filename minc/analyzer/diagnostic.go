@@ -126,7 +126,14 @@ func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Toke
 
 func (a *Analyzer) makeExpectedArity(expected, got int, tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
-		fmt.Sprintf("Expected '%d' arguments, but got '%d' instead.", expected, got),
+		fmt.Sprintf("Expected %d argument(s), but got %d instead.", expected, got),
+		tok,
+	)
+}
+
+func (a *Analyzer) makeExpectedTypeArity(expected, got int, tok token.Token) diagnostic.Diagnostic {
+	return a.makeDiagnostic(
+		fmt.Sprintf("Expected %d type argument(s), but got %d instead.", expected, got),
 		tok,
 	)
 }

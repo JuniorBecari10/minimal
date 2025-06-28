@@ -1,24 +1,11 @@
 fn main() {
-    {
-        10 // correct. tail expressions do not have a semicolon.
-    }; // type: int
-    
-    {
-        10; // warning from parser. this shouldn't have a semicolon. but its value will be returned anyway.
-    }; // type: int
+    let x = {
+        return;
+    }; // never
 
-    {
-        while true { }
-        10 // error from analyzer. this is not returned and is not consistent.
-    }; // type: void
-
-    {
-        while true { }
-        10; // correct. this won't be returned from the block.
-    }; // type: void
-
-    {
-        while true { }
-        out 10; // correct. this will be returned.
-    }; // type: int
+    x; abelha;
 }
+
+fn abelha(): int {
+    return 10;
+} // int

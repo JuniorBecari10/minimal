@@ -1,0 +1,11 @@
+fn main() {
+    let x = { }; // void
+    let y = {
+        out 20;
+    }; // int
+    let z = {
+        out;
+    }; // void
+
+    x; y; z;
+}

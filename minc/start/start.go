@@ -48,7 +48,7 @@ func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("%#v\n\n", ast)
+	// fmt.Printf("%#v\n\n", ast)
 
 	tast, res := analyzer.New(ast, fileData).Analyze()
 	
@@ -56,7 +56,8 @@ func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("%#v\n", tast)
+	// fmt.Prilnntf("%#v\n", tast)
+	fmt.Sprintln(tast)
 
 	return value.Chunk{}, true
 }

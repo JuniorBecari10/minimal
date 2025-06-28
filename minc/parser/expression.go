@@ -258,6 +258,7 @@ func (p *Parser) parseNil() (ast.Expression, diagnostic.Diagnostic) {
 
 	return newExpr(tok, ast.NilExpression{
 		TypeArguments: typeArgs,
+		Token: tok,
 	}), nil
 }
 

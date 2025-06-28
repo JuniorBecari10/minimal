@@ -48,6 +48,7 @@ type AsExpression struct {
 }
 
 type NilExpression struct {
+	Token token.Token
 	TypeArguments []types.Type
 }
 

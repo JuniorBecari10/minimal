@@ -1,0 +1,11 @@
+fn main() {
+    nil; // ok (it will be discarded anyway)
+    nil<int>; // error
+    nil<float?>; // ok
+
+    let x = nil; // error (needs concrete type)
+    let y: int? = nil; y; // ok
+    let z = nil<str?>; z; // ok
+
+    let a: int = nil; // error (incompatible types)
+}
