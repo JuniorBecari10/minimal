@@ -135,7 +135,7 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
         return from
 	}
 
-	switch from.(type) {
+	switch check := from.(type) {
 		// int -> float
 		case types.TypeInt: {
 			if _, ok := to.(types.TypeFloat); ok {
@@ -154,10 +154,32 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
 		case types.TypeUnknown: {
 			return to
 		}
+
+		// check optional (if types inside optionals can coerce)
+		case types.TypeOptional: {
+			// unwrap inner nil? -> T??
+			if _, isNil := check.Inside.Data.(types.TypeUntypedNil); isNil {
+				if _, ok := to.(types.TypeOptional); ok {
+					return to
+				}
+			}
+
+			if toOpt, ok := to.(types.TypeOptional); ok {
+				inner := mergeTypes(fromOpt.Type, toOpt.Type)
+				if inner != nil {
+					return types.TypeOptional{Type: inner}
+				}
+			}	
+		}
 	}
 	
 	// any type -> any
 	if _, ok := to.(types.TypeAny); ok {
+		return to
+	}
+
+	// any type -> unknown
+	if _, ok := to.(types.TypeUnknown); ok {
 		return to
 	}
 

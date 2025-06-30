@@ -187,8 +187,7 @@ func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression) (tast.NilExpression, d
 			}, expr.TypeArguments[0].Data, expr.TypeArguments[0].Token)
 		}
 
-		t := expr.TypeArguments[0]
-		inferredType = t
+		inferredType = expr.TypeArguments[0]
 	} else if len(expr.TypeArguments) > 1 {
 		return tast.NilExpression{}, a.makeExpectedTypeArity(1, len(expr.TypeArguments), expr.Token)
 	}
@@ -205,18 +204,28 @@ func (a *Analyzer) analyzeSomeExpr(expr ast.SomeExpression, shallow bool) (tast.
 		return tast.SomeExpression{}, diag
 	}
 
-	// borrows error checking from nil
-	nilExpr, diag := a.analyzeNilExpr(ast.NilExpression{
-		Token: expr.Inside.Base.Token,
-		TypeArguments: expr.TypeArguments,
-	}); if diag != nil {
-		return tast.SomeExpression{}, diag
+	inferredType := types.DummyType(types.TypeOptional{
+		Inside: types.DummyType(inside.Data.Type()),
+	})
+
+	if len(expr.TypeArguments) == 1 {
+		// require argument to be an optional type.
+		// TODO: coerce?
+		if _, ok := expr.TypeArguments[0].Data.(types.TypeOptional); !ok {
+			return tast.SomeExpression{}, a.makeExpectedType(types.TypeOptional{
+				Inside: types.DummyType(types.TypeAny{}),
+			}, expr.TypeArguments[0].Data, expr.TypeArguments[0].Token)
+		}
+
+		inferredType = expr.TypeArguments[0]
+	} else if len(expr.TypeArguments) > 1 {
+		return tast.SomeExpression{}, a.makeExpectedTypeArity(1, len(expr.TypeArguments), expr.Inside.Base.Token)
 	}
 
 	return tast.SomeExpression{
 		Inside: inside,
-		TypeArguments: nilExpr.TypeArguments,
-		InferredType: nilExpr.InferredType,
+		TypeArguments: expr.TypeArguments,
+		InferredType: inferredType,
 	}, nil
 }
 
