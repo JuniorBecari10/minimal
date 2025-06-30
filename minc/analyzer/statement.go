@@ -33,7 +33,6 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 		}
 
 		case ast.OutStatement: {
-			fmt.Println("out!")
 			stmt, diag := a.outStmt(s, stmt, inferredType)
 			return newStmt(stmt), diag
 		}
@@ -137,8 +136,6 @@ func (a *Analyzer) outStmt(
 	stmt ast.OutStatement,
 	inferredType **types.TypeData,
 ) (tast.OutStatement, diagnostic.Diagnostic) {
-	fmt.Println("aaaaaaaa")
-	fmt.Println(*inferredType)
 	if stmt.Expression == nil {
 		// no expression = void
 
@@ -165,7 +162,6 @@ func (a *Analyzer) outStmt(
 	// set the inferred type to be the type of the expression
 	if *inferredType == nil {
 		infer := expr.Data.Type()
-		fmt.Println(infer)
 		*inferredType = &infer
 	}
 

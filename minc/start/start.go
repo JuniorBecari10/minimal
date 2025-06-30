@@ -56,8 +56,8 @@ func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
 		os.Exit(1)
 	}
 
-	// fmt.Prilnntf("%#v\n", tast)
-	fmt.Sprintln(tast)
+	fmt.Printf("%#v\n", tast)
+	// fmt.Sprintln(tast)
 
 	return value.Chunk{}, true
 }

@@ -124,6 +124,21 @@ func (a *Analyzer) makeExpectedType(expected, got types.TypeData, tok token.Toke
 	)
 }
 
+func (a *Analyzer) makeExpectedReturnType(expected, got types.TypeData, tok token.Token, annotated bool) diagnostic.Diagnostic {
+	if annotated {
+		return a.makeDiagnostic(
+			fmt.Sprintf("Expected return type to be '%s', but got '%s', which cannot be coerced to it.", expected.String(), got.String()),
+			tok,
+		)
+	} else {
+		return a.makeHelpDiagnostic(
+			fmt.Sprintf("Expected return type to be '%s', but got '%s', which cannot be coerced to it.", expected.String(), got.String()),
+			[]string { "The returned type is not annotated, so it's set to be 'void' by default." },
+			tok,
+		)
+	}
+}
+
 func (a *Analyzer) makeExpectedArity(expected, got int, tok token.Token) diagnostic.Diagnostic {
 	return a.makeDiagnostic(
 		fmt.Sprintf("Expected %d argument(s), but got %d instead.", expected, got),

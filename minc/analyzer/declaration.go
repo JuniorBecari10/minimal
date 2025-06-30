@@ -12,9 +12,11 @@ import (
 // because this is a statement, and not an expression, like a lambda.
 func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnostic.Diagnostic) {
 	returnType := types.DummyType(types.TypeVoid{})
+	returnAnnotated := false
 
 	if decl.Return != nil {
 		returnType = *decl.Return
+		returnAnnotated = true
 	}
 
 	paramTypes := []types.Type{}
@@ -37,7 +39,11 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		Base: tast.AstBase{},
 		Data: body,
 	}, returnType.Data); if !ok {
-		return tast.FnDeclaration{}, a.makeExpectedType(returnType.Data, body.Type(), returnType.Token)
+		if returnAnnotated {
+			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.Type(), decl.Return.Token, returnAnnotated)
+		} else {
+			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.Type(), decl.Name, returnAnnotated)
+		}
 	}
 
 	returnType.Data = coerced.Data.Type()

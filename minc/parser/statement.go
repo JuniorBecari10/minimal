@@ -123,8 +123,10 @@ func (p *Parser) returnStmt(requireSemicolon bool) (ast.Statement, diagnostic.Di
 }
 
 func (p *Parser) outStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
-	// To the parser they mean the same thing.
-	return p.returnStmt(requireSemicolon)
+	stmt, diag := p.returnStmt(requireSemicolon)
+	return newStmt(stmt.Base.Token, ast.OutStatement{
+		Expression: stmt.Data.(ast.ReturnStatement).Expression,
+	}), diag
 }
 
 func (p *Parser) exprStmt(requireSemicolon bool) (ast.Statement, diagnostic.Diagnostic) {
