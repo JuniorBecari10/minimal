@@ -46,6 +46,8 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		}
 	}
 
+	// TODO: check if it's concrete?
+
 	returnType.Data = coerced.Data.Type()
 
 	a.addVariable(decl.Name, types.Type{

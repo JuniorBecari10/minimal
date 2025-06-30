@@ -45,7 +45,13 @@ type CoerceExpression struct {
 type NilExpression struct {
 	Token token.Token
 	TypeArguments []types.Type
-	InferredType *types.Type // must be optional
+	InferredType types.Type // must be an optional type (T?).
+}
+
+type SomeExpression struct {
+	Inside Expression
+	TypeArguments []types.Type
+	InferredType types.Type // must be an optional type (T?).
 }
 
 type VoidExpression struct {
@@ -151,11 +157,11 @@ func (x CoerceExpression) Type() types.TypeData {
 }
 
 func (x NilExpression) Type() types.TypeData {
-	if x.InferredType == nil {
-		return types.TypeUntypedNil{}
-	} else {
-		return x.InferredType.Data
-	}
+	return x.InferredType.Data
+}
+
+func (x SomeExpression) Type() types.TypeData {
+	return x.InferredType.Data
 }
 
 func (VoidExpression) Type() types.TypeData  { return types.TypeVoid{} }

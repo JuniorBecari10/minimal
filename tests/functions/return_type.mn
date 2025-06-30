@@ -1,0 +1,12 @@
+fn main() {
+    var x: int? = nil;
+    x = |10|;
+    x;
+
+    let a = <int?> |10|;
+    a;
+
+    // ---
+
+    let n: float? = |nil|; // error (correct type: float??)
+}

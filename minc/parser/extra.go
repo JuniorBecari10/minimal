@@ -39,12 +39,14 @@ func (p *Parser) parseOneStmtBlock(start token.TokenKind, requireSemicolon bool)
 		return ast.BlockExpression{
 			Stmts: []ast.Statement{},
 			Token: tok,
+			IsFunctionBlock: requireSemicolon,
 		}, nil
 	}
 
 	return ast.BlockExpression{
 		Stmts: []ast.Statement{stmt},
 		Token: tok,
+		IsFunctionBlock: requireSemicolon,
 	}, nil
 }
 
@@ -72,6 +74,7 @@ func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) 
 	return ast.BlockExpression{
 		Stmts: stmts,
 		Token: tok,
+		IsFunctionBlock: true, // doesn't matter here
 	}, nil
 }
 

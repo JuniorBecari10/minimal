@@ -10,8 +10,8 @@ import (
 
 type PrefixFn = func() (ast.Expression, diagnostic.Diagnostic)
 type InfixFn = func(ast.Expression, token.Position) (ast.Expression, diagnostic.Diagnostic)
-type Precedence int
 
+type Precedence int
 const (
 	PREC_LOWEST Precedence = iota
 	PREC_ASSIGNMENT    // = += -= *= /= %=
@@ -79,6 +79,9 @@ func (p *Parser) getPrefixFn(kind token.TokenKind) PrefixFn {
 
 		case token.TokenIfKw: return p.parseIf
 		case token.TokenFnKw: return p.parseFnExpr
+		
+		case token.TokenLess: return p.parsePrefixTypeArguments
+		case token.TokenVerticalBar: return func() (ast.Expression, diagnostic.Diagnostic) { return p.parseSome([]types.Type{}) }
 
 		case token.TokenNotKw: return func() (ast.Expression, diagnostic.Diagnostic) { return p.parseUnary(token.TokenNotKw) }
 		case token.TokenMinus: return func() (ast.Expression, diagnostic.Diagnostic) { return p.parseUnary(token.TokenMinus) }
@@ -385,6 +388,34 @@ func (p *Parser) parseFnExpr() (ast.Expression, diagnostic.Diagnostic) {
 		Parameters: params,
 		Return: returnType,
 		Body: body,
+	}), nil
+}
+
+// this disambiguates the function to call. for now, this only calls parseSome.
+func (p *Parser) parsePrefixTypeArguments() (ast.Expression, diagnostic.Diagnostic) {
+	args, diag := p.parseTypeArguments(); if diag != nil {
+		return ast.Expression{}, diag
+	}
+
+	return p.parseSome(args)
+}
+
+func (p *Parser) parseSome(typeArgs []types.Type) (ast.Expression, diagnostic.Diagnostic) {
+	bar, diag := p.expectToken(token.TokenVerticalBar); if diag != nil {
+		return ast.Expression{}, diag
+	}
+	
+	inside, diag := p.parseExpression(); if diag != nil {
+		return ast.Expression{}, diag
+	}
+
+	_, diag = p.expectToken(token.TokenVerticalBar); if diag != nil {
+		return ast.Expression{}, diag
+	}
+
+	return newExpr(bar, ast.SomeExpression{
+		Inside: inside,
+		TypeArguments: typeArgs,
 	}), nil
 }
 

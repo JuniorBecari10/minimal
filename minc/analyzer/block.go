@@ -38,7 +38,7 @@ func (a *Analyzer) analyzeBlock(block ast.BlockExpression, mode BlockAnalyzeMode
 			var diag diagnostic.Diagnostic
 
             // if it has a semicolon here, report it as a warning, since it is redundant.
-			if stmt.Semicolon != nil {
+			if stmt.Semicolon != nil && !block.IsFunctionBlock {
 				diag = a.makeWarnRedundantSemicolon(*stmt.Semicolon)
 			}
 

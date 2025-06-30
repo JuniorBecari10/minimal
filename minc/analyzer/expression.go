@@ -47,6 +47,11 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			expr, diag := a.analyzeNilExpr(expr)
 			return newExpr(expr), diag
 		}
+
+		case ast.SomeExpression: {
+			expr, diag := a.analyzeSomeExpr(expr, shallow)
+			return newExpr(expr), diag
+		}
 		
 		case ast.VoidExpression: {
 			expr, diag := a.analyzeVoidExpr(expr, shallow, expectedType)
@@ -171,8 +176,7 @@ func (a *Analyzer) analyzeAsExpr(expr ast.AsExpression, shallow bool) (tast.AsEx
 func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression) (tast.NilExpression, diagnostic.Diagnostic) {
 	// there must be at most one type argument only.
 
-	t := types.DummyType(types.TypeUntypedNil{})
-	var inferredType *types.Type = &t
+	inferredType := types.DummyType(types.TypeUntypedNil{})
 
 	if len(expr.TypeArguments) == 1 {
 		// require argument to be an optional type.
@@ -184,7 +188,7 @@ func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression) (tast.NilExpression, d
 		}
 
 		t := expr.TypeArguments[0]
-		inferredType = &t
+		inferredType = t
 	} else if len(expr.TypeArguments) > 1 {
 		return tast.NilExpression{}, a.makeExpectedTypeArity(1, len(expr.TypeArguments), expr.Token)
 	}
@@ -193,6 +197,26 @@ func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression) (tast.NilExpression, d
 		Token: expr.Token,
 		TypeArguments: expr.TypeArguments,
 		InferredType: inferredType,
+	}, nil
+}
+
+func (a *Analyzer) analyzeSomeExpr(expr ast.SomeExpression, shallow bool) (tast.SomeExpression, diagnostic.Diagnostic) {
+	inside, diag := a.analyzeExpression(expr.Inside, shallow, nil); if diag != nil {
+		return tast.SomeExpression{}, diag
+	}
+
+	// borrows error checking from nil
+	nilExpr, diag := a.analyzeNilExpr(ast.NilExpression{
+		Token: expr.Inside.Base.Token,
+		TypeArguments: expr.TypeArguments,
+	}); if diag != nil {
+		return tast.SomeExpression{}, diag
+	}
+
+	return tast.SomeExpression{
+		Inside: inside,
+		TypeArguments: nilExpr.TypeArguments,
+		InferredType: nilExpr.InferredType,
 	}, nil
 }
 

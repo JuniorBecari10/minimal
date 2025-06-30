@@ -40,6 +40,7 @@ const (
 	TokenDoubleDot = "'..'"
 
 	TokenArrow = "'->'"
+	TokenVerticalBar = "'|'"
 
 	TokenGreater      = "'>'"
 	TokenGreaterEqual = "'>='"

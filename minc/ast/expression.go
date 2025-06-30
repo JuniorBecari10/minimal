@@ -52,6 +52,11 @@ type NilExpression struct {
 	TypeArguments []types.Type
 }
 
+type SomeExpression struct {
+	Inside Expression
+	TypeArguments []types.Type
+}
+
 type VoidExpression struct {
 	Expr *Expression // optional
 }
@@ -104,6 +109,7 @@ type FnExpression struct {
 type BlockExpression struct {
 	Stmts []Statement
 	Token token.Token
+	IsFunctionBlock bool
 }
 
 type IfExpression struct {
@@ -131,6 +137,7 @@ func (x CharExpression) expr()                 {}
 func (x StringExpression) expr()               {}
 func (x BoolExpression) expr()                 {}
 func (x NilExpression) expr()                  {}
+func (x SomeExpression) expr()                 {}
 func (x VoidExpression) expr()                 {}
 func (x RangeExpression) expr()                {}
 func (x AsExpression) expr()                   {}
