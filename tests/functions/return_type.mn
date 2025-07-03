@@ -2,10 +2,12 @@ fn main() {
     let x = {
         return 10;
     };
-    x;
+    x; // never
     
-    fn a(): _ -> 10;
-    a;
+    fn f(): _ -> 10;
+    f; // fn (): int (inferred)
+    a; // fn (): int
 }
 
 fn a(): int -> 10;
+fn b(): _ { }

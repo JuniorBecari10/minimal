@@ -12,11 +12,9 @@ import (
 // because this is a statement, and not an expression, like a lambda.
 func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnostic.Diagnostic) {
 	returnType := types.DummyType(types.TypeVoid{})
-	returnAnnotated := false
 
 	if decl.Return != nil {
 		returnType = *decl.Return
-		returnAnnotated = true
 	}
 
 	paramTypes := []types.Type{}
@@ -34,21 +32,12 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
 	}
 
-	// if the return type is unknown, it will coerce.
-	coerced, ok := coerceExpr(tast.Expression{
-		Base: tast.AstBase{},
-		Data: body,
-	}, returnType.Data); if !ok {
-		if returnAnnotated {
-			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.Type(), decl.Return.Token, returnAnnotated)
-		} else {
-			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.Type(), decl.Name, returnAnnotated)
-		}
-	}
-
 	// TODO: check if it's concrete?
 
-	returnType.Data = coerced.Data.Type()
+	// change return data to the block's if it's unknown (that means, open for inference)
+	if _, ok := returnType.Data.(types.TypeUnknown); ok {
+		returnType.Data = body.BlockType
+	}
 
 	a.addVariable(decl.Name, types.Type{
 		Token: decl.Name,
@@ -85,7 +74,7 @@ func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagno
 			Type: varType,
 		}, nil
 	} else {
-		if ok := canCoerce(expr.Data.Type(), decl.Type.Data); !ok {
+		if !canCoerce(expr.Data.Type(), decl.Type.Data) {
 			return tast.VarDeclaration{}, a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
 		}
 

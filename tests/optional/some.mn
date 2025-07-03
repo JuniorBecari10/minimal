@@ -8,6 +8,6 @@ fn main() {
 
     // ---
 
-    let n: (float?)? = |nil|; // error (correct type: float??)
-    let b = |nil|;
+    let n: float?? = |nil|; // ok
+    let b = |nil|; // error: expected concrete type
 }

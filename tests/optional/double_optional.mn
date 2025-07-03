@@ -1,0 +1,4 @@
+fn main() {
+    let x: float?? = |nil|; // 'nil' coerces to 'float?', which coerces to 'float??'.
+    x; // float??
+}

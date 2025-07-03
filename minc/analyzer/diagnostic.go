@@ -82,7 +82,7 @@ func (a *Analyzer) makeCannotModifyImmutable(name token.Token) diagnostic.Diagno
 
 func (a *Analyzer) makeExpectedConcreteType(t types.Type) diagnostic.Diagnostic {
 	return a.makeHelpDiagnostic(
-		fmt.Sprintf("Expected concrete type, but '%s' is abstract.", t.Token.FormatError()),
+		fmt.Sprintf("Expected concrete type, but '%s' is abstract.", t.Data),
 		[]string{ "Please annotate this with a concrete type." },
 		t.Token,
 	)

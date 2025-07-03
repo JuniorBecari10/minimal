@@ -147,6 +147,7 @@ func (a *Analyzer) topLevelFnDecl(decl ast.FnDeclaration) (Global, diagnostic.Di
 		immutable: true,
 		initialized: false,
 		modified: false,
+		used: false,
 	}, nil
 }
 
@@ -172,6 +173,7 @@ func (a *Analyzer) topLevelVarDecl(decl ast.VarDeclaration) (Global, diagnostic.
 			immutable: decl.Immutable,
 			initialized: false,
 			modified: false,
+			used: false,
 		}, nil
 	} else {
 		// type is annotated; add the variable with its type.
@@ -183,6 +185,7 @@ func (a *Analyzer) topLevelVarDecl(decl ast.VarDeclaration) (Global, diagnostic.
 			immutable: decl.Immutable,
 			initialized: false,
 			modified: false,
+			used: false,
 		}, nil
 	}
 }

@@ -1,0 +1,7 @@
+fn main() {
+    let x = {
+        return;
+    }; // (never)
+    
+    x; // can all variable uses of type 'never' be removed?
+}
