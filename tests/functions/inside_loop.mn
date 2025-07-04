@@ -1,0 +1,20 @@
+fn main() {
+    loop {
+        break; // ok
+        continue; // ok
+        
+        fn a() {
+            // cannot use 'break' or 'continue' here.
+            break;
+            continue;
+        }
+
+        break; // ok
+        continue; // ok
+        
+        {
+            break; // ok
+            continue; // ok
+        }
+    }
+}

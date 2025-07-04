@@ -50,11 +50,31 @@ func (a *Analyzer) analyzeBinary(
 	return leftCoerced, rightCoerced, nil
 }
 
+// TODO: check the other types that can have abstract types inside them
 func typeIsConcrete(t types.TypeData) bool {
-	switch t.(type) {
+	switch type_ := t.(type) {
 		// the abstract types (nil and unknown).
 		case types.TypeUntypedNil, types.TypeUnknown:
 			return false
+
+		// if the type inside the optional is abstract, the entire optional type is also abstract.
+		case types.TypeOptional:
+			return typeIsConcrete(type_.Inside.Data)
+
+		// if any type inside a function type is abstract, the entire function type is also abstract.
+		case types.TypeFunction: {
+			// check parameters
+			for _, param := range type_.Parameters {
+				if !typeIsConcrete(param.Data) {
+					return false
+				}
+			}
+
+			return typeIsConcrete(type_.Return.Data)
+		}
+
+		case types.TypeRange: 
+			return typeIsConcrete(type_.Inside.Data)
 
 		default:
 			return true
@@ -135,7 +155,7 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
         return from
 	}
 
-	switch from.(type) {
+	switch fromCheck := from.(type) {
 		// int -> float
 		case types.TypeInt: {
 			if _, ok := to.(types.TypeFloat); ok {
@@ -157,7 +177,14 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
 
 		// check optional (if types inside optionals can coerce)
 		case types.TypeOptional: {
-			// unwrap inner nil? -> T??
+			// T? -> T?
+
+			// coerceable if both 'from' and 'to' are optionals.
+			if toOpt, ok := to.(types.TypeOptional); ok {
+				return mergeTypes(fromCheck.Inside.Data, toOpt.Inside.Data)
+			} else {
+				return nil
+			}
 		}
 	}
 	
@@ -172,6 +199,16 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
 	}
 
 	return nil
+}
+
+func typeNeedsUnusedWarning(t types.TypeData) bool {
+	switch t.(type) {
+		case types.TypeVoid, types.TypeNever:
+			return false
+
+		default:
+			return true
+	}
 }
 
 func (a *Analyzer) newScope() {

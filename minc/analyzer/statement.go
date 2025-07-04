@@ -171,6 +171,11 @@ func (a *Analyzer) outStmt(
 }
 
 func (a *Analyzer) forStmt(stmt ast.ForStatement) (tast.ForStatement, diagnostic.Diagnostic) {
+	inside := a.isInsideLoop
+	a.isInsideLoop = true
+
+	defer func() { a.isInsideLoop = inside }()
+
 	iterable, diag := a.analyzeExpression(stmt.Iterable, false, nil); if diag != nil {
 		return tast.ForStatement{}, diag
 	}
@@ -202,6 +207,11 @@ func (a *Analyzer) forStmt(stmt ast.ForStatement) (tast.ForStatement, diagnostic
 }
 
 func (a *Analyzer) loopStmt(stmt ast.LoopStatement) (tast.LoopStatement, diagnostic.Diagnostic) {
+	inside := a.isInsideLoop
+	a.isInsideLoop = true
+
+	defer func() { a.isInsideLoop = inside }()
+
 	block, res := a.analyzeBlockAlone(stmt.Block, MODE_LOOP); if res == RES_ERROR {
 		return tast.LoopStatement{}, diagnostic.HandledDiagnostic{}
 	}
@@ -216,6 +226,11 @@ func (a *Analyzer) loopStmt(stmt ast.LoopStatement) (tast.LoopStatement, diagnos
 }
 
 func (a *Analyzer) whileStmt(stmt ast.WhileStatement) (tast.WhileStatement, diagnostic.Diagnostic) {
+	inside := a.isInsideLoop
+	a.isInsideLoop = true
+
+	defer func() { a.isInsideLoop = inside }()
+
 	condition, diag := a.analyzeExpression(stmt.Condition, false, nil); if diag != nil {
 		return tast.WhileStatement{}, diag
 	}
@@ -276,7 +291,8 @@ func (a *Analyzer) exprStmt(stmt ast.ExprStatement) (tast.ExprStatement, diagnos
 	}
 
 	var retDiag diagnostic.Diagnostic = nil
-	if _, ok := expr.Data.Type().(types.TypeVoid); !ok {
+
+	if typeNeedsUnusedWarning(expr.Data.Type()) {
 		retDiag = a.makeWarnUnusedValueExprStmt(expr.Data.Type(), expr.Base.Token)
 	}
 

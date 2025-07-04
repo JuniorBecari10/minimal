@@ -1,0 +1,4 @@
+fn main() { }
+
+// rejected, because at the signature level the type must be fully concrete.
+fn a(x: _): _ { }

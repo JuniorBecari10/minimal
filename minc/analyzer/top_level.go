@@ -132,6 +132,8 @@ func (a *Analyzer) topLevelFnDecl(decl ast.FnDeclaration) (Global, diagnostic.Di
 	for _, param := range decl.Parameters {
 		if param.Type == nil {
 			return Global{}, a.makeTypeAnnotationsNeeded(param.Name)
+		} else if !typeIsConcrete(param.Type.Data) {
+			return Global{}, a.makeExpectedConcreteType(*param.Type)
 		}
 
 		paramTypes = append(paramTypes, *param.Type)
@@ -177,7 +179,13 @@ func (a *Analyzer) topLevelVarDecl(decl ast.VarDeclaration) (Global, diagnostic.
 		}, nil
 	} else {
 		// type is annotated; add the variable with its type.
-		// actual type checking is done later.
+		// just check if it's concrete.
+
+		if !typeIsConcrete(decl.Type.Data) {
+			return Global{}, a.makeExpectedConcreteType(*decl.Type)
+		}
+
+		// actual type checking (check if the expression type matches) is done later.
 		return Global{
 			name: decl.Name,
 			globalType: *decl.Type,

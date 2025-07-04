@@ -1,0 +1,5 @@
+fn main() { }
+
+fn a(): int -> 10; // ok
+fn b(): float -> 20; // ok, coerce.
+fn c(): str -> 30; // error

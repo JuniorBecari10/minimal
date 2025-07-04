@@ -10,10 +10,10 @@ import (
 
 type DiagnosticType string
 
-// TODO: add icons, like [X], (X) or |X| for errors, and '!' for warnings.
+// maybe change the icon, like [X], (X) or |X| for errors, and '!' for warnings.
 const (
-	TYPE_ERROR DiagnosticType = "Error"
-	TYPE_WARNING DiagnosticType = "Warning"
+	TYPE_ERROR DiagnosticType = "(X) Error"
+	TYPE_WARNING DiagnosticType = "(!) Warning"
 )
 
 type Diagnostic interface {
