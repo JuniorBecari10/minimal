@@ -1,5 +1,8 @@
 fn main() {
     let x: float = {
         10
-    };
+    }; // should coerce
+    x;
 }
+
+let a: float = 10;

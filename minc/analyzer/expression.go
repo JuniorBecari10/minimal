@@ -9,6 +9,8 @@ import (
 	"minlib/token"
 )
 
+type NewExprFn = func(data tast.ExprData) tast.Expression
+
 // expectedType is optional
 func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedType *types.TypeData) (tast.Expression, diagnostic.Diagnostic) {
 	newExpr := func(data tast.ExprData) tast.Expression {
@@ -20,7 +22,7 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 
 	switch expr := e.Data.(type) {
 		case ast.IntExpression:
-			return newExpr(a.analyzeIntExpr(expr)), nil
+			return newExpr(a.analyzeIntExpr(expr, expectedType, newExpr)), nil
 
 		case ast.FloatExpression:
 			return newExpr(a.analyzeFloatExpr(expr)), nil
@@ -133,10 +135,21 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 	panic(fmt.Sprintf("Internal: Invalid expression: %#v", e))
 }
 
-func (a *Analyzer) analyzeIntExpr(expr ast.IntExpression) tast.IntExpression {
-	return tast.IntExpression{
+// --- Below here, any expression that has or contain a value that may coerce, should take the expectedType as parameter.
+
+// coerces to float
+func (a *Analyzer) analyzeIntExpr(expr ast.IntExpression, expectedType *types.TypeData, newExpr NewExprFn) tast.IntExpression {
+	num := tast.IntExpression{
 		Literal: expr.Literal,
 	}
+
+	if expectedType != nil {
+		coerced, ok := coerceExpr(newExpr(num), *expectedType); if ok {
+        
+		}
+	}
+
+	return num
 }
 
 func (a *Analyzer) analyzeFloatExpr(expr ast.FloatExpression) tast.FloatExpression {

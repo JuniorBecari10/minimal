@@ -110,8 +110,9 @@ func getTypePrecedenceFor(kind token.TokenKind) TypePrecedence {
 // ---
 
 func (p *Parser) parseFnType() (types.Type, diagnostic.Diagnostic) {
-	// 'fn' keyword is already advanced.
-	fnKw := p.previous
+	fnKw, diag := p.advance(); if diag != nil {
+		return types.Type{}, diag
+	}
 
 	params, diag := p.parseParameterTypes(); if diag != nil {
 		return types.Type{}, diag
@@ -138,8 +139,9 @@ func (p *Parser) parseFnType() (types.Type, diagnostic.Diagnostic) {
 }
 
 func (p *Parser) parseRangeType() (types.Type, diagnostic.Diagnostic) {
-	// 'range' already advanced.
-	rangeTk := p.previous
+	rangeTk, diag := p.advance(); if diag != nil {
+		return types.Type{}, diag
+	}
 
 	args, diag := p.parseTypeArguments(); if diag != nil {
 		return types.Type{}, diag
@@ -159,7 +161,9 @@ func (p *Parser) parseRangeType() (types.Type, diagnostic.Diagnostic) {
 }
 
 func (p *Parser) parseGroupType() (types.Type, diagnostic.Diagnostic) {
-	// '(' already advanced.
+	_, diag := p.advance(); if diag != nil {
+		return types.Type{}, diag
+	}
 
 	t, diag := p.parseType(); if diag != nil {
 		return types.Type{}, diag
