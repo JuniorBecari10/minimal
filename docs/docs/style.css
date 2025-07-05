@@ -10,7 +10,8 @@
 /* Put a background color in the book title on the left. */
 #__nav_1_label,
 #__nav_2_label,
-#__nav_3_label {
+#__nav_3_label,
+#__nav_4_label {
     position: relative;
     left: -0.5em;
     margin-bottom: 0.5em;
@@ -19,6 +20,7 @@
 #__nav_1_label,
 #__nav_2_label,
 #__nav_3_label,
+#__nav_4_label,
 nav.md-nav--secondary:nth-child(1) > label:nth-child(1) {
     background-color: var(--md-default-fg-color--lightest);
     width: fit-content;
@@ -43,6 +45,7 @@ header.md-header {
 
 header.md-header--shadow {
     border-radius: 0 0 2em 2em;
+    box-shadow: -2px 15px 30px -15px rgba(0,0,0,0.50);
 }
 
 nav.md-tabs {
@@ -52,9 +55,12 @@ nav.md-tabs {
     padding-bottom: 1em;
 }
 
+/*
 footer {
     margin: 0 5em;
 }
+*/
+
 .md-footer__inner {
     border-radius: 2em 2em 0 0;
 }
