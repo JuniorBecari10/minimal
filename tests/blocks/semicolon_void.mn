@@ -1,0 +1,15 @@
+fn main() {
+    println("hi!"); // expressions that return void can be alone in a block and have a semicolon without throwing a warning.
+}
+
+fn void_expr() {
+    void(10);
+}
+
+fn not_void(): int {
+    10; // throw a warning
+}
+
+fn not_void_no_semicolon(): int {
+    10 // ok
+}

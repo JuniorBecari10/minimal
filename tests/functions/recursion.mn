@@ -1,0 +1,8 @@
+fn main() {
+    println(factorial(10));
+}
+
+fn factorial(x: int): int {
+    if x <= 1: x
+    else: x * factorial(x - 1)
+}

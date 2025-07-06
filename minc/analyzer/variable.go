@@ -32,7 +32,7 @@ func (v *Local) IsModified() bool {
 	return v.modified
 }
 
-func (v *Local) Used() bool {
+func (v *Local) IsUsed() bool {
 	return v.used
 }
 
@@ -72,7 +72,7 @@ func (v *Global) IsModified() bool {
 	return v.modified
 }
 
-func (v *Global) Used() bool {
+func (v *Global) IsUsed() bool {
 	return v.used
 }
 

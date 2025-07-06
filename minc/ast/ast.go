@@ -14,6 +14,7 @@ type AstBase struct {
 type Parameter struct {
 	Name token.Token
 	Type *types.Type // optional
+	Immutable bool
 }
 
 type Field struct {

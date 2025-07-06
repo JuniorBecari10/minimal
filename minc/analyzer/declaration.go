@@ -24,6 +24,9 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		retAnnotated = true
 	}
 
+	a.newScope()
+	defer a.endScope()
+
 	paramTypes := []types.Type{}
 
 	for _, param := range decl.Parameters {
@@ -34,6 +37,7 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		}
 
 		paramTypes = append(paramTypes, *param.Type)
+		a.addVariable(param.Name, *param.Type, true)
 	}
 
 	// return type may be unknown. check the body and see if the type can be coerced to it.

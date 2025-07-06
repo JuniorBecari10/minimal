@@ -10,7 +10,7 @@ type Variable interface {
 	Type() types.Type
 	IsImmutable() bool
 	IsModified() bool
-	Used() bool
+	IsUsed() bool
 
 	MarkModified()
 	MarkUsed()

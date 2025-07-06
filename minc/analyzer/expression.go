@@ -22,7 +22,7 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 
 	switch expr := e.Data.(type) {
 		case ast.IntExpression:
-			return newExpr(a.analyzeIntExpr(expr, expectedType, newExpr)), nil
+			return a.analyzeIntExpr(expr, expectedType, newExpr), nil
 
 		case ast.FloatExpression:
 			return newExpr(a.analyzeFloatExpr(expr)), nil
@@ -46,12 +46,12 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 		}
 
 		case ast.NilExpression: {
-			expr, diag := a.analyzeNilExpr(expr)
+			expr, diag := a.analyzeNilExpr(expr, expectedType)
 			return newExpr(expr), diag
 		}
 
 		case ast.SomeExpression: {
-			expr, diag := a.analyzeSomeExpr(expr, shallow)
+			expr, diag := a.analyzeSomeExpr(expr, shallow, expectedType)
 			return newExpr(expr), diag
 		}
 		
@@ -138,18 +138,19 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 // --- Below here, any expression that has or contain a value that may coerce, should take the expectedType as parameter.
 
 // coerces to float
-func (a *Analyzer) analyzeIntExpr(expr ast.IntExpression, expectedType *types.TypeData, newExpr NewExprFn) tast.IntExpression {
+func (a *Analyzer) analyzeIntExpr(expr ast.IntExpression, expectedType *types.TypeData, newExpr NewExprFn) tast.Expression {
 	num := tast.IntExpression{
 		Literal: expr.Literal,
 	}
 
 	if expectedType != nil {
-		coerced, ok := coerceExpr(newExpr(num), *expectedType); if ok {
-        
+		// if cannot coerce, return it as-is. If there is a type mismatch, it will be caught later.
+		if coerced, ok := coerceExpr(newExpr(num), *expectedType); ok {
+			return coerced
 		}
 	}
 
-	return num
+	return newExpr(num)
 }
 
 func (a *Analyzer) analyzeFloatExpr(expr ast.FloatExpression) tast.FloatExpression {
@@ -186,14 +187,13 @@ func (a *Analyzer) analyzeAsExpr(expr ast.AsExpression, shallow bool) (tast.AsEx
     return tast.AsExpression{}, nil
 }
 
-func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression) (tast.NilExpression, diagnostic.Diagnostic) {
+func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression, expectedType *types.TypeData) (tast.NilExpression, diagnostic.Diagnostic) {
 	// there must be at most one type argument only.
 
 	inferredType := types.DummyType(types.TypeUntypedNil{})
 
 	if len(expr.TypeArguments) == 1 {
 		// require argument to be an optional type.
-		// TODO: coerce?
 		if _, ok := expr.TypeArguments[0].Data.(types.TypeOptional); !ok {
 			return tast.NilExpression{}, a.makeExpectedType(types.TypeOptional{
 				Inside: types.DummyType(types.TypeAny{}),
@@ -203,6 +203,13 @@ func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression) (tast.NilExpression, d
 		inferredType = expr.TypeArguments[0]
 	} else if len(expr.TypeArguments) > 1 {
 		return tast.NilExpression{}, a.makeExpectedTypeArity(1, len(expr.TypeArguments), expr.Token)
+	} else {
+		// no type arguments.
+		// nil doesn't need to be wrapped in a coerce expression, since at runtime it will be the same value anyway.
+		if expectedType != nil && canCoerce(inferredType.Data, *expectedType) {
+			// if it can coerce, it is likely an optional.
+			inferredType = types.DummyType(*expectedType)
+		}
 	}
 
 	return tast.NilExpression{
@@ -212,7 +219,7 @@ func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression) (tast.NilExpression, d
 	}, nil
 }
 
-func (a *Analyzer) analyzeSomeExpr(expr ast.SomeExpression, shallow bool) (tast.SomeExpression, diagnostic.Diagnostic) {
+func (a *Analyzer) analyzeSomeExpr(expr ast.SomeExpression, shallow bool, expectedType *types.TypeData) (tast.SomeExpression, diagnostic.Diagnostic) {
 	inside, diag := a.analyzeExpression(expr.Inside, shallow, nil); if diag != nil {
 		return tast.SomeExpression{}, diag
 	}
@@ -233,6 +240,13 @@ func (a *Analyzer) analyzeSomeExpr(expr ast.SomeExpression, shallow bool) (tast.
 		inferredType = expr.TypeArguments[0]
 	} else if len(expr.TypeArguments) > 1 {
 		return tast.SomeExpression{}, a.makeExpectedTypeArity(1, len(expr.TypeArguments), expr.Inside.Base.Token)
+	} else {
+		// no type arguments.
+		// nil doesn't need to be wrapped in a coerce expression, since at runtime it will be the same value anyway.
+		if expectedType != nil && canCoerce(inferredType.Data, *expectedType) {
+			// if it can coerce, it is likely an optional.
+			inferredType = types.DummyType(*expectedType)
+		}
 	}
 
 	return tast.SomeExpression{
@@ -251,6 +265,8 @@ func (a *Analyzer) analyzeVoidExpr(expr ast.VoidExpression, shallow bool, expect
 		expr, diag := a.analyzeExpression(*expr.Expr, shallow, expectedType); if diag != nil {
 			return tast.VoidExpression{}, diag
 		}
+
+		// the type of the expression can be abstract, since it will be discarded and not used.
 
 		return tast.VoidExpression{
 			Expr: &expr,
