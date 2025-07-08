@@ -29,6 +29,7 @@ func (p *Parser) parseFnBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
 	}
 }
 
+// 'ShowSemicolonWarning' is inversely proportional to 'requireSemicolon'. Brace blocks set it to false.
 func (p *Parser) parseOneStmtBlock(start token.TokenKind, requireSemicolon bool) (ast.BlockExpression, diagnostic.Diagnostic) {
 	tok, diag := p.expectToken(start); if diag != nil {
 		return ast.BlockExpression{}, diag
@@ -39,14 +40,14 @@ func (p *Parser) parseOneStmtBlock(start token.TokenKind, requireSemicolon bool)
 		return ast.BlockExpression{
 			Stmts: []ast.Statement{},
 			Token: tok,
-			IsFunctionBlock: requireSemicolon,
+			ShowSemicolonWarning: !requireSemicolon,
 		}, nil
 	}
 
 	return ast.BlockExpression{
 		Stmts: []ast.Statement{stmt},
 		Token: tok,
-		IsFunctionBlock: requireSemicolon,
+		ShowSemicolonWarning: !requireSemicolon,
 	}, nil
 }
 
@@ -74,10 +75,11 @@ func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) 
 	return ast.BlockExpression{
 		Stmts: stmts,
 		Token: tok,
-		IsFunctionBlock: true, // doesn't matter here
+		ShowSemicolonWarning: true, // here the warning should always appear
 	}, nil
 }
 
+// for both declarations and lambdas
 func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.BlockExpression, diagnostic.Diagnostic) {
 	errorRet := func(diag diagnostic.Diagnostic) ([]ast.Parameter, *types.Type, ast.BlockExpression, diagnostic.Diagnostic) {
 		return []ast.Parameter{}, nil, ast.BlockExpression{}, diag

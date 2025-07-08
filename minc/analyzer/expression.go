@@ -9,9 +9,8 @@ import (
 	"minlib/token"
 )
 
-type NewExprFn = func(data tast.ExprData) tast.Expression
-
 // expectedType is optional
+// TODO: coerce expression here
 func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedType *types.TypeData) (tast.Expression, diagnostic.Diagnostic) {
 	newExpr := func(data tast.ExprData) tast.Expression {
 		return tast.Expression{
@@ -22,7 +21,7 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 
 	switch expr := e.Data.(type) {
 		case ast.IntExpression:
-			return a.analyzeIntExpr(expr, expectedType, newExpr), nil
+			return newExpr(a.analyzeIntExpr(expr)), nil
 
 		case ast.FloatExpression:
 			return newExpr(a.analyzeFloatExpr(expr)), nil
@@ -135,22 +134,12 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 	panic(fmt.Sprintf("Internal: Invalid expression: %#v", e))
 }
 
-// --- Below here, any expression that has or contain a value that may coerce, should take the expectedType as parameter.
+// ---
 
-// coerces to float
-func (a *Analyzer) analyzeIntExpr(expr ast.IntExpression, expectedType *types.TypeData, newExpr NewExprFn) tast.Expression {
-	num := tast.IntExpression{
+func (a *Analyzer) analyzeIntExpr(expr ast.IntExpression) tast.IntExpression {
+	return tast.IntExpression{
 		Literal: expr.Literal,
 	}
-
-	if expectedType != nil {
-		// if cannot coerce, return it as-is. If there is a type mismatch, it will be caught later.
-		if coerced, ok := coerceExpr(newExpr(num), *expectedType); ok {
-			return coerced
-		}
-	}
-
-	return newExpr(num)
 }
 
 func (a *Analyzer) analyzeFloatExpr(expr ast.FloatExpression) tast.FloatExpression {
@@ -281,18 +270,23 @@ func (a *Analyzer) analyzeUnaryExpr(expr ast.UnaryExpression, shallow bool, expe
 		return tast.UnaryExpression{}, diag
 	}
 
-	if expr.Operator.Kind == token.TokenNotKw {
-		// must be boolean.
-		if _, ok := operand.Data.Type().(types.TypeBool); !ok {
-			return tast.UnaryExpression{}, a.makeExpectedType(types.TypeBool{}, operand.Data.Type(), operand.Base.Token)
+	switch expr.Operator.Kind {
+		case token.TokenNotKw: {
+			// must be boolean.
+			if _, ok := operand.Data.Type().(types.TypeBool); !ok {
+				return tast.UnaryExpression{}, a.makeExpectedType(types.TypeBool{}, operand.Data.Type(), operand.Base.Token)
+			}
 		}
-	} else if expr.Operator.Kind == token.TokenMinus {
-		// must be numeric (int / float).
-		if !typeIsNumeric(operand.Data.Type()) {
-			return tast.UnaryExpression{}, a.makeExpectedType(types.TypeFloat{}, operand.Data.Type(), operand.Base.Token)
+
+		case token.TokenMinus: {
+			// must be numeric (int / float).
+			if !typeIsNumeric(operand.Data.Type()) {
+				return tast.UnaryExpression{}, a.makeExpectedType(types.TypeFloat{}, operand.Data.Type(), operand.Base.Token)
+			}
 		}
-	} else {
-		panic(fmt.Sprintf("Internal: Invalid unary operator: '%s'", expr.Operator.Kind))
+
+		default:
+			panic(fmt.Sprintf("Internal: Invalid unary operator: '%s'", expr.Operator.Kind))
 	}
 
 	return tast.UnaryExpression{

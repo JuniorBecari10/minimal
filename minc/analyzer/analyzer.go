@@ -4,6 +4,7 @@ import (
 	"minc/ast"
 	"minc/parser"
 	"minc/tast"
+	"minc/types"
 	"minlib/file"
 )
 
@@ -31,6 +32,7 @@ type Analyzer struct {
 
 	scopeDepth uint32
 	isInsideLoop bool
+	expectedReturnType *types.TypeData
 
 	fileData *file.FileData
 }
@@ -45,6 +47,7 @@ func New(ast ast.Ast, fileData *file.FileData) *Analyzer {
 
 		scopeDepth: 0,
 		isInsideLoop: false,
+		expectedReturnType: nil,
 
 		fileData: fileData,
 	}

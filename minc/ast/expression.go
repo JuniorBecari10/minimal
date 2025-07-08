@@ -109,7 +109,7 @@ type FnExpression struct {
 type BlockExpression struct {
 	Stmts []Statement
 	Token token.Token
-	IsFunctionBlock bool
+	ShowSemicolonWarning bool
 }
 
 type IfExpression struct {

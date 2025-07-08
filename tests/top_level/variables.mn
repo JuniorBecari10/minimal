@@ -2,3 +2,5 @@ fn main() { }
 
 // TODO: remove duplicate error messages
 let x = |nil|; // error (needs concrete type)
+
+let a: float = 20; // coerce

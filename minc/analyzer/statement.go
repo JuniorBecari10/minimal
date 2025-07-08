@@ -90,13 +90,15 @@ func (a *Analyzer) returnStmt(
 		// no expression = void.
 
 		// set the inferred type to 'void', if it's a function's body.
-		if *inferredType == nil && mode == MODE_FUNCTION {
-			var infer types.TypeData = types.TypeVoid{}
-			*inferredType = &infer
-		} else {
-			// else, we set it to never, since returning in an inner block makes it not return anything.
-			var infer types.TypeData = types.TypeNever{}
-			*inferredType = &infer
+		if *inferredType == nil {
+			if mode == MODE_FUNCTION {
+				var infer types.TypeData = types.TypeVoid{}
+				*inferredType = &infer
+			} else {
+				// else, we set it to never, since returning in an inner block makes it not return anything.
+				var infer types.TypeData = types.TypeNever{}
+				*inferredType = &infer
+			}
 		}
 
 		return tast.ReturnStatement{
@@ -109,7 +111,7 @@ func (a *Analyzer) returnStmt(
 
 	// TODO: use the function's expected return type to help inferring this type.
 	// also, add an expected type parameter to analyzeBlock, analyzeStatement and some statements, such as return and out.
-	expr, diag := a.analyzeExpression(*stmt.Expression, false, nil); if diag != nil {
+	expr, diag := a.analyzeExpression(*stmt.Expression, false, a.expectedReturnType); if diag != nil {
 		return tast.ReturnStatement{}, diag
 	}
 	

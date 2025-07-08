@@ -24,11 +24,18 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		retAnnotated = true
 	}
 
+	oldExpectedReturn := a.expectedReturnType
+	a.expectedReturnType = &returnType.Data
+
+	defer func() { a.expectedReturnType = oldExpectedReturn }()
+
 	a.newScope()
 	defer a.endScope()
 
 	paramTypes := []types.Type{}
 
+	// function declarations must have annotated parameters with concrete types.
+	// the compiler won't try to infer them.
 	for _, param := range decl.Parameters {
 		if param.Type == nil {
 			return tast.FnDeclaration{}, a.makeTypeAnnotationsNeeded(param.Name)
@@ -100,20 +107,15 @@ func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagno
 			return tast.VarDeclaration{}, a.makeExpectedConcreteType(*decl.Type)
 		}
 
-		if !canCoerce(expr.Data.Type(), decl.Type.Data) {
-			return tast.VarDeclaration{}, a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
-		}
-
-		var ok bool
-		expr, ok = coerceExpr(expr, decl.Type.Data); if !ok {
-			return tast.VarDeclaration{}, a.makeExpectedType(decl.Type.Data, expr.Data.Type(), decl.Type.Token)
+		coercedExpr, ok := coerceExpr(expr, decl.Type.Data); if !ok {
+			return tast.VarDeclaration{}, a.makeExpectedType(decl.Type.Data, coercedExpr.Data.Type(), decl.Type.Token)
 		}
 
 		a.addVariable(decl.Name, *decl.Type, decl.Immutable)
 
 		return tast.VarDeclaration{
 			Name: decl.Name,
-			Init: expr,
+			Init: coercedExpr,
 			Type: *decl.Type,
 		}, nil
 	}
