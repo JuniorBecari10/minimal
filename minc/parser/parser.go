@@ -2,6 +2,7 @@ package parser
 
 import (
 	"minc/ast"
+	"minc/diagnostic"
 	"minc/lexer"
 	"minlib/file"
 	"minlib/token"
@@ -22,6 +23,7 @@ type Parser struct {
 	next token.Token
 
 	hadError bool
+	diagnostics []diagnostic.Diagnostic
 
 	// Turned on if the lexer the parser owns had an error. The parser may not continue parsing, because
 	// the subsequent tokens may be incomplete and thus not suitable for parsing.
@@ -39,6 +41,7 @@ func New(source string, fileData *file.FileData) *Parser {
 		// current and next set when starting to parse
 
 		hadError: false,
+		diagnostics: []diagnostic.Diagnostic{},
 		hadLexerError: false,
 
 		fileData: fileData,
@@ -70,12 +73,12 @@ func (p *Parser) setInitialTokens() ParserResult {
 	return RES_OK
 }
 
-func (p *Parser) Parse() (ast.Ast, ParserResult) {
+func (p *Parser) Parse() (ast.Ast, []diagnostic.Diagnostic, ParserResult) {
 	stmts := []ast.Statement{}
 	res := p.setInitialTokens()
 
 	if res == RES_ERROR {
-		return stmts, res
+		return stmts, p.diagnostics, res
 	}
 
 	for !p.current.IsEnd() {
@@ -88,11 +91,11 @@ func (p *Parser) Parse() (ast.Ast, ParserResult) {
 
 		// The parser cannot recover from a lexer error.
 		if p.hadLexerError {
-			return stmts, RES_ERROR
+			return stmts, p.diagnostics, RES_ERROR
 		}
 		
 		stmts = append(stmts, stmt)
 	}
 
-	return stmts, res
+	return stmts, p.diagnostics, res
 }

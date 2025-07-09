@@ -52,16 +52,17 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
 	}
 
-	// change return data to the block's if it's unknown (that means, open for inference)
-	if _, ok := returnType.Data.(types.TypeUnknown); ok {
-		returnType.Data = body.BlockType
-	} else if body.BlockType != returnType.Data {
-        // no check for coercions, this must be done at the return level
+	bodyCoerced, ok := coerceExpr(body.IntoExpr(), returnType.Data); if !ok {
 		if retAnnotated {
 			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, returnType.Token, retAnnotated)
 		} else {
 			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, decl.Name, retAnnotated)
 		}
+	}
+
+	// change return data to the block's if it's unknown (that means, open for inference)
+	if _, ok := returnType.Data.(types.TypeUnknown); ok {
+		returnType.Data = body.BlockType
 	}
 	
 	if !typeIsConcrete(returnType.Data) {
@@ -90,6 +91,8 @@ func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagno
 	}
 
 	if decl.Type == nil {
+		// if the type is not annotated, require the type of the expression to be concrete without coercions.
+		
 		if !typeIsConcrete(expr.Data.Type()) {
 			return tast.VarDeclaration{}, a.makeTypeAnnotationsNeeded(decl.Name)
 		}
@@ -103,6 +106,8 @@ func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagno
 			Type: varType,
 		}, nil
 	} else {
+		// if it is, require the type to be concrete and try to coerce the expression to it.
+
 		if !typeIsConcrete(decl.Type.Data) {
 			return tast.VarDeclaration{}, a.makeExpectedConcreteType(*decl.Type)
 		}

@@ -42,17 +42,25 @@ func Compile(sourcePath, outputPath string) {
 }
 
 func compileSource(source string, fileData *file.FileData) (value.Chunk, bool) {
-	ast, res := parser.New(source, fileData).Parse()
+	ast, diags, res := parser.New(source, fileData).Parse()
 	
 	if res == parser.RES_ERROR {
+		for _, diag := range diags {
+			diag.PrintDiagnostic()
+		}
+
 		os.Exit(1)
 	}
 
 	// fmt.Printf("%#v\n\n", ast)
 
-	tast, res := analyzer.New(ast, fileData).Analyze()
+	tast, diags, res := analyzer.New(ast, fileData).Analyze()
 	
 	if res == analyzer.RES_ERROR {
+		for _, diag := range diags {
+			diag.PrintDiagnostic()
+		}
+
 		os.Exit(1)
 	}
 

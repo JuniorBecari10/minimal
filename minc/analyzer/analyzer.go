@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"minc/ast"
+	"minc/diagnostic"
 	"minc/parser"
 	"minc/tast"
 	"minc/types"
@@ -32,7 +33,9 @@ type Analyzer struct {
 
 	scopeDepth uint32
 	isInsideLoop bool
+
 	expectedReturnType *types.TypeData
+	diagnostics []diagnostic.Diagnostic
 
 	fileData *file.FileData
 }
@@ -47,7 +50,9 @@ func New(ast ast.Ast, fileData *file.FileData) *Analyzer {
 
 		scopeDepth: 0,
 		isInsideLoop: false,
+
 		expectedReturnType: nil,
+		diagnostics: []diagnostic.Diagnostic{},
 
 		fileData: fileData,
 	}
@@ -55,11 +60,11 @@ func New(ast ast.Ast, fileData *file.FileData) *Analyzer {
 
 // Analyzes the code, does a lot of checkings, and if necessary or it's better, modifies it,
 // and returns a typed AST, ready to be compiled.
-func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
+func (a *Analyzer) Analyze() (tast.Tast, []diagnostic.Diagnostic, AnalyzerResult) {
 	a.addNatives()
 
 	res := a.hoistTopLevel(); if res != RES_OK {
-		return nil, res
+		return nil, a.diagnostics, res
 	}
 
 	tast, res := a.analyzeTopLevelStatements()
@@ -68,5 +73,5 @@ func (a *Analyzer) Analyze() (tast.Tast, AnalyzerResult) {
 		res = endRes
 	}
 
-	return tast, res
+	return tast, a.diagnostics, res
 }

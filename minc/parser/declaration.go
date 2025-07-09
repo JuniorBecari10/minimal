@@ -10,7 +10,7 @@ func (p *Parser) parseTopLevelDeclaration() (ast.Statement, ParserResult) {
 	return p.parseStatement(false, true)
 }
 
-// parses a statement and print the diagnostic if an error occurs.
+// parses a statement and add the diagnostic to the list inside the parser if an error occurs.
 // this is the synchronization point; this does not bubble up the error.
 // it returns a ParseResult for better error handling on the caller side.
 func (p *Parser) parseStatement(allowStatements, requireSemicolon bool) (ast.Statement, ParserResult) {
@@ -21,7 +21,7 @@ func (p *Parser) parseStatement(allowStatements, requireSemicolon bool) (ast.Sta
 	}
 
 	decl, diag := p.declaration(allowStatements, requireSemicolon); if diag != nil {
-		diag.PrintDiagnostic()
+		p.diagnostics = append(p.diagnostics, diag)
 		p.hadError = true
 
 		p.synchronize()

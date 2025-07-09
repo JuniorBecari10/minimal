@@ -10,7 +10,6 @@ import (
 )
 
 // expectedType is optional
-// TODO: coerce expression here
 func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedType *types.TypeData) (tast.Expression, diagnostic.Diagnostic) {
 	newExpr := func(data tast.ExprData) tast.Expression {
 		return tast.Expression{

@@ -135,6 +135,17 @@ type SetPropertyExpression struct {
 
 // ---
 
+func (b BlockExpression) IntoExpr() Expression {
+	return Expression{
+		Base: AstBase{
+			Token: b.Token,
+		},
+		Data: b,
+	}
+}
+
+// ---
+
 func (IntExpression) Type() types.TypeData    { return types.TypeInt{} }
 func (FloatExpression) Type() types.TypeData  { return types.TypeFloat{} }
 func (StringExpression) Type() types.TypeData { return types.TypeStr{} }

@@ -16,7 +16,7 @@ func (a *Analyzer) analyzeBlockAlone(block ast.BlockExpression, mode BlockAnalyz
 	res := RES_OK
 
 	blockRes, diag := a.analyzeBlock(block, mode, false); if diag != nil {
-		diag.PrintDiagnostic()
+		a.diagnostics = append(a.diagnostics, diag)
 		res = RES_ERROR
 	}
 
@@ -87,7 +87,7 @@ func (a *Analyzer) analyzeStatements(stmts ast.Ast, tok token.Token, mode BlockA
 	
 	for _, s := range stmts {
 		stmt, diag := a.analyzeStatement(s, &inferredType, mode); if diag != nil {
-			diag.PrintDiagnostic()
+			a.diagnostics = append(a.diagnostics, diag)
 
 			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
 				res = RES_ERROR
@@ -118,7 +118,7 @@ func (a *Analyzer) analyzeTopLevelStatements() (tast.Tast, AnalyzerResult) {
 
 	for _, s := range a.ast {
 		stmt, diag := a.analyzeStatement(s, nil, MODE_NORMAL); if diag != nil {
-			diag.PrintDiagnostic()
+			a.diagnostics = append(a.diagnostics, diag)
 
 			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
 				res = RES_ERROR
