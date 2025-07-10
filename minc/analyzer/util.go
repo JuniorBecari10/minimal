@@ -180,6 +180,7 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
 			// T? -> T?
 
 			// coerceable if both 'from' and 'to' are optionals.
+			// you wouldn't coerce a T? to a nil.
 			if toOpt, ok := to.(types.TypeOptional); ok {
 				return mergeTypes(fromCheck.Inside.Data, toOpt.Inside.Data)
 			} else {

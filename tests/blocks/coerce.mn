@@ -3,6 +3,23 @@ fn main() {
         10
     }; // should coerce
     x;
+
+    let y: float = {
+        out 10;
+    };
+    y;
+
+    fun({
+        out 1 + 1;
+    });
+
+    fun({
+        1 + 1
+    });
 }
 
 let a: float = 10;
+
+fn fun(x: float): float {
+    out x + 20;
+}

@@ -16,6 +16,8 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 
 	defer func() { a.isInsideLoop = inside }()
 
+	// ---
+
 	returnType := types.DummyType(types.TypeVoid{})
 	retAnnotated := false
 
@@ -29,9 +31,14 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 
 	defer func() { a.expectedReturnType = oldExpectedReturn }()
 
+	// ---
+
 	a.newScope()
 	defer a.endScope()
 
+	// ---
+
+	// convert parameters to their types
 	paramTypes := []types.Type{}
 
 	// function declarations must have annotated parameters with concrete types.
@@ -52,19 +59,19 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
 	}
 
-	bodyCoerced, ok := coerceExpr(body.IntoExpr(), returnType.Data); if !ok {
+	// merge return type with the block's if it's abstract.
+	if !typeIsConcrete(returnType.Data) {
+		returnType.Data = mergeTypes(returnType.Data, body.BlockType)
+	} else if body.BlockType != returnType.Data {
+        // no check for coercions, this must be done at the return level
 		if retAnnotated {
 			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, returnType.Token, retAnnotated)
 		} else {
 			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, decl.Name, retAnnotated)
 		}
 	}
-
-	// change return data to the block's if it's unknown (that means, open for inference)
-	if _, ok := returnType.Data.(types.TypeUnknown); ok {
-		returnType.Data = body.BlockType
-	}
 	
+	// maybe there's no need to check for never
 	if !typeIsConcrete(returnType.Data) {
 		return tast.FnDeclaration{}, a.makeExpectedConcreteType(returnType)
 	}
@@ -86,7 +93,12 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 }
 
 func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagnostic.Diagnostic) {
-	expr, diag := a.analyzeExpression(decl.Init, false, nil); if diag != nil {
+	var expectedType *types.TypeData = nil
+	if decl.Type != nil {
+		expectedType = &decl.Type.Data
+	}
+
+	expr, diag := a.analyzeExpression(decl.Init, false, expectedType); if diag != nil {
 		return tast.VarDeclaration{}, diag
 	}
 
@@ -112,15 +124,11 @@ func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagno
 			return tast.VarDeclaration{}, a.makeExpectedConcreteType(*decl.Type)
 		}
 
-		coercedExpr, ok := coerceExpr(expr, decl.Type.Data); if !ok {
-			return tast.VarDeclaration{}, a.makeExpectedType(decl.Type.Data, coercedExpr.Data.Type(), decl.Type.Token)
-		}
-
 		a.addVariable(decl.Name, *decl.Type, decl.Immutable)
 
 		return tast.VarDeclaration{
 			Name: decl.Name,
-			Init: coercedExpr,
+			Init: expr,
 			Type: *decl.Type,
 		}, nil
 	}

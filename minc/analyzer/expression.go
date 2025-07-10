@@ -9,8 +9,20 @@ import (
 	"minlib/token"
 )
 
-// expectedType is optional
 func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedType *types.TypeData) (tast.Expression, diagnostic.Diagnostic) {
+	expr, diag := a.expression(e, shallow, expectedType); if diag != nil || expectedType == nil {
+		return expr, diag
+	}
+
+	coerced, ok := coerceExpr(expr, *expectedType); if !ok {
+		return tast.Expression{}, a.makeExpectedType(*expectedType, expr.Data.Type(), expr.Base.Token)
+	}
+
+	return coerced, nil
+}
+
+// expectedType is optional
+func (a *Analyzer) expression(e ast.Expression, shallow bool, expectedType *types.TypeData) (tast.Expression, diagnostic.Diagnostic) {
 	newExpr := func(data tast.ExprData) tast.Expression {
 		return tast.Expression{
 			Base: tast.AstBase(e.Base),
@@ -98,10 +110,10 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 			return newExpr(expr), diag
 		}
 
-		case ast.FnExpression: {/*
+		case ast.FnExpression: {
 			expr, diag := a.analyzeFnExpr(expr, shallow, expectedType)
 			return newExpr(expr), diag
-		*/}
+		}
 
 		case ast.BlockExpression: {
 			expr, diag := a.analyzeBlockExpr(expr, shallow)
@@ -405,42 +417,98 @@ func (a *Analyzer) analyzeIdentifierAssignExpr(
 		Expr: assignExpr,
 	}, nil
 }
-/*
+
 func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedType *types.TypeData) (tast.FnExpression, diagnostic.Diagnostic) {
-    // the return type is inferred if not annotated, not automatic 'void', like function declarations.
+	inside := a.isInsideLoop
+	a.isInsideLoop = false // functions cancel this
+
+	defer func() { a.isInsideLoop = inside }()
+
+	// ---
+
+	// it is unknown.
 	returnType := types.DummyType(types.TypeUnknown{})
+	retAnnotated := false
 
 	if expr.Return != nil {
 		returnType = *expr.Return
+		retAnnotated = true
 	}
 
-	expectedFn, okFn := (*expectedType).(types.TypeFunction)
+	oldExpectedReturn := a.expectedReturnType
+	a.expectedReturnType = &returnType.Data
+
+	defer func() { a.expectedReturnType = oldExpectedReturn }()
+
+	// ---
+
+	a.newScope()
+	defer a.endScope()
+
+	// ---
+
+	// convert parameters to their types
 	paramTypes := []types.Type{}
 
+	// the compiler will try to infer the parameters if the expected type is a function.
 	for _, param := range expr.Parameters {
-		if param.Type == nil {
-			// try to infer the parameter type based on the inferred type, if it's a function.
+		// TODO: infer the parameters
+		if !typeIsConcrete(param.Type.Data) {
+			return tast.FnExpression{}, a.makeExpectedConcreteType(*param.Type)
 		}
 
 		paramTypes = append(paramTypes, *param.Type)
+		a.addVariable(param.Name, *param.Type, true)
+	}
+
+	// try to infer only the parameters if it's a shallow pass.
+	// don't enter the body and try to infer the return type by it.
+	if shallow {
+		// return type must be concrete without inference.
+		if !typeIsConcrete(returnType.Data) {
+            return tast.FnExpression{}, a.makeExpectedConcreteType(returnType)
+		}
+
+		return tast.FnExpression{
+			Parameters: expr.Parameters,
+			Return: returnType,
+			Body: tast.BlockExpression{
+				Stmts: []tast.Statement{},
+				Token: expr.Body.Token,
+				BlockType: types.TypeUnknown{}, // body type is unknown, since we haven't entered it.
+			},
+		}, nil
 	}
 
 	// return type may be unknown. check the body and see if the type can be coerced to it.
-	body, res := a.analyzeBlockAlone(decl.Body, MODE_FUNCTION); if res == RES_ERROR {
-		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
+	body, res := a.analyzeBlockAlone(expr.Body, MODE_FUNCTION); if res == RES_ERROR {
+		return tast.FnExpression{}, diagnostic.HandledDiagnostic{}
 	}
 
-	// if the return type is unknown, it will coerce.
-	coerced, ok := coerceExpr(tast.Expression{
-		Base: tast.AstBase{},
-		Data: body,
-	}, returnType.Data); if !ok {
-		return tast.FnDeclaration{}, a.makeExpectedType(returnType.Data, body.Type(), returnType.Token)
+	// merge return type with the block's if it's abstract.
+	if !typeIsConcrete(returnType.Data) {
+		returnType.Data = mergeTypes(returnType.Data, body.BlockType)
+	} else if body.BlockType != returnType.Data {
+        // no check for coercions, this must be done at the return level
+		if retAnnotated {
+			return tast.FnExpression{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, returnType.Token, retAnnotated)
+		} else {
+			return tast.FnExpression{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, expr.Body.Token, retAnnotated)
+		}
+	}
+	
+	// maybe there's no need to check for never
+	if !typeIsConcrete(returnType.Data) {
+		return tast.FnExpression{}, a.makeExpectedConcreteType(returnType)
 	}
 
-	returnType.Data = coerced.Data.Type()
+	return tast.FnExpression{
+		Parameters: expr.Parameters,
+		Return: returnType,
+		Body: body,
+	}, nil
 }
-*/
+
 func (a *Analyzer) analyzeBlockExpr(expr ast.BlockExpression, shallow bool) (tast.BlockExpression, diagnostic.Diagnostic) {
 	return a.analyzeBlock(expr, MODE_NORMAL, shallow)
 }

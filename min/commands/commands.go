@@ -160,6 +160,7 @@ func getCommand(command string) string {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "The desired command requires '%s' to be in path.\n", command)
 		fmt.Fprintln(os.Stderr, "Please place it in path before running this command again.")
+		
 		os.Exit(1)
 	}
 
@@ -173,4 +174,3 @@ func getMinc() string {
 func getMinvm() string {
 	return getCommand("minvm")
 }
-

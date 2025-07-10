@@ -23,4 +23,3 @@ func logNewline(message string, operation func()) {
 func log(message string) {
 	fmt.Printf("\n[..] %s\n", message)
 }
-

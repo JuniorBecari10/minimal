@@ -1,4 +1,5 @@
-fn main() { }
+// to remove the unused warnings.
+fn main() { void(a); void(b); void(c); }
 
 fn a(): int -> 10; // ok
 fn b(): float -> 20; // ok, coerce.

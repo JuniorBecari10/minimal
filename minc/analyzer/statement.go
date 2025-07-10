@@ -33,7 +33,7 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 		}
 
 		case ast.OutStatement: {
-			stmt, diag := a.outStmt(s, stmt, inferredType)
+			stmt, diag := a.outStmt(s, stmt, inferredType, mode)
 			return newStmt(stmt), diag
 		}
 
@@ -137,6 +137,7 @@ func (a *Analyzer) outStmt(
 	s ast.Statement,
 	stmt ast.OutStatement,
 	inferredType **types.TypeData,
+	mode BlockAnalyzeMode,
 ) (tast.OutStatement, diagnostic.Diagnostic) {
 	if stmt.Expression == nil {
 		// no expression = void
@@ -157,7 +158,17 @@ func (a *Analyzer) outStmt(
 	}
 
 	// TODO: use the block's expected return type to help inferring this type.
-	expr, diag := a.analyzeExpression(*stmt.Expression, false, nil); if diag != nil {
+	// if it's a function, it will use the return type.
+
+	// make the expected type to the function's return type if this is a function body.
+	var expectedType *types.TypeData = nil
+
+	if mode == MODE_FUNCTION {
+		expectedType = a.expectedReturnType
+	}
+	fmt.Println(expectedType)
+
+	expr, diag := a.analyzeExpression(*stmt.Expression, false, expectedType); if diag != nil {
 		return tast.OutStatement{}, diag
 	}
 
@@ -233,16 +244,10 @@ func (a *Analyzer) whileStmt(stmt ast.WhileStatement) (tast.WhileStatement, diag
 
 	defer func() { a.isInsideLoop = inside }()
 
-	condition, diag := a.analyzeExpression(stmt.Condition, false, nil); if diag != nil {
+	var typeBool types.TypeData = types.TypeBool{}
+	condition, diag := a.analyzeExpression(stmt.Condition, false, &typeBool); if diag != nil {
 		return tast.WhileStatement{}, diag
 	}
-
-	// check if it's a boolean or it can coerce to it (future-proof, since currently there is no type that can coerce to a bool).
-	coerced, ok := coerceExpr(condition, types.TypeBool{}); if !ok {
-		return tast.WhileStatement{}, a.makeExpectedType(types.TypeBool{}, condition.Data.Type(), condition.Base.Token)
-	}
-
-	condition = coerced
 
 	block, res := a.analyzeBlockAlone(stmt.Block, MODE_LOOP); if res == RES_ERROR {
 		return tast.WhileStatement{}, diagnostic.HandledDiagnostic{}

@@ -41,9 +41,26 @@ func (a *Analyzer) analyzeBlock(block ast.BlockExpression, mode BlockAnalyzeMode
 			if stmt.Semicolon != nil && block.ShowSemicolonWarning {
 				diag = a.makeWarnRedundantSemicolon(*stmt.Semicolon)
 			}
+			
+			// make the expected type to the function's return type if this is a function body.
+			var expectedType *types.TypeData = nil
 
-			exprInside, exprDiag := a.analyzeExpression(stmt.Expr, shallow, nil); if diag == nil {
-				diag = exprDiag
+			if mode == MODE_FUNCTION {
+				expectedType = a.expectedReturnType
+			}
+
+			// yes, if diag == nil.
+			exprInside, exprDiag := a.analyzeExpression(stmt.Expr, shallow, expectedType); if diag == nil {
+				if mode == MODE_FUNCTION {
+					// TODO: if it's an expected type diagnostic, change it to be an expected return one.
+					diag = exprDiag
+				} else {
+					diag = exprDiag
+				}
+			}
+
+			if diag != nil {
+				return tast.BlockExpression{}, diag
 			}
 
 			return tast.BlockExpression{
@@ -66,6 +83,7 @@ func (a *Analyzer) analyzeBlock(block ast.BlockExpression, mode BlockAnalyzeMode
 		return tast.BlockExpression{}, diagnostic.HandledDiagnostic{}
 	}
 
+	// check if there is more than one statement
 	if len(block.Stmts) > 1 {
 		if stmt, ok := block.Stmts[len(block.Stmts)-1].Data.(ast.ExprStatement); ok {
 			// if it doesn't have a semicolon, report an error.
