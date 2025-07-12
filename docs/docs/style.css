@@ -4,40 +4,16 @@
 
     display: inline-block;
     padding: 0 0.5em;
-    border-radius: 1em;
+    border-radius: 0.8em;
 }
 
-/* Put a background color in the book title on the left. */
-#__nav_1_label,
-#__nav_2_label,
-#__nav_3_label,
-#__nav_4_label {
-    position: relative;
-    left: -0.5em;
-    margin-bottom: 0.5em;
-}
-
-#__nav_1_label,
-#__nav_2_label,
-#__nav_3_label,
-#__nav_4_label,
-nav.md-nav--secondary:nth-child(1) > label:nth-child(1) {
-    background-color: var(--md-default-fg-color--lightest);
-    width: fit-content;
-
-    padding: 0.5em 0.7em;
-    border-radius: 0.7em;
-}
-
-nav.md-nav--secondary:nth-child(1) > label:nth-child(1) {
-    margin-bottom: 1.5em;
-}
-
+/* Shift the logo slightly to the right */
 a.md-header__button > img:nth-child(1) {
     position: relative;
-    left: 0.5em;
+    left: 0.8em;
 }
 
+/* Add spaces to the headers */
 header.md-header {
     margin: 0 5em;
     padding: 1em 0;
@@ -45,7 +21,7 @@ header.md-header {
 
 header.md-header--shadow {
     border-radius: 0 0 2em 2em;
-    box-shadow: -2px 15px 30px -15px rgba(0,0,0,0.50);
+    box-shadow: 0 15px 30px -15px rgba(0,0,0,0.50);
 }
 
 nav.md-tabs {
@@ -55,16 +31,72 @@ nav.md-tabs {
     padding-bottom: 1em;
 }
 
-/*
-footer {
-    margin: 0 5em;
-}
-*/
-
 .md-footer__inner {
     border-radius: 2em 2em 0 0;
 }
 
 table {
     border-radius: 1em !important;
+}
+
+form.md-search__form,
+form.md-search__form > input {
+    border-radius: 1em;
+}
+
+form.md-search__form:has(input.focus-visible) {
+    border-radius: 1em 1em 0 0;
+}
+
+div.md-header__source {
+    margin: 0;
+}
+
+@media screen and (max-width: 44.9844em) {
+    header.md-header {
+        margin: 0;
+        padding: 1em 0;
+    }
+
+    .md-content__inner>.highlight > pre > code.md-code__content {
+        width: 93%;
+
+        display: block;
+        margin-left: 50%;
+        transform: translateX(-50%);
+        border-radius: 0.8em;
+    }
+
+    button.md-clipboard {
+        right: 1.6em;
+    }
+}
+
+@media screen and (min-width: 44.9844em) {
+    /* Put a background color in the book title on the left. */
+    #__nav_1_label,
+    #__nav_2_label,
+    #__nav_3_label,
+    #__nav_4_label {
+        position: relative;
+        left: -0.5em;
+        margin-bottom: 0.5em;
+    }
+
+    /* Make all side headers with a background */
+    #__nav_1_label,
+    #__nav_2_label,
+    #__nav_3_label,
+    #__nav_4_label,
+    nav.md-nav--secondary:nth-child(1) > label:nth-child(1) {
+        background-color: var(--md-default-fg-color--lightest);
+        width: fit-content;
+
+        padding: 0.5em 0.7em;
+        border-radius: 0.7em;
+    }
+
+    nav.md-nav--secondary:nth-child(1) > label:nth-child(1) {
+        margin-bottom: 1.5em;
+    }
 }

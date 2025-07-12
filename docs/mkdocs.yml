@@ -4,6 +4,7 @@ copyright: Copyright &copy; 2025 Antônio Carlos (JuniorBecari10)
 
 theme:
     name: material
+
     color_mode: auto
     language: en
 
@@ -56,7 +57,7 @@ extra_css:
   - style.css
 
 nav:
-  - Home: index.md
+  - Home: home.md
 
   - Reference Book:
       - Overview: reference/overview.md
