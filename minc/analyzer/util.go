@@ -122,7 +122,7 @@ func getIteratorType(iterable tast.Expression) types.TypeData {
 // wraps the given expression in a CoerceExpression, if the types can be coerced, but not equal.
 func coerceExpr(expr tast.Expression, convertType types.TypeData) (tast.Expression, bool) {
 	// if the types are equal, there's no need to coerce.
-	if expr.Data.Type() == convertType {
+	if reflect.DeepEqual(expr.Data.Type(), convertType) {
 		return expr, true
 	}
 

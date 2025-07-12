@@ -93,8 +93,15 @@ func (p *Parser) fnDecl() (ast.Statement, diagnostic.Diagnostic) {
 		return ast.Statement{}, diag
 	}
 
-	params, returnType, body, diag := p.parseFunctionDefinition(); if diag != nil {
+	params, returnType, body, isOneStmtBlock, diag := p.parseFunctionDefinition(); if diag != nil {
 		return ast.Statement{}, diag
+	}
+
+	if isOneStmtBlock {
+		// we need to require semicolons.
+		diag := p.expectSemicolon(); if diag != nil {
+			return ast.Statement{}, diag
+		}
 	}
 
 	return newStmt(keyword, ast.FnDeclaration{

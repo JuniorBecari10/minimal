@@ -11,7 +11,6 @@ func (p *Parser) parseBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
 	const START = token.TokenColon
 
 	if p.check(START) {
-		// statement-level one-statement blocks do not require semicolons.
 		return p.parseOneStmtBlock(START, false)
 	} else {
 		return p.parseBraceBlock()
@@ -22,8 +21,7 @@ func (p *Parser) parseFnBlock() (ast.BlockExpression, diagnostic.Diagnostic) {
 	const START = token.TokenArrow
 
 	if p.check(START) {
-		// function one-statement blocks require semicolons.
-		return p.parseOneStmtBlock(START, true)
+		return p.parseOneStmtBlock(START, false)
 	} else {
 		return p.parseBraceBlock()
 	}
@@ -80,9 +78,9 @@ func (p *Parser) parseBraceBlock() (ast.BlockExpression, diagnostic.Diagnostic) 
 }
 
 // for both declarations and lambdas
-func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.BlockExpression, diagnostic.Diagnostic) {
-	errorRet := func(diag diagnostic.Diagnostic) ([]ast.Parameter, *types.Type, ast.BlockExpression, diagnostic.Diagnostic) {
-		return []ast.Parameter{}, nil, ast.BlockExpression{}, diag
+func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.BlockExpression, bool, diagnostic.Diagnostic) {
+	errorRet := func(diag diagnostic.Diagnostic) ([]ast.Parameter, *types.Type, ast.BlockExpression, bool, diagnostic.Diagnostic) {
+		return []ast.Parameter{}, nil, ast.BlockExpression{}, false, diag
 	}
 
 	params, diag := p.parseParameters(); if diag != nil {
@@ -99,9 +97,11 @@ func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.Bl
 	}
 
 	var parseBlock func() (ast.BlockExpression, diagnostic.Diagnostic)
+	isOneStmtBlock := false
 
 	if p.check(token.TokenArrow) {
 		parseBlock = p.parseFnBlock
+		isOneStmtBlock = true
 	} else {
 		parseBlock = p.parseBraceBlock
 	}
@@ -110,7 +110,7 @@ func (p *Parser) parseFunctionDefinition() ([]ast.Parameter, *types.Type, ast.Bl
 		return errorRet(diag)
 	}
 
-	return params, returnType, body, nil
+	return params, returnType, body, isOneStmtBlock, nil
 }
 
 func (p *Parser) parseMethods() ([]ast.FnDeclaration, diagnostic.Diagnostic) {
@@ -166,12 +166,14 @@ func (p *Parser) parseParameters() ([]ast.Parameter, diagnostic.Diagnostic) {
 			return nil, diag
 		}
 
-		if p.match(token.TokenComma) {
+		if !p.check(token.TokenColon) {
 			// type not annotated.
 			params = append(params, ast.Parameter{
 				Name: name,
 				Type: nil,
 			})
+
+			continue
 		}
 
 		paramType, diag := p.parseTypeAnnotation(); if diag != nil {

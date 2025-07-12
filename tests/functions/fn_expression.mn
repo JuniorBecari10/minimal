@@ -1,0 +1,7 @@
+fn main() {
+    // let x = fn () -> 20; // ok, fn (): int.
+    // x;
+
+    let x: fn (int): int = fn (x) -> x + 1;
+    x;
+}

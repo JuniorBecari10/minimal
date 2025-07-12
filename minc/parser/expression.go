@@ -380,9 +380,11 @@ func (p *Parser) parseIf() (ast.Expression, diagnostic.Diagnostic) {
 func (p *Parser) parseFnExpr() (ast.Expression, diagnostic.Diagnostic) {
     keyword, _ := p.advance()
 
-	params, returnType, body, diag := p.parseFunctionDefinition(); if diag != nil {
+	params, returnType, body, _, diag := p.parseFunctionDefinition(); if diag != nil {
 		return ast.Expression{}, diag
 	}
+
+	// semicolons don't make a difference here.
 
 	return newExpr(keyword, ast.FnExpression{
 		Parameters: params,

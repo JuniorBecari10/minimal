@@ -14,6 +14,7 @@ func (a *Analyzer) analyzeExpression(e ast.Expression, shallow bool, expectedTyp
 		return expr, diag
 	}
 
+	// expectedType != nil.
 	coerced, ok := coerceExpr(expr, *expectedType); if !ok {
 		return tast.Expression{}, a.makeExpectedType(*expectedType, expr.Data.Type(), expr.Base.Token)
 	}
@@ -220,7 +221,12 @@ func (a *Analyzer) analyzeNilExpr(expr ast.NilExpression, expectedType *types.Ty
 }
 
 func (a *Analyzer) analyzeSomeExpr(expr ast.SomeExpression, shallow bool, expectedType *types.TypeData) (tast.SomeExpression, diagnostic.Diagnostic) {
-	inside, diag := a.analyzeExpression(expr.Inside, shallow, nil); if diag != nil {
+	// 'any?' type
+	var anyOpt types.TypeData = types.TypeOptional{
+		Inside: types.DummyType(types.TypeAny{}),
+	}
+
+	inside, diag := a.analyzeExpression(expr.Inside, shallow, &anyOpt); if diag != nil {
 		return tast.SomeExpression{}, diag
 	}
 
@@ -230,7 +236,6 @@ func (a *Analyzer) analyzeSomeExpr(expr ast.SomeExpression, shallow bool, expect
 
 	if len(expr.TypeArguments) == 1 {
 		// require argument to be an optional type.
-		// TODO: coerce?
 		if _, ok := expr.TypeArguments[0].Data.(types.TypeOptional); !ok {
 			return tast.SomeExpression{}, a.makeExpectedType(types.TypeOptional{
 				Inside: types.DummyType(types.TypeAny{}),
@@ -359,11 +364,7 @@ func (a *Analyzer) analyzeCallExpr(expr ast.CallExpression, shallow bool, expect
 			return tast.CallExpression{}, diag
 		}
 
-		coerced, ok := coerceExpr(arg, fn.Parameters[i].Data); if !ok {
-			return tast.CallExpression{}, a.makeExpectedType(fn.Parameters[i].Data, arg.Data.Type(), arg.Base.Token)
-		}
-
-		typedArgs = append(typedArgs, coerced)
+		typedArgs = append(typedArgs, arg)
 	}
 
 	return tast.CallExpression{
@@ -426,8 +427,12 @@ func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedTy
 
 	// ---
 
-	// it is unknown.
-	returnType := types.DummyType(types.TypeUnknown{})
+	// it is unknown by the standard, as opposed to void for fn declarations
+	returnType := types.Type{
+        Token: expr.Body.Token,
+		Data: types.TypeUnknown{},
+	}
+
 	retAnnotated := false
 
 	if expr.Return != nil {
@@ -436,7 +441,12 @@ func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedTy
 	}
 
 	oldExpectedReturn := a.expectedReturnType
-	a.expectedReturnType = &returnType.Data
+
+	if retAnnotated {
+	    a.expectedReturnType = &returnType.Data
+	} else {
+        a.expectedReturnType = nil
+	}
 
 	defer func() { a.expectedReturnType = oldExpectedReturn }()
 
@@ -449,16 +459,58 @@ func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedTy
 
 	// convert parameters to their types
 	paramTypes := []types.Type{}
+	
+	expectedFn := types.TypeFunction{}
+	isFn := false
+
+	if expectedType != nil {
+		expectedFn, isFn = (*expectedType).(types.TypeFunction)
+	}
 
 	// the compiler will try to infer the parameters if the expected type is a function.
-	for _, param := range expr.Parameters {
-		// TODO: infer the parameters
-		if !typeIsConcrete(param.Type.Data) {
-			return tast.FnExpression{}, a.makeExpectedConcreteType(*param.Type)
+	for i, param := range expr.Parameters {
+		var paramType types.Type
+
+		if param.Type == nil {
+			// parameter type is not annotated, make it be the inferred type's parameter type, if it's a function.
+			if isFn {
+				// it is a function. add the parameter with the expected function's parameter type.
+				paramType = types.DummyType(expectedFn.Parameters[i].Data)
+			} else {
+				// it is not a function. the parameter is not annotated, so we can't infer it. throw an error.
+				return tast.FnExpression{}, a.makeTypeAnnotationsNeeded(param.Name)
+			}
+		} else {
+            // parameter type is annotated. if it's not concrete, try to merge it with the expected function's parameter type.
+			if typeIsConcrete(param.Type.Data) {
+				// it is concrete. make it be parameter type, and forget the expected type.
+				paramType = *param.Type
+			} else {
+				// it is not. try to merge it.
+				if isFn {
+					// expected type is a function, try to merge it.
+					inferredParam := mergeTypes(param.Type.Data, expectedFn.Parameters[i].Data); if inferredParam == nil {
+						// cannot merge, throw an error.
+						return tast.FnExpression{}, a.makeExpectedConcreteType(*param.Type)
+					}
+
+					// can merge. but, let's check one more time if it's concrete.
+					if typeIsConcrete(inferredParam) {
+						// nice. put it into the parameter.
+						paramType = types.DummyType(inferredParam)
+					} else {
+						// no. throw an error.
+						return tast.FnExpression{}, a.makeExpectedConcreteType(*param.Type)
+					}
+				} else {
+                    // expected type is not a function. the parameter type is not concrete, so we throw an error.
+					return tast.FnExpression{}, a.makeExpectedConcreteType(*param.Type)
+				}
+			}
 		}
 
-		paramTypes = append(paramTypes, *param.Type)
-		a.addVariable(param.Name, *param.Type, true)
+		paramTypes = append(paramTypes, paramType)
+		a.addVariable(param.Name, paramType, true)
 	}
 
 	// try to infer only the parameters if it's a shallow pass.
@@ -487,7 +539,12 @@ func (a *Analyzer) analyzeFnExpr(expr ast.FnExpression, shallow bool, expectedTy
 
 	// merge return type with the block's if it's abstract.
 	if !typeIsConcrete(returnType.Data) {
-		returnType.Data = mergeTypes(returnType.Data, body.BlockType)
+		ret := mergeTypes(returnType.Data, body.BlockType); if ret == nil {
+			// cannot merge. throw an error.
+			return tast.FnExpression{}, a.makeExpectedConcreteType(returnType)
+		}
+
+		returnType.Data = ret
 	} else if body.BlockType != returnType.Data {
         // no check for coercions, this must be done at the return level
 		if retAnnotated {
@@ -520,10 +577,6 @@ func (a *Analyzer) analyzeIfExpr(expr ast.IfExpression, shallow bool, expectedTy
 		return tast.IfExpression{}, diag
 	}
 
-	conditionCoerced, ok := coerceExpr(condition, expectedCondition); if !ok {
-		return tast.IfExpression{}, a.makeExpectedType(expectedCondition, condition.Data.Type(), condition.Base.Token)
-	}
-
 	then, diag := a.analyzeExpression(expr.Then, shallow, expectedType); if diag != nil {
 		return tast.IfExpression{}, diag
 	}
@@ -536,7 +589,7 @@ func (a *Analyzer) analyzeIfExpr(expr ast.IfExpression, shallow bool, expectedTy
 		}
 
 		return tast.IfExpression{
-			Condition: conditionCoerced,
+			Condition: condition,
 			Then: thenCoerced,
 			Else: nil,
 
@@ -569,7 +622,7 @@ func (a *Analyzer) analyzeIfExpr(expr ast.IfExpression, shallow bool, expectedTy
 		}
 
 		return tast.IfExpression{
-			Condition: conditionCoerced,
+			Condition: condition,
 			Then: thenCoerced,
 			Else: &elseCoerced,
 
