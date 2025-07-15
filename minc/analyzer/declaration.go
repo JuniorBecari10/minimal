@@ -59,11 +59,21 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
 	}
 
+	merged := mergeTypes(returnType.Data, body.BlockType)
+
 	// merge return type with the block's if it's abstract.
 	if !typeIsConcrete(returnType.Data) {
-		returnType.Data = mergeTypes(returnType.Data, body.BlockType)
-	} else if body.BlockType != returnType.Data {
-        // no check for coercions, this must be done at the return level
+		// type cannot be coerced.
+		if merged == nil {
+			if retAnnotated {
+				return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, returnType.Token, retAnnotated)
+			} else {
+				return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, decl.Name, retAnnotated)
+			}
+		}
+
+		returnType.Data = merged
+	} else if merged == nil {
 		if retAnnotated {
 			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, returnType.Token, retAnnotated)
 		} else {
@@ -94,6 +104,7 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 
 func (a *Analyzer) varDecl(decl ast.VarDeclaration) (tast.VarDeclaration, diagnostic.Diagnostic) {
 	var expectedType *types.TypeData = nil
+	
 	if decl.Type != nil {
 		expectedType = &decl.Type.Data
 	}

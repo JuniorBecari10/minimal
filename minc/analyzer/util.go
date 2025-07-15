@@ -156,13 +156,6 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
 	}
 
 	switch fromCheck := from.(type) {
-		// int -> float
-		case types.TypeInt: {
-			if _, ok := to.(types.TypeFloat); ok {
-				return to
-			}
-		}
-
 		// nil -> any?
 		case types.TypeUntypedNil: {
 			if _, ok := to.(types.TypeOptional); ok {
@@ -182,7 +175,9 @@ func mergeTypes(from, to types.TypeData) types.TypeData {
 			// coerceable if both 'from' and 'to' are optionals.
 			// you wouldn't coerce a T? to a nil.
 			if toOpt, ok := to.(types.TypeOptional); ok {
-				return mergeTypes(fromCheck.Inside.Data, toOpt.Inside.Data)
+				return types.TypeOptional{
+					Inside: types.DummyType(mergeTypes(fromCheck.Inside.Data, toOpt.Inside.Data)),
+				}
 			} else {
 				return nil
 			}

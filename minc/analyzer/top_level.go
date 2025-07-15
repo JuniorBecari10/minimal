@@ -15,9 +15,9 @@ func (a *Analyzer) hoistTopLevel() AnalyzerResult {
 
 	for _, d := range a.ast {
 		global, diag := a.analyzeTopLevelDecl(d); if diag != nil {
-			diag.PrintDiagnostic()
+			a.diagnostics = append(a.diagnostics, diag)
 
-			if diag.DiagnosticType() == diagnostic.TYPE_WARNING {
+			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
 				res = RES_ERROR
 			}
 
