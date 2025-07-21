@@ -44,14 +44,12 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 	// function declarations must have annotated parameters with concrete types.
 	// the compiler won't try to infer them.
 	for _, param := range decl.Parameters {
-		if param.Type == nil {
-			return tast.FnDeclaration{}, a.makeTypeAnnotationsNeeded(param.Name)
-		} else if !typeIsConcrete(param.Type.Data) {
-			return tast.FnDeclaration{}, a.makeExpectedConcreteType(*param.Type)
+		if !typeIsConcrete(param.Type.Data) {
+			return tast.FnDeclaration{}, a.makeExpectedConcreteType(param.Type)
 		}
 
-		paramTypes = append(paramTypes, *param.Type)
-		a.addVariable(param.Name, *param.Type, true)
+		paramTypes = append(paramTypes, param.Type)
+		a.addVariable(param.Name, param.Type, true)
 	}
 
 	// return type may be unknown. check the body and see if the type can be coerced to it.
@@ -59,27 +57,22 @@ func (a *Analyzer) fnDecl(decl ast.FnDeclaration) (tast.FnDeclaration, diagnosti
 		return tast.FnDeclaration{}, diagnostic.HandledDiagnostic{}
 	}
 
+	getCorrectDiagnostic := func() diagnostic.Diagnostic {
+		if retAnnotated {
+			return a.makeExpectedReturnType(returnType.Data, body.BlockType, returnType.Token, retAnnotated)
+		} else {
+			return a.makeExpectedReturnType(returnType.Data, body.BlockType, decl.Name, retAnnotated)
+		}
+	}
+
 	merged := mergeTypes(returnType.Data, body.BlockType)
 
 	// merge return type with the block's if it's abstract.
-	if !typeIsConcrete(returnType.Data) {
-		// type cannot be coerced.
-		if merged == nil {
-			if retAnnotated {
-				return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, returnType.Token, retAnnotated)
-			} else {
-				return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, decl.Name, retAnnotated)
-			}
-		}
-
-		returnType.Data = merged
-	} else if merged == nil {
-		if retAnnotated {
-			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, returnType.Token, retAnnotated)
-		} else {
-			return tast.FnDeclaration{}, a.makeExpectedReturnType(returnType.Data, body.BlockType, decl.Name, retAnnotated)
-		}
+	if merged == nil {
+		return tast.FnDeclaration{}, getCorrectDiagnostic()
 	}
+
+	returnType.Data = merged
 	
 	// maybe there's no need to check for never
 	if !typeIsConcrete(returnType.Data) {

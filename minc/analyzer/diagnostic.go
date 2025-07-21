@@ -7,6 +7,14 @@ import (
 	"minlib/token"
 )
 
+func (a *Analyzer) makeWarnUnsupported(tok token.Token) diagnostic.Diagnostic {
+	return a.makeWarningHelpDiagnostic(
+		"Unsupported feature.",
+		[]string { "This feature is yet to be coded." },
+		tok,
+	)
+}
+
 func (a *Analyzer) makeWarnUnreachable(tok token.Token) diagnostic.Diagnostic {
 	return a.makeWarningDiagnostic(
 		"Unreachable code.",

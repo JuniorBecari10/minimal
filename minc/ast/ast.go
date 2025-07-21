@@ -13,7 +13,7 @@ type AstBase struct {
 
 type Parameter struct {
 	Name token.Token
-	Type *types.Type // optional
+	Type types.Type
 	Immutable bool
 }
 
