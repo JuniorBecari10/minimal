@@ -8,6 +8,8 @@ import (
 	"minc/types"
 )
 
+// inferredType has a double pointer because it is a pointer to an optional,
+// for a "remote" modification of the inferred type of the block.
 func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeData, mode BlockAnalyzeMode) (tast.Statement, diagnostic.Diagnostic) {
 	newStmt := func(data tast.StmtData) tast.Statement {
 		return tast.Statement{
@@ -24,7 +26,7 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 
 		case ast.RecordDeclaration: {
 			// dummy error; not yet supported.
-			return tast.Statement{}, a.makeTypeAnnotationsNeeded(stmt.Name)
+			return tast.Statement{}, a.makeWarnUnsupported(stmt.Name)
 		}
 
 		case ast.ReturnStatement: {
@@ -80,6 +82,8 @@ func (a *Analyzer) analyzeStatement(s ast.Statement, inferredType **types.TypeDa
 
 // assuming this isn't at top-level, and this doesn't tell the type of the current block.
 // 'return' only tells the type of the block if this is the function block; otherwise it is never.
+
+// TODO: merge 'return' and 'out' logic
 func (a *Analyzer) returnStmt(
 	s ast.Statement,
 	stmt ast.ReturnStatement,
@@ -95,7 +99,7 @@ func (a *Analyzer) returnStmt(
 				var infer types.TypeData = types.TypeVoid{}
 				*inferredType = &infer
 			} else {
-				// else, we set it to never, since returning in an inner block makes it not return anything.
+				// otherwise, we set it to never, since returning from a function in an inner block makes it not return anything.
 				var infer types.TypeData = types.TypeNever{}
 				*inferredType = &infer
 			}
@@ -121,7 +125,7 @@ func (a *Analyzer) returnStmt(
 			infer := expr.Data.Type()
 			*inferredType = &infer
 		} else {
-			// else, we set it to never, since returning in an inner block makes it not return anything.
+			// otherwise, we set it to never, since returning from a function in an inner block makes it not return anything.
 			var infer types.TypeData = types.TypeNever{}
 			*inferredType = &infer
 		}
@@ -166,7 +170,6 @@ func (a *Analyzer) outStmt(
 	if mode == MODE_FUNCTION {
 		expectedType = a.expectedReturnType
 	}
-	fmt.Println(expectedType)
 
 	expr, diag := a.analyzeExpression(*stmt.Expression, false, expectedType); if diag != nil {
 		return tast.OutStatement{}, diag
@@ -203,12 +206,8 @@ func (a *Analyzer) forStmt(stmt ast.ForStatement) (tast.ForStatement, diagnostic
 
 	varType := getIteratorType(iterable)
 
-	block, res := a.analyzeBlockAlone(stmt.Block, MODE_LOOP); if res == RES_ERROR {
-		return tast.ForStatement{}, diagnostic.HandledDiagnostic{}
-	}
-
-	if !canCoerce(block.BlockType, types.TypeVoid{}) {
-		return tast.ForStatement{}, a.makeExpectedType(types.TypeVoid{}, block.BlockType, block.Token)
+	block, diag := a.analyzeLoopBody(stmt.Block); if diag != nil {
+		return tast.ForStatement{}, diag
 	}
 
 	return tast.ForStatement{
@@ -225,12 +224,8 @@ func (a *Analyzer) loopStmt(stmt ast.LoopStatement) (tast.LoopStatement, diagnos
 
 	defer func() { a.isInsideLoop = inside }()
 
-	block, res := a.analyzeBlockAlone(stmt.Block, MODE_LOOP); if res == RES_ERROR {
-		return tast.LoopStatement{}, diagnostic.HandledDiagnostic{}
-	}
-
-	if !canCoerce(block.BlockType, types.TypeVoid{}) {
-		return tast.LoopStatement{}, a.makeExpectedType(types.TypeVoid{}, block.BlockType, block.Token)
+	block, diag := a.analyzeLoopBody(stmt.Block); if diag != nil {
+		return tast.LoopStatement{}, diag
 	}
 
 	return tast.LoopStatement{
@@ -245,16 +240,13 @@ func (a *Analyzer) whileStmt(stmt ast.WhileStatement) (tast.WhileStatement, diag
 	defer func() { a.isInsideLoop = inside }()
 
 	var typeBool types.TypeData = types.TypeBool{}
+
 	condition, diag := a.analyzeExpression(stmt.Condition, false, &typeBool); if diag != nil {
 		return tast.WhileStatement{}, diag
 	}
 
-	block, res := a.analyzeBlockAlone(stmt.Block, MODE_LOOP); if res == RES_ERROR {
-		return tast.WhileStatement{}, diagnostic.HandledDiagnostic{}
-	}
-
-	if !canCoerce(block.BlockType, types.TypeVoid{}) {
-		return tast.WhileStatement{}, a.makeExpectedType(types.TypeVoid{}, block.BlockType, block.Token)
+	block, diag := a.analyzeLoopBody(stmt.Block); if diag != nil {
+		return tast.WhileStatement{}, diag
 	}
 
 	return tast.WhileStatement{

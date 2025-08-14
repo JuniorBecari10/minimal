@@ -8,7 +8,8 @@ import (
 	"minlib/token"
 )
 
-// this returns a block, with its type inferred by its statements.
+// these functions return a block, with their types inferred by their statements.
+
 // the first statement that can set the type of the block directly inside it will do it.
 // this function is meant to analyze blocks stored alone in the AST nodes, like in 'while', 'for' and 'if'.
 func (a *Analyzer) analyzeBlockAlone(block ast.BlockExpression, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
@@ -79,7 +80,7 @@ func (a *Analyzer) analyzeBlock(block ast.BlockExpression, mode BlockAnalyzeMode
 		}
 	}
 
-	// both else blocks
+	// both else blocks: len(stmts) != 1 || (len(stmts) == 1 && stmts[0].(type) != ExprStatement)
 	blockRes, res := a.analyzeStatements(block.Stmts, block.Token, mode); if res == RES_ERROR {
 		return tast.BlockExpression{}, diagnostic.HandledDiagnostic{}
 	}

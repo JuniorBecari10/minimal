@@ -39,15 +39,19 @@ func (a *Analyzer) analyzeBinary(
 		return errReturn(a.makeIncompatibleTypes(leftTyped.Data.Type(), rightTyped.Data.Type(), operator))
 	}
 
-	leftCoerced, ok := coerceExpr(leftTyped, merged); if !ok {
-		return errReturn(a.makeExpectedType(merged, leftTyped.Data.Type(), left.Base.Token))
+	return leftTyped, rightTyped, nil
+}
+
+func (a *Analyzer) analyzeLoopBody(body ast.BlockExpression) (tast.BlockExpression, diagnostic.Diagnostic) {
+	block, res := a.analyzeBlockAlone(body, MODE_LOOP); if res == RES_ERROR {
+		return tast.BlockExpression{}, diagnostic.HandledDiagnostic{}
 	}
 
-	rightCoerced, ok := coerceExpr(rightTyped, merged); if !ok {
-		return errReturn(a.makeExpectedType(merged, rightTyped.Data.Type(), right.Base.Token))
+	if !canCoerce(block.BlockType, types.TypeVoid{}) {
+		return tast.BlockExpression{}, a.makeExpectedType(types.TypeVoid{}, block.BlockType, block.Token)
 	}
 
-	return leftCoerced, rightCoerced, nil
+	return block, nil
 }
 
 // TODO: check the other types that can have abstract types inside them
@@ -90,21 +94,6 @@ func typeIsIterable(t types.TypeData) bool {
 	}
 }
 
-func typeIsNumeric(t types.TypeData) bool {
-	ok := canCoerce(t, types.TypeFloat{}) // int and float will succeed.
-	return ok
-}
-
-/*
-func (a *Analyzer) assertType(t, expected types.TypeData, tok token.Token) diagnostic.Diagnostic {
-	if !canCoerce(t, expected) {
-		return a.makeExpectedType(expected, t, tok)
-	}
-
-	return nil
-}
-*/
-
 // assumes that 'iterable' has an iterable type.
 func getIteratorType(iterable tast.Expression) types.TypeData {
 	switch t := iterable.Data.Type().(type) {
@@ -119,84 +108,65 @@ func getIteratorType(iterable tast.Expression) types.TypeData {
 	}
 }
 
-// wraps the given expression in a CoerceExpression, if the types can be coerced, but not equal.
-func coerceExpr(expr tast.Expression, convertType types.TypeData) (tast.Expression, bool) {
-	// if the types are equal, there's no need to coerce.
-	if reflect.DeepEqual(expr.Data.Type(), convertType) {
-		return expr, true
-	}
-
-	ok := canCoerce(expr.Data.Type(), convertType)
-
-	if !ok {
-		return tast.Expression{}, ok
-	}
-
-	return tast.Expression{
-		Base: expr.Base,
-		Data: tast.CoerceExpression{
-			Operand: expr,
-			ConvertType: convertType,
-		},
-	}, true
-}
-
 func canCoerce(from, to types.TypeData) bool {
 	t := mergeTypes(from, to)
 	return t != nil
 }
 
 // merge both types so that the type returned emcompasses all types from one and from the other,
-// like (int, float) returns 'float', since it has every 'int' value as valid, along with all 'float' only valid ones.
+// like T -> any returns 'any'.
 // returns 'nil' if it cannot be done.
+// TODO: support function types and range types.
 func mergeTypes(from, to types.TypeData) types.TypeData {
 	// if types are equal, they can be merged.
+	// T <-> T
 	if reflect.DeepEqual(from, to) {
-        return from
-	}
-
-	switch fromCheck := from.(type) {
-		// nil -> any?
-		case types.TypeUntypedNil: {
-			if _, ok := to.(types.TypeOptional); ok {
-				return to
-			}
-		}
-
-		// unknown -> any type
-		case types.TypeUnknown: {
-			return to
-		}
-
-		// check optional (if types inside optionals can coerce)
-		case types.TypeOptional: {
-			// T? -> T?
-
-			// coerceable if both 'from' and 'to' are optionals.
-			// you wouldn't coerce a T? to a nil.
-			if toOpt, ok := to.(types.TypeOptional); ok {
-				return types.TypeOptional{
-					Inside: types.DummyType(mergeTypes(fromCheck.Inside.Data, toOpt.Inside.Data)),
-				}
-			} else {
-				return nil
-			}
-		}
-	}
-	
-	// any type -> any
-	if _, ok := to.(types.TypeAny); ok {
-		return to
-	}
-
-	// any type -> unknown
-	if _, ok := to.(types.TypeUnknown); ok {
 		return from
 	}
 
+	// nil -> T?
+	if _, isNil := from.(types.TypeUntypedNil); isNil {
+		if _, ok := to.(types.TypeOptional); ok {
+			return to
+		}
+	}
+	// T? -> nil is not allowed.
+
+	// unknown -> T
+	if _, isUnknown := from.(types.TypeUnknown); isUnknown {
+		return to
+	}
+	// T -> unknown is not allowed.
+
+	// T? -> U? if T -> U, or
+	// T? <-> U? if T <-> U
+	fromOpt, isFromOpt := from.(types.TypeOptional)
+	toOpt, isToOpt := to.(types.TypeOptional)
+
+	if isFromOpt && isToOpt {
+		inner := mergeTypes(fromOpt.Inside.Data, toOpt.Inside.Data)
+		
+		// cannot merge.
+		if inner == nil {
+			return nil
+		}
+
+		return types.TypeOptional{
+			Inside: types.DummyType(inner),
+		}
+	}
+
+	// T -> any
+	if _, isAny := from.(types.TypeAny); isAny {
+		return from
+	}
+	// any -> T (downgrade) is not allowed.
+
+	// cannot merge.
 	return nil
 }
 
+// returns if 
 func typeNeedsUnusedWarning(t types.TypeData) bool {
 	switch t.(type) {
 		case types.TypeVoid, types.TypeNever:
@@ -213,6 +183,10 @@ func (a *Analyzer) newScope() {
 
 func (a *Analyzer) endScope() {
 	a.scopeDepth--
+
+	if a.scopeDepth < 0 {
+		a.scopeDepth = 0
+	}
 
 	// remove all variables from the current scope.
 	// for this, we'd need to traverse the locals array backwards.

@@ -34,7 +34,7 @@ type Analyzer struct {
 	scopeDepth uint32
 	isInsideLoop bool
 
-	expectedReturnType *types.TypeData
+	expectedReturnType *types.TypeData // optional
 	diagnostics []diagnostic.Diagnostic
 
 	fileData *file.FileData
