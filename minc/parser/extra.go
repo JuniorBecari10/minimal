@@ -166,23 +166,13 @@ func (p *Parser) parseParameters() ([]ast.Parameter, diagnostic.Diagnostic) {
 			return nil, diag
 		}
 
-		if !p.check(token.TokenColon) {
-			// type not annotated.
-			params = append(params, ast.Parameter{
-				Name: name,
-				Type: nil,
-			})
-
-			continue
-		}
-
 		paramType, diag := p.parseTypeAnnotation(); if diag != nil {
 			return nil, diag
 		}
 
 		params = append(params, ast.Parameter{
 			Name: name,
-			Type: &paramType,
+			Type: paramType,
 		})
 
 		if !p.check(token.TokenRightParen) {

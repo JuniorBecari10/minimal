@@ -8,8 +8,8 @@ import (
 	"minlib/token"
 )
 
-// synchronization point. this function prints the diagnostics and doesn't bubble them up
-// this returns a block, with its type inferred by its statements.
+// these functions return a block, with their types inferred by their statements.
+
 // the first statement that can set the type of the block directly inside it will do it.
 // this function is meant to analyze blocks stored alone in the AST nodes, like in 'while', 'for' and 'if'.
 func (a *Analyzer) analyzeBlockAlone(block ast.BlockExpression, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
@@ -23,6 +23,8 @@ func (a *Analyzer) analyzeBlockAlone(block ast.BlockExpression, mode BlockAnalyz
 	return blockRes, res
 }
 
+// synchronization point. this function prints the diagnostics and doesn't bubble them up.
+// this analyzes a block expression and tries to infer its type.
 func (a *Analyzer) analyzeBlock(block ast.BlockExpression, mode BlockAnalyzeMode, shallow bool) (tast.BlockExpression, diagnostic.Diagnostic) {
 	if shallow {
 		// don't enter the block; return an empty one with unknown type.
@@ -78,14 +80,14 @@ func (a *Analyzer) analyzeBlock(block ast.BlockExpression, mode BlockAnalyzeMode
 		}
 	}
 
-	// both else blocks
+	// both else blocks: len(stmts) != 1 || (len(stmts) == 1 && stmts[0].(type) != ExprStatement)
 	blockRes, res := a.analyzeStatements(block.Stmts, block.Token, mode); if res == RES_ERROR {
 		return tast.BlockExpression{}, diagnostic.HandledDiagnostic{}
 	}
 
 	// check if there is more than one statement
 	if len(block.Stmts) > 1 {
-		if stmt, ok := block.Stmts[len(block.Stmts)-1].Data.(ast.ExprStatement); ok {
+		if stmt, ok := block.Stmts[len(block.Stmts) - 1].Data.(ast.ExprStatement); ok {
 			// if it doesn't have a semicolon, report an error.
 			if stmt.Semicolon == nil {
 				return blockRes, a.makeExpectedSemicolon(stmt.Expr.Base.Token)
@@ -97,31 +99,19 @@ func (a *Analyzer) analyzeBlock(block ast.BlockExpression, mode BlockAnalyzeMode
 }
 
 func (a *Analyzer) analyzeStatements(stmts ast.Ast, tok token.Token, mode BlockAnalyzeMode) (tast.BlockExpression, AnalyzerResult) {
-	generatedTast := make(tast.Tast, 0, len(stmts))
-	res := RES_OK
-
 	a.newScope()
+    defer a.endScope()
+
 	var inferredType *types.TypeData = nil
 	
-	for _, s := range stmts {
-		stmt, diag := a.analyzeStatement(s, &inferredType, mode); if diag != nil {
-			a.diagnostics = append(a.diagnostics, diag)
-
-			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
-				res = RES_ERROR
-			}
-		}
-
-		generatedTast = append(generatedTast, stmt)
-	}
-
+	// res is carried forward
+	generatedTast, res := a.statements(stmts, &inferredType, mode)
 	var blockType types.TypeData = types.TypeVoid{}
 
 	if inferredType != nil {
+		// block types are not always concrete, so we don't need to check.
 		blockType = *inferredType
 	}
-
-	a.endScope()
 
 	return tast.BlockExpression{
 		Stmts: generatedTast,
@@ -131,11 +121,15 @@ func (a *Analyzer) analyzeStatements(stmts ast.Ast, tok token.Token, mode BlockA
 }
 
 func (a *Analyzer) analyzeTopLevelStatements() (tast.Tast, AnalyzerResult) {
-	generatedTast := make(tast.Tast, 0, len(a.ast))
+	return a.statements(a.ast, nil, MODE_NORMAL)
+}
+
+func (a *Analyzer) statements(ast ast.Ast, inferredType **types.TypeData, mode BlockAnalyzeMode) (tast.Tast, AnalyzerResult) {
+	generatedTast := make(tast.Tast, 0, len(ast))
 	res := RES_OK
 
-	for _, s := range a.ast {
-		stmt, diag := a.analyzeStatement(s, nil, MODE_NORMAL); if diag != nil {
+	for _, s := range ast {
+		stmt, diag := a.analyzeStatement(s, inferredType, mode); if diag != nil {
 			a.diagnostics = append(a.diagnostics, diag)
 
 			if diag.DiagnosticType() == diagnostic.TYPE_ERROR {
